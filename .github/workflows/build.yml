@@ -1,6 +1,6 @@
 name: Build SNES core
 
-# Rebuilds snes.js + snes.wasm only when the bridge or this file changes.
+# Rebuilds snes.js (with the WebAssembly packed inside) only when the bridge or this file changes.
 # Run it by hand from the Actions tab with "Run workflow".
 on:
   push:
@@ -58,16 +58,19 @@ jobs:
           xargs -P 4 -I{} sh -c '{}' < jobs.txt
           em++ -O3 -w -std=gnu++17 $DEFS $INCS "$GITHUB_WORKSPACE/bridge.cpp" obj/*.o \
             -o "$GITHUB_WORKSPACE/snes.js" \
-            -sMODULARIZE=1 -sEXPORT_NAME=createSnes -sENVIRONMENT=web \
+            -sMODULARIZE=1 -sEXPORT_NAME=createSnes -sENVIRONMENT=web -sSINGLE_FILE=1 \
             -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=67108864 \
             -sEXPORTED_FUNCTIONS=_malloc,_free \
             -sEXPORTED_RUNTIME_METHODS=HEAPU8,HEAPU16,HEAP16
+          cp ../LICENSE "$GITHUB_WORKSPACE/snes9x-LICENSE.txt"
           ls -la "$GITHUB_WORKSPACE"/snes.*
 
       - name: Commit the built core
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add snes.js snes.wasm
+          git rm -q --cached --ignore-unmatch snes.wasm
+          rm -f snes.wasm
+          git add snes.js snes9x-LICENSE.txt
           git commit -m "Build SNES core" || echo "Core unchanged"
           git push
