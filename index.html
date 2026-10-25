@@ -890,7 +890,7 @@ const VS4=`#version 300 es
 precision highp float;layout(location=0) in vec2 aQ;layout(location=1) in vec4 aA;layout(location=2) in vec4 aB;
 uniform mat4 uM;uniform vec3 uR;uniform vec3 uU;uniform vec3 uF;uniform float uAx;uniform float uHh;uniform int uPass;out vec2 vUV;out vec2 vQ;
 void main(){vec3 base=vec3((aA.x-128.0)*uAx,uHh-aA.y,aA.z);vQ=aQ;
- if(uPass==1){vec3 p=base+vec3((aQ.x-.5)*aB.x*uAx*.95,(.5-aQ.y)*max(5.0,aB.x*.45),.12);gl_Position=uM*vec4(p,1.0);vUV=vec2(0.0);return;}
+ if(uPass==1){if(aA.w<.5){gl_Position=vec4(0.0,0.0,-2.0,1.0);vUV=vec2(0.0);return;}vec3 p=base+vec3((aQ.x-.5)*aB.x*uAx*.95,(.5-aQ.y)*max(5.0,aB.x*.45),.12);gl_Position=uM*vec4(p,1.0);vUV=vec2(0.0);return;}
  vec3 p=base-uF*6.0+uR*((aQ.x-.5)*aB.x*uAx)+uU*((1.0-aQ.y)*aB.y);gl_Position=uM*vec4(p,1.0);vUV=(aB.zw+aQ*aB.xy)/512.0;}`;
 const FS4=`#version 300 es
 precision mediump float;uniform sampler2D uC;uniform vec3 uTint;uniform highp int uPass;in vec2 vUV;in vec2 vQ;out vec4 o;
@@ -995,11 +995,16 @@ function standSprites(s,sps,H,flat){G.groups=[];const n=sps.length;if(!n)return;
   const ya=Math.max(0,y0),yb=Math.min(H,y1);let ov=0;for(let y=ya;y<yb;y++)ov+=G.rowOv[y];if(yb<=ya||ov*2>=yb-ya)continue;
   if(flat&&grp.some(sp=>{for(let cy=0;cy<sp.h/8;cy++)for(let cx=0;cx<sp.w/8;cx++)if(flat(objWA(sp,cx,cy),4))return true;return false;}))continue;
   for(const sp of grp)G.standIdx[sp.i]=1;G.groups.push({grp,x0,y0,y1,w,h});}}
-function paintSpriteCards(s){const V=s.V,D=TC[4].d,cgl=G.cgl;
- for(const{grp,x0,y0,y1,w,h}of G.groups){const card=cardAlloc(w,h);if(!card)continue;
-  for(const sp of[...grp].sort((a,b)=>b.i-a.i)){for(let y=0;y<sp.h;y++){const py=sp.vf?sp.h-1-y:y;for(let x=0;x<sp.w;x++){const px=sp.hf?sp.w-1-x:x,
-   c=D[tcGet(V,objWA(sp,px>>3,py>>3),4)+(py&7)*8+(px&7)];if(c)G.at32[(card.ay+sp.y-y0+y)*512+card.ax+sp.x-x0+x]=(cgl[128+sp.pal*16+c]|0xff000000)>>>0;}}}
-  Object.assign(card,{box:{x:x0,y:y0,w,h},fx:x0+w/2,fy:y1,shadow:1});G.cards.push(card);}}
+// The game already knows what covers a character: a roof, wall, post or treetop drawn over the sprite.
+// Any sprite pixel the real picture hides stays hidden on the standing card, so walking behind things works like the original.
+function paintSpriteCards(s,H){const V=s.V,D=TC[4].d,cgl=G.cgl,WL=G.wl,code=G.code;
+ for(const{grp,x0,y0,y1,w,h}of G.groups){const card=cardAlloc(w,h);if(!card)continue;let shown=0,hidden=0;
+  for(const sp of[...grp].sort((a,b)=>b.i-a.i)){for(let y=0;y<sp.h;y++){const py=sp.vf?sp.h-1-y:y,Y=sp.y+y;for(let x=0;x<sp.w;x++){const px=sp.hf?sp.w-1-x:x,X=sp.x+x,
+   c=D[tcGet(V,objWA(sp,px>>3,py>>3),4)+(py&7)*8+(px&7)];if(!c)continue;
+   if(X>=0&&X<256&&Y>=0&&Y<H&&WL[code[Y*256+X]]!==4){hidden++;continue;}
+   G.at32[(card.ay+Y-y0)*512+card.ax+X-x0]=(cgl[128+sp.pal*16+c]|0xff000000)>>>0;shown++;}}}
+  if(!shown)continue;
+  Object.assign(card,{box:{x:x0,y:y0,w,h},fx:x0+w/2,fy:y1,shadow:hidden<shown?1:0,hidden:hidden/(shown+hidden)});G.cards.push(card);}}
 // Props: background tiles marked "stands up" (trees, fences, signs) are grouped into pieces and stood up the same way.
 function standProps(H,nat){const vis=G.vis,cgl=G.cgl,stack=[];vis.fill(0);
  for(let bg=0;bg<4;bg++){if(!G.bgOn[bg])continue;const st=G.bS[bg],op=G.bg[bg];
@@ -1027,7 +1032,7 @@ function compose3D(){const s=snap(),H=G.H=logical.h,vw=M._s9x_vw(),vh=M._s9x_vh(
  if(ord){let acc=0,cnt=0;const lum=v=>(v&255)+(v>>8&255)+(v>>16&255);
   for(let i=7;i<256*H;i+=53){const w=G.wl[code[i]];if(w<0||w>3||ovm>>w&1||G.rowOv[i>>8])continue;const d=lum(cgl[G.cg[w][i]]);if(d<60)continue;acc+=lum(nat(i))/d;cnt++;}
   const br=cnt>8?Math.min(1.15,acc/cnt):1;if(Math.abs(br-1)>.03)for(let i=0;i<256;i++){const v=cgl[i];cgl[i]=Math.min(255,(v&255)*br|0)|Math.min(255,(v>>8&255)*br|0)<<8|Math.min(255,(v>>16&255)*br|0)<<16;}}
- paintSpriteCards(s);
+ paintSpriteCards(s,H);
  G.pm.fill(0);if(hd&&fn.stand&&ord)standProps(H,nat);
  const RL=G.rl,WL=G.wl,RL2=G.rl2,WL2=G.wl2,rowOv=G.rowOv,hole=G.hole;let any=false;hole.fill(0);
  for(let y=0;y<H;y++){for(let x=0;x<256;x++){const i=y*256+x,nv=nat(i);let h4=0,col=nv,ovp=0;
@@ -1069,7 +1074,7 @@ function glDraw(){const gl=G.gl,c=$('#gl'),r=c.getBoundingClientRect(),dpr=Math.
  gl.uniform1f(G.u.uS,S.depth/100);gl.uniform1f(G.u.uSh,S.shadow?1:0);gl.uniform1f(G.u.uAx,G.ax);gl.uniform3fv(G.u.uTint,G.tint);
  gl.drawArraysInstanced(gl.TRIANGLES,0,G.nv,256*G.H);
  const n=G.cards.length;
- if(n){const d=G.cardData;G.cards.forEach((c,i)=>d.set([c.fx,c.fy,c.z,0,c.w,c.h,c.ax,c.ay],i*8));
+ if(n){const d=G.cardData;G.cards.forEach((c,i)=>d.set([c.fx,c.fy,c.z,c.shadow?1:0,c.w,c.h,c.ax,c.ay],i*8));
   gl.useProgram(G.prog4);gl.bindVertexArray(G.vao4);gl.bindBuffer(gl.ARRAY_BUFFER,G.cardBuf);gl.bufferSubData(gl.ARRAY_BUFFER,0,d.subarray(0,n*8));
   gl.bindTexture(gl.TEXTURE_2D,G.texA);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,512,Math.min(512,G.pack.y+G.pack.rh+1),gl.RGBA,gl.UNSIGNED_BYTE,G.atlas);
   const u=G.u4;gl.uniform1i(u.uC,0);gl.uniformMatrix4fv(u.uM,false,G.M);gl.uniform3fv(u.uR,G.R);gl.uniform3fv(u.uU,G.U);gl.uniform3fv(u.uF,G.F);
