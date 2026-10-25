@@ -79,7 +79,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
  #wrap{width:min(68vw,calc(100dvh * var(--arn)))}
  #lsh,#rsh{margin:6px 10px 0;height:30px;width:84px}#mid{justify-self:center;align-self:end;padding-bottom:14px}#act{align-self:end;padding:0 6px 10px}
 }
-#sheet,#editor{position:fixed;inset:0;background:#2a273366;display:flex;align-items:flex-end;z-index:20}
+#sheet,#editor,#choose{position:fixed;inset:0;background:#2a273366;display:flex;align-items:flex-end;z-index:20}
 .panel{background:var(--sheet);width:100%;max-width:680px;margin:0 auto;max-height:90dvh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);user-select:text;-webkit-user-select:text}
 .tabs{display:flex;gap:4px;padding:10px 10px 6px;align-items:center}
 .tabrow{display:flex;gap:2px;overflow-x:auto;flex:1;min-width:0}
@@ -94,7 +94,7 @@ p.note{font-size:13px;color:var(--soft);margin:4px 0 10px;line-height:1.45}
 .btn.main{background:var(--ink);color:#fff}.btn.warn{background:#f2d3d4;color:#7a1f23}
 .list{display:flex;flex-direction:column;gap:6px}
 .item{display:flex;gap:10px;align-items:center;background:#fff;border-radius:12px;padding:8px 10px}
-.item .grow{flex:1;min-width:0}.item small{display:block;color:var(--soft);font-size:12px}
+.item .grow{flex:1;min-width:0}.item.game{flex-wrap:wrap}.item .acts{display:flex;gap:6px;width:100%;justify-content:flex-end}.item small{display:block;color:var(--soft);font-size:12px}
 .item img,.item canvas{border-radius:6px;image-rendering:pixelated;background:#0001;flex:none}
 details{background:#fff;border-radius:12px;padding:6px 12px;margin:8px 0}
 summary{font-weight:700;padding:6px 0;cursor:pointer}
@@ -112,6 +112,10 @@ label.ck{display:flex;gap:6px;align-items:center;font-size:14px}
 .strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
 .strip button{flex:none;border:0;background:#fff;border-radius:10px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--soft)}
 .strip img{width:104px;border-radius:6px;image-rendering:pixelated}
+#qmenu{position:fixed;inset:0;z-index:18;background:#2a273333}
+.qi{position:absolute;transform:translate(-50%,-50%);width:76px;height:76px;border-radius:50%;border:0;background:var(--sheet);box-shadow:0 4px 14px #0004;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.qi span{font-size:24px}.qi small{font-size:11px;font-weight:650;color:var(--ink);max-width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qi.on{background:var(--sel)}.qi.on small{color:#fff}
 .checker{background:conic-gradient(#ddd 25%,#fff 0 50%,#ddd 0 75%,#fff 0) 0 0/10px 10px}
 body.pad #ctl{display:none}
 body.pad #app{grid-template-rows:auto 1fr}
@@ -159,9 +163,10 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
  </div>
  <div class="pages">
   <section class="page" data-p="games">
-   <div class="row"><button class="btn main" id="addGame">Add a game</button></div>
+   <div class="row"><button class="btn main" id="addGame">Add a game or file</button></div>
+   <p class="note">Opens your games (.sfc, .smc or .zip), game backups, Mod packs and IPS or BPS patches.</p>
    <div class="list" id="gameList"></div>
-   <p class="note">Games are stored only in this browser. Use Touch-SNES from your Home Screen so Safari keeps them.</p>
+   <p class="note">Games are stored compressed, only on this device. Use Backup to move a game with its saves and setup to your own iPad or a new phone. Use Touch-SNES from your Home Screen so Safari keeps everything. <span id="storeNote"></span></p>
   </section>
   <section class="page" data-p="saves" hidden>
    <div class="list" id="slotList"></div>
@@ -206,6 +211,9 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
    <div class="row"><input type="text" id="actIcon" placeholder="Icon" style="width:64px"><input type="text" id="actLabel" placeholder="Label, like Use tool" style="flex:1"></div>
    <div class="row" id="actBtns"></div>
    <div class="row"><select id="actMode"><option value="hold">Hold while pressed</option><option value="turbo">Turbo while pressed</option><option value="toggle">Tap to hold, tap to release</option></select><button class="btn main" id="actAdd">Add button</button></div>
+   <h2>Touch gestures</h2>
+   <p class="note">With 👆 on: tap to walk, tap someone to walk over and talk, drag to steer. Anytime: hold the screen for a quick menu, tap with two fingers for Back.</p>
+   <div class="row" id="gestRow"></div>
    <h2>Tap to walk</h2>
    <div class="row"><label>Camera follows <select id="walkLayer"><option value="0">BG1</option><option value="1">BG2</option><option value="2">BG3</option><option value="3">BG4</option></select></label><label class="ck"><input type="checkbox" id="walkDiag" checked> Diagonal walking</label></div>
    <h2>3D view</h2>
@@ -223,6 +231,10 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
    <p class="note" id="fxNote">For the game’s season, use a 1-byte value where 0 is spring, 1 summer, 2 fall, 3 winter.</p>
    <h2>Notes</h2>
    <textarea id="notes" style="min-height:110px;font-family:inherit;font-size:14px" placeholder="Birthdays, favorite gifts, what to plant next season…"></textarea>
+   <h2>Mod packs</h2>
+   <p class="note">Share your tile edits, 3D setup, lighting, weather, buttons and watches with friends. Packs never include the game, so each person uses their own copy.</p>
+   <div class="row"><button class="btn main" id="packOut">Share as Mod pack</button><button class="btn" id="packIn">Open a Mod pack</button></div>
+   <div class="list" id="packList"></div>
    <h2>Game data</h2>
    <p class="note">Everything above, plus tile edits, watches and cheats, lives in this file. Share it or edit it by hand.</p>
    <div class="row"><button class="btn" id="profOut">Export</button><button class="btn" id="profIn">Import</button><button class="btn" id="profEdit">Edit as text</button></div>
@@ -234,12 +246,15 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
    <div class="row"><label>Shape <select id="setAspect"><option value="4:3">TV (4:3)</option><option value="pixel">Square pixels</option></select></label></div>
    <div class="row"><label class="ck"><input type="checkbox" id="setCrt"> Scanlines</label><label class="ck"><input type="checkbox" id="setSmooth"> Smooth pixels</label><label class="ck"><input type="checkbox" id="setWatch" checked> Show watches</label></div>
    <h3>3D</h3>
-   <div class="row"><label class="ck"><input type="checkbox" id="setD3"> 3D depth view</label><label class="ck"><input type="checkbox" id="setStand"> Standing characters (HD-2D)</label><label class="ck"><input type="checkbox" id="setDof"> Depth of field</label></div>
+   <div class="row"><label class="ck"><input type="checkbox" id="setD3"> 3D depth view</label><label class="ck"><input type="checkbox" id="setStand"> Standing characters (HD-2D)</label><label class="ck"><input type="checkbox" id="setTalkFlat"> Level the camera while text is up</label><label class="ck"><input type="checkbox" id="setDof"> Depth of field</label></div>
    <div class="row"><label class="ck"><input type="checkbox" id="setSun"> Sun shadows</label><label class="ck"><input type="checkbox" id="setGlow"> Night lights</label><label class="ck"><input type="checkbox" id="setBloom"> Bloom</label><label class="ck"><input type="checkbox" id="setWater"> Water shimmer</label><label class="ck"><input type="checkbox" id="setShadow"> Shadows</label><label class="ck"><input type="checkbox" id="setMotion"> Move with phone</label></div>
    <div class="row"><label>Tilt <input type="range" id="setTilt" min="0" max="60"></label><label>Depth <input type="range" id="setDepth" min="0" max="300"></label><button class="btn" id="photoBtn2">Photo mode</button></div>
    <p class="note">Characters stand up like paper cutouts on a 3D stage, with soft shadows and a tilt-shift blur at the edges. Shadows follow the time of day when Lighting is on. From Tools, Pick, mark tiles to stand up, glow at night (lanterns, windows) or shimmer (water). Move with phone gently follows how you hold it and settles back to center.</p>
+   <h3>Start up</h3>
+   <div class="row"><label class="ck"><input type="checkbox" id="setResume"> Open my last game when the app starts</label></div>
    <h3>Controls</h3>
    <div class="row"><label>Opacity <input type="range" id="setOp" min="30" max="100"></label></div>
+   <div class="row"><label class="ck"><input type="checkbox" id="setGest"> Hold the screen for a quick menu, two-finger tap for Back</label></div>
    <div class="row"><label class="ck"><input type="checkbox" id="setPadHide"> Hide touch controls when a controller connects</label></div>
    <h3>Weather</h3>
    <div class="row"><label>Amount <select id="setFxAmt"><option value="18">Light</option><option value="40">Medium</option><option value="80">Heavy</option></select></label></div>
@@ -281,6 +296,12 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
  </div>
 </div></div>
 
+<div id="choose" hidden><div class="panel">
+ <div class="tabs"><strong id="chTitle" style="flex:1;padding:0 6px"></strong><button class="ib close" id="chClose" aria-label="Close">✕</button></div>
+ <div class="pages"><p class="note" id="chNote"></p><label class="ck" id="chHdrRow" style="margin-bottom:8px"><input type="checkbox" id="chHdr"> Patch is for a headered copy (.smc)</label><div class="list" id="chList"></div></div>
+</div></div>
+
+<div id="qmenu" hidden></div>
 <div id="toast" hidden></div>
 <input type="file" id="romFile" hidden>
 <input type="file" id="jsonFile" accept=".json,application/json" hidden>
@@ -304,7 +325,7 @@ const DB=(()=>{let p,mem=null;const memStore=s=>(mem[s]||(mem[s]=new Map()));
   return new Promise((res,rej)=>{const t=d.transaction(st,mode);const r=fn(t.objectStore(st));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);});};
  return{get:(s,k)=>run(s,'readonly',o=>o.get(k),m=>m.get(k)),put:(s,k,v)=>run(s,'readwrite',o=>o.put(v,k),m=>{m.set(k,v);}),
   del:(s,k)=>run(s,'readwrite',o=>o.delete(k),m=>{m.delete(k);}),keys:s=>run(s,'readonly',o=>o.getAllKeys(),m=>[...m.keys()])};})();
-const SETDEF={sunShadow:true,glowFx:true,bloom:true,waterFx:true,fastText:2,moments:5,stand:true,dof:true,look:'original',fxAmt:40,padHide:true,aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10,d3:false,tilt:28,depth:100,shadow:true,motion:false};
+const SETDEF={gestures:true,talkFlat:true,resume:true,sunShadow:true,glowFx:true,bloom:true,waterFx:true,fastText:2,moments:5,stand:true,dof:true,look:'original',fxAmt:40,padHide:true,aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10,d3:false,tilt:28,depth:100,shadow:true,motion:false};
 let S=Object.assign({},SETDEF,JSON.parse(localStorage.getItem('ht.settings')||'{}'));
 const saveSettings=()=>localStorage.setItem('ht.settings',JSON.stringify(S));
 const fnv=(a,o=0,n=a.length)=>{let h=0x811c9dc5;for(let i=o;i<o+n;i++){h^=a[i];h=Math.imul(h,16777619);}return h>>>0;};
@@ -334,9 +355,9 @@ function draw(){
  const w=M._s9x_vw(),h=M._s9x_vh();
  if(!img||img.width!==w||img.height!==h){cv.width=w;cv.height=h;img=cx.createImageData(w,h);logical={w:256,h:h>240?h/2:h};applyAspect();}
  if(G.on&&game){compose3D();glDraw();fxTick();hudTick();return;}
- const src=new Uint16Array(H8().buffer,P.video,w*h),dst=new Uint32Array(img.data.buffer);
- for(let i=0;i<dst.length;i++)dst[i]=LUT[src[i]];
- cx.putImageData(img,0,0);fxTick();hudTick();}
+ blit();fxTick();hudTick();}
+function blit(){if(!img)return;const src=new Uint16Array(H8().buffer,P.video,img.width*img.height),dst=new Uint32Array(img.data.buffer);
+ for(let i=0;i<dst.length;i++)dst[i]=LUT[src[i]];cx.putImageData(img,0,0);}
 function applyAspect(){const n=S.aspect==='pixel'?logical.w/logical.h:4/3;document.documentElement.style.setProperty('--ar',String(n));document.documentElement.style.setProperty('--arn',String(n));}
 
 /* ---------- audio ---------- */
@@ -401,20 +422,23 @@ function loop(now){requestAnimationFrame(loop);if(!running||paused){last=now;ret
  acc+=Math.min(100,now-last);last=now;const ft=1000/fps;let n=0;while(acc>=ft){acc-=ft;n++;}if(n>4){n=4;acc=0;}if(!n)return;
  pollPads();
  if(rewinding){rewindStep();draw();return;}
- const fast=ff?S.ff:TX.on?S.fastText:1,k=n*fast;for(let i=0;i<k;i++)step(!ff&&(fast===1||i%fast===0));draw();}
+ const fast=ff?S.ff:TX.on&&S.fastText>1?S.fastText:1,k=n*fast;for(let i=0;i<k;i++)step(!ff&&(fast===1||i%fast===0));draw();}
 function step(audio){frameNo++;M._s9x_set_input(inputMask());applyFreezes();M._s9x_frame();if(audio)pushAudio();
- walkTick();patchTick();rewindCapture();if(frameNo%120===0)sramCheck();if(frameNo%8===0)textTick();momentTick();if(frameNo%30===0)lightTick();if(frameNo%15===0)layerTick();}
+ walkTick();patchTick();rewindCapture();if(frameNo%120===0)sramCheck();if(frameNo%8===0)textTick();momentTick();if(frameNo%3600===0){const m=lib.find(g=>g.id===game.id);if(m)m.playMin=(m.playMin||0)+1;}if(frameNo%30===0)lightTick();if(frameNo%15===0)layerTick();}
 requestAnimationFrame(loop);
 
 /* ---------- fast text: speed up while a text box is open ---------- */
 // A text box is a band of rows on the text layer. Rows that stay covered for minutes are a status bar, not a text box.
-const TX={on:false,age:new Uint16Array(240)};
-function textTick(){if(!S.fastText||!game){if(TX.on){TX.on=false;badge();}return;}const s=snap(),ovm=overlayMask(s),H=logical.h;
+const TX={on:false,age:new Uint16Array(240),base:null};
+function textTick(){if(!(S.fastText>1||G.on&&S.talkFlat)||!game){if(TX.on){TX.on=false;badge();}return;}const s=snap(),ovm=overlayMask(s),H=logical.h;
  if(!ovm){if(TX.on){TX.on=false;badge();}return;}tcSync(s.V);
  for(let bg=0;bg<4;bg++){const b=bgInfo(s,bg);G.bgOn[bg]=b.bpp&&(s.R[0x2C]>>bg&1);if(G.bgOn[bg]&&ovm>>bg&1)opBG(s,b,H,{});}
  findOverlayRows(H,ovm);let n=0;for(let y=0;y<H;y++){if(G.rowOv[y]){if(TX.age[y]<65535)TX.age[y]++;if(TX.age[y]<900)n++;}else TX.age[y]=0;}
- const was=TX.on;TX.on=n>=16;if(was!==TX.on)badge();}
-function badge(){const b=$('#ffbadge');b.hidden=!(ff||TX.on);b.textContent=ff?'Fast':'Fast text';}
+ // Text floating over the scene without a box (like Chrono Trigger's) shows up as a jump in text-layer pixels above the usual amount.
+ let px=0;for(let bg=0;bg<4;bg++)if(ovm>>bg&1&&G.bgOn[bg]){const op=G.bg[bg];for(let i=0;i<256*H;i+=2)if(op[i])px+=2;}
+ if(TX.base===null||px<TX.base)TX.base=px;else TX.base+=(px-TX.base)*.0005;
+ const was=TX.on;TX.on=n>=16||px-TX.base>1200;if(was!==TX.on)badge();}
+function badge(){const b=$('#ffbadge'),ft=TX.on&&S.fastText>1;b.hidden=!(ff||ft);b.textContent=ff?'Fast':'Fast text';}
 
 /* ---------- moments: a save state every few minutes of play ---------- */
 const MO={f:0};
@@ -430,13 +454,6 @@ async function renderMoments(){const box=$('#momList');box.innerHTML='';if(!game
 /* ---------- games ---------- */
 let lib=[];
 async function loadLib(){lib=(await DB.get('data','lib'))||[];renderGames();}
-function renderGames(){const box=$('#gameList');box.innerHTML='';
- if(!lib.length){box.innerHTML='<p class="note">No games yet.</p>';return;}
- [...lib].sort((a,b)=>(b.played||0)-(a.played||0)).forEach(g=>{const d=document.createElement('div');d.className='item';
-  d.innerHTML=`<div class="grow"><strong>${esc(g.name)}</strong><small>${g.played?'Last played '+new Date(g.played).toLocaleDateString():'Not played yet'}</small></div><button class="btn main">Play</button><button class="btn warn" aria-label="Remove">✕</button>`;
-  const[play,del]=d.querySelectorAll('button');play.onclick=()=>{closeSheet();play.disabled=true;startGame(g.id).finally(()=>play.disabled=false);};
-  del.onclick=async()=>{if(!confirm(`Remove ${g.name} from this device? Its saves stay unless you clear them.`))return;await DB.del('roms',g.id);lib=lib.filter(x=>x.id!==g.id);await DB.put('data','lib',lib);renderGames();};
-  box.appendChild(d);});}
 async function unzip(buf){const dv=new DataView(buf.buffer,buf.byteOffset,buf.byteLength);let e=-1;
  for(let i=buf.length-22;i>=Math.max(0,buf.length-65557);i--)if(dv.getUint32(i,true)===0x06054b50){e=i;break;}
  if(e<0)throw new Error('This zip file is damaged.');let p=dv.getUint32(e+16,true);const n=dv.getUint16(e+10,true);
@@ -447,19 +464,124 @@ async function unzip(buf){const dv=new DataView(buf.buffer,buf.byteOffset,buf.by
   if(method===0)return{name,data:data.slice()};
   if(method===8)return{name,data:new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())};}
  throw new Error('This zip has no SNES game inside.');}
-async function addGame(){const f=$('#romFile');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return;
- let buf=new Uint8Array(await file.arrayBuffer()),fname=file.name;
- if(buf[0]===0x50&&buf[1]===0x4B){try{const z=await unzip(buf);buf=z.data;fname=z.name.split('/').pop();}catch(e){toast(e.message,4000);return;}}
- if(buf.length%1024===512)buf=buf.slice(512);
- if(buf.length<0x8000){toast('That file is too small to be an SNES game.');return;}
- const id=hex(fnv(buf))+buf.length.toString(16);const name=fname.replace(/\.[^.]+$/,'');
- await DB.put('roms',id,buf);if(!lib.find(g=>g.id===id)){lib.push({id,name,added:Date.now()});await DB.put('data','lib',lib);}
- renderGames();closeSheet();startGame(id);};f.click();}
-$('#addGame').onclick=addGame;$('#emptyAdd').onclick=addGame;
+/* ---------- files: games stored compressed, game backups, Mod packs and patches ---------- */
+const canZip=typeof CompressionStream!=='undefined';
+async function gz(u8){return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());}
+async function putRom(id,buf){const m=lib.find(g=>g.id===id);
+ if(canZip){const z=await gz(buf);await DB.put('roms',id,{gz:z,size:buf.length});if(m){m.size=buf.length;m.zsize=z.length;}}
+ else{await DB.put('roms',id,buf);if(m)m.size=m.zsize=buf.length;}}
+// Older installs stored games uncompressed; they are compressed the first time they're opened.
+async function getRom(id){const v=await DB.get('roms',id);if(!v)return null;
+ if(v instanceof Uint8Array){if(canZip){await putRom(id,v);await DB.put('data','lib',lib);}return v;}return gunzip(v.gz);}
+const MAGIC={game:'TSNESGAME1',pack:'TSNESPACK1'},enc=t=>new TextEncoder().encode(t),dec=b=>new TextDecoder().decode(b);
+const hasMagic=(b,m)=>b.length>=m.length&&[...m].every((ch,i)=>b[i]===ch.charCodeAt(0));
+async function wrap(magic,payload){const z=canZip?await gz(payload):payload,out=new Uint8Array(magic.length+1+z.length);out.set(enc(magic));out[magic.length]=canZip?1:0;out.set(z,magic.length+1);return out;}
+async function unwrap(magic,b){const z=b.subarray(magic.length+1);return b[magic.length]?gunzip(z):z;}
+const fmtSize=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+const fmtPlay=m=>!m?'':m<60?`${m} min played`:`${(m/60).toFixed(m<600?1:0)} hr played`;
+function persistAsk(){navigator.storage?.persist?.().catch(()=>{});}
+async function addRomBytes(buf,fname,start=true){if(buf.length%1024===512)buf=buf.slice(512);
+ if(buf.length<0x8000){toast('That file is too small to be an SNES game.');return null;}
+ const id=hex(fnv(buf))+buf.length.toString(16),name=fname.replace(/\.[^.]+$/,'');
+ if(!lib.find(g=>g.id===id))lib.push({id,name,added:Date.now()});await putRom(id,buf);await DB.put('data','lib',lib);persistAsk();renderGames();
+ if(start){closeSheet();startGame(id);}return id;}
+// One button opens anything: a game, a zip, a game backup, a Mod pack, or an IPS/BPS patch.
+function openFile(){const f=$('#romFile');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return;let b=new Uint8Array(await file.arrayBuffer());
+ try{if(hasMagic(b,MAGIC.game))return await restoreGame(b);if(hasMagic(b,MAGIC.pack))return await openPack(b);
+  if(hasMagic(b,'PATCH')||hasMagic(b,'BPS1'))return await patchFlow(b,file.name);
+  let fname=file.name;if(b[0]===0x50&&b[1]===0x4B){const z=await unzip(b);b=z.data;fname=z.name.split('/').pop();}
+  await addRomBytes(b,fname);}catch(e){toast(e.message||'That file couldn’t be opened.',5000);}};f.click();}
+$('#addGame').onclick=openFile;$('#emptyAdd').onclick=openFile;$('#packIn').onclick=openFile;
+function renderGames(){const box=$('#gameList');box.innerHTML='';
+ if(!lib.length){box.innerHTML='<p class="note">No games yet.</p>';return;}
+ [...lib].sort((a,b)=>(b.played||0)-(a.played||0)).forEach(g=>{const d=document.createElement('div');d.className='item';
+  const info=[g.played?'Last played '+new Date(g.played).toLocaleDateString():'Not played yet',fmtPlay(g.playMin),g.zsize?fmtSize(g.zsize)+' stored':''].filter(Boolean).join(', ');
+  d.classList.add('game');d.innerHTML=`${g.cover?`<img src="${g.cover}" width="72" alt="">`:'<canvas width="72" height="63"></canvas>'}<div class="grow"><strong>${esc(g.name)}</strong><small>${info}</small></div><div class="acts"><button class="btn warn" aria-label="Remove">✕</button><button class="btn">Backup</button><button class="btn main">Play</button></div>`;
+  const[del,bk,play]=d.querySelectorAll('button');play.onclick=()=>{closeSheet();play.disabled=true;startGame(g.id).finally(()=>play.disabled=false);};
+  bk.onclick=()=>backupGame(g.id).catch(e=>toast(e.message,4000));
+  del.onclick=async()=>{if(!confirm(`Remove ${g.name} from this device? Its saves stay unless you clear them.`))return;await DB.del('roms',g.id);lib=lib.filter(x=>x.id!==g.id);await DB.put('data','lib',lib);renderGames();};
+  box.appendChild(d);});
+ if(navigator.storage?.estimate)navigator.storage.estimate().then(e=>{$('#storeNote').textContent=`Using ${fmtSize(e.usage||0)} of this device’s space for Touch-SNES.`;}).catch(()=>{});}
+// A game backup holds your copy of the game plus its saves, slots and setup, for moving to your own iPad or a new phone.
+async function backupGame(id){const meta=lib.find(g=>g.id===id),rom=await getRom(id);if(!rom)throw new Error('That game isn’t on this device anymore.');
+ if(game&&game.id===id)await saveAuto();const slots={};
+ for(const k of['quick','auto',1,2,3,4]){const v=await DB.get('data',`state:${id}:${k}`);if(v)slots[k]={b:b64(v.bytes),img:v.img,t:v.t};}
+ const sram=await DB.get('data','sram:'+id),prof=await DB.get('data','prof:'+id);
+ const head=enc(JSON.stringify({v:1,id,name:meta.name,added:meta.added,cover:meta.cover,playMin:meta.playMin||0,profile:prof||null,sram:sram?b64(sram):null,slots}));
+ const body=new Uint8Array(4+head.length+rom.length);new DataView(body.buffer).setUint32(0,head.length,true);body.set(head,4);body.set(rom,4+head.length);
+ download(meta.name+'.tsnesgame',await wrap(MAGIC.game,body),'application/octet-stream');}
+async function restoreGame(b){const body=await unwrap(MAGIC.game,b),n=new DataView(body.buffer,body.byteOffset).getUint32(0,true),h=JSON.parse(dec(body.subarray(4,4+n))),rom=body.slice(4+n);
+ const has=lib.find(g=>g.id===h.id);if(has&&!confirm(`${h.name} is already here. Replace its saves and setup with the backup’s?`))return;
+ if(!has)lib.push({id:h.id,name:h.name,added:h.added||Date.now(),cover:h.cover,playMin:h.playMin||0});
+ await putRom(h.id,rom);if(h.profile)await DB.put('data','prof:'+h.id,h.profile);if(h.sram)await DB.put('data','sram:'+h.id,unb64(h.sram));
+ for(const[k,v]of Object.entries(h.slots||{}))await DB.put('data',`state:${h.id}:${k}`,{bytes:unb64(v.b),img:v.img,t:v.t});
+ await DB.put('data','lib',lib);persistAsk();renderGames();toast(`${h.name} restored with its saves and setup`);if(game&&game.id===h.id)startGame(h.id);}
+// Mod packs: everything you've built for a game except the game itself. They apply only to someone's own copy.
+const PACK_KEYS=['tiles','depth','light','fx','actions','watches','cheats','walk'];
+function packSummary(p){const d=p.depth||{},n=o=>Object.keys(o||{}).length,pl=(k,w)=>`${k} ${w}${k>1?'s':''}`,out=[];
+ if(n(p.tiles))out.push(pl(n(p.tiles),'tile edit'));const tags=n(d.stand)+n(d.glow)+n(d.water)+n(d.tiles)+n(d.flat);if(tags)out.push(pl(tags,'3D tag'));
+ if(p.light&&p.light.source!=='off')out.push('lighting');if(p.fx&&p.fx.mode!=='off')out.push('weather');
+ if(p.actions?.length)out.push(pl(p.actions.length,'action button'));if(p.watches?.length)out.push(pl(p.watches.length,'watch'));if(p.cheats?.length)out.push(pl(p.cheats.length,'cheat'));
+ return out.join(', ')||'no changes yet';}
+async function sharePack(){if(!game){toast('Start the game first');return;}const data={};for(const k of PACK_KEYS)data[k]=game.profile[k];
+ const title=prompt('Name your Mod pack',`${game.name} HD-2D`);if(title===null)return;
+ const author=prompt('Your name or handle (optional)',localStorage.getItem('tsnes.author')||'');if(author===null)return;localStorage.setItem('tsnes.author',author);
+ const pack={app:'tsnes',kind:'pack',v:1,title:title||game.name,author,created:Date.now(),game:{id:game.id,name:game.name},thumb:thumb(),summary:packSummary(data),data};
+ download((title||game.name).replace(/[\\/:*?"<>|]/g,'')+'.tsnespack',await wrap(MAGIC.pack,enc(JSON.stringify(pack))),'application/octet-stream');}
+async function openPack(b){const p=JSON.parse(dec(await unwrap(MAGIC.pack,b)));if(p.app!=='tsnes'||p.kind!=='pack')throw new Error('That isn’t a Touch-SNES Mod pack.');
+ let target=lib.find(g=>g.id===p.game.id);
+ if(!target){const near=lib.find(g=>g.name.toLowerCase().startsWith(p.game.name.toLowerCase().split(' (')[0]));
+  if(!near){toast(`This Mod pack is for ${p.game.name}. Add your own copy of that game first, then open the pack again.`,6000);return;}
+  if(!confirm(`“${p.title}” was made for a different copy of ${p.game.name} than yours. Apply it to ${near.name} anyway? Some edits may not line up.`))return;target=near;}
+ if(!confirm(`Apply “${p.title}”${p.author?' by '+p.author:''} to ${target.name}?\n\nIt adds ${p.summary}. Your own changes stay, unless the pack changes the same thing.`))return;
+ const cur=game&&game.id===target.id?game.profile:normProfile(await DB.get('data','prof:'+target.id),target.name),d=p.data||{};
+ Object.assign(cur.tiles,d.tiles||{});for(const k of['tiles','stand','flat','glow','water'])Object.assign(cur.depth[k],d.depth?.[k]||{});
+ if(d.depth&&'overlay'in d.depth&&d.depth.overlay!==null)cur.depth.overlay=d.depth.overlay;
+ if(d.light&&d.light.source!=='off')cur.light=d.light;if(d.fx&&d.fx.mode!=='off')cur.fx=d.fx;if(d.walk)Object.assign(cur.walk,d.walk);
+ const addU=(arr,items,key)=>{for(const it of items||[])if(!arr.some(x=>x[key]===it[key]))arr.push(it);};
+ addU(cur.actions,d.actions,'label');addU(cur.watches,d.watches,'addr');addU(cur.cheats,d.cheats,'code');
+ cur.packs.push({title:p.title,author:p.author||'',summary:p.summary,t:Date.now()});
+ await DB.put('data','prof:'+target.id,cur);if(game&&game.id===target.id){game.profile=cur;reloadProfile();}
+ renderPacks();toast(`“${p.title}” applied to ${target.name}`,4000);}
+function renderPacks(){const box=$('#packList');box.innerHTML='';if(!game)return;
+ for(const p of game.profile.packs.slice().reverse()){const d=document.createElement('div');d.className='item';
+  d.innerHTML=`<div class="grow"><strong>${esc(p.title)}</strong><small>${p.author?'By '+esc(p.author)+', ':''}${esc(p.summary||'')}</small></div>`;box.appendChild(d);}}
+$('#packOut').onclick=()=>sharePack().catch(e=>toast(e.message,4000));
+// IPS and BPS patches (fan translations, fixes, hacks) applied to a game you already have. The result is added as its own game.
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0;}
+function applyIPS(src,p){let out=src.slice(),o=5;const grow=n=>{if(n>out.length){const t=new Uint8Array(n);t.set(out);out=t;}};
+ while(o+3<=p.length){if(p[o]===0x45&&p[o+1]===0x4F&&p[o+2]===0x46){o+=3;if(o+3<=p.length)out=out.slice(0,p[o]<<16|p[o+1]<<8|p[o+2]);return out;}
+  const off=p[o]<<16|p[o+1]<<8|p[o+2],sz=p[o+3]<<8|p[o+4];o+=5;
+  if(sz){grow(off+sz);out.set(p.subarray(o,o+sz),off);o+=sz;}else{const n=p[o]<<8|p[o+1];grow(off+n);out.fill(p[o+2],off,off+n);o+=3;}}
+ throw new Error('This IPS patch is incomplete.');}
+function applyBPS(src,p){let o=4;const vn=()=>{let d=0,s=1;for(;;){const x=p[o++];d+=(x&0x7f)*s;if(x&0x80)break;s*=128;d+=s;}return d;};
+ const ss=vn(),ts=vn(),ms=vn();o+=ms;if(src.length!==ss)throw new Error('This patch is for a different version of the game.');
+ const out=new Uint8Array(ts),end=p.length-12;let op=0,sr=0,tr=0;
+ while(o<end){const d=vn(),cmd=d%4,len=Math.floor(d/4)+1;
+  if(cmd===0){out.set(src.subarray(op,op+len),op);op+=len;}
+  else if(cmd===1){out.set(p.subarray(o,o+len),op);o+=len;op+=len;}
+  else{const r=vn(),rel=(r%2?-1:1)*Math.floor(r/2);if(cmd===2){sr+=rel;out.set(src.subarray(sr,sr+len),op);sr+=len;op+=len;}else{tr+=rel;for(let i=0;i<len;i++)out[op++]=out[tr++];}}}
+ if(crc32(out)!==new DataView(p.buffer,p.byteOffset+end+4,4).getUint32(0,true))throw new Error('The patched game didn’t check out. The patch file may be damaged.');return out;}
+async function patchFlow(b,fname){const pname=fname.replace(/\.[^.]+$/,'');if(!lib.length)throw new Error('Add the game this patch is for first, then open the patch.');
+ if(hasMagic(b,'BPS1')){const want=new DataView(b.buffer,b.byteOffset+b.length-12,4).getUint32(0,true);
+  for(const g of lib){const r=await getRom(g.id);if(r&&crc32(r)===want)return addRomBytes(applyBPS(r,b),`${g.name} + ${pname}`);}
+  throw new Error('None of your games match this patch. It needs the exact version of the game it was made for.');}
+ chooseGame(`Which game is “${pname}” for?`,true,async(g,headered)=>{const r=await getRom(g.id);let out;
+  if(headered){const h=new Uint8Array(r.length+512);h.set(r,512);out=applyIPS(h,b).slice(512);}else out=applyIPS(r,b);
+  await addRomBytes(out,`${g.name} + ${pname}`);});}
+function chooseGame(title,ips,cb){const box=$('#chList');box.innerHTML='';$('#chTitle').textContent=title;$('#chHdrRow').hidden=!ips;$('#chHdr').checked=false;
+ $('#chNote').textContent=ips?'The patched version is added as its own game, so your original stays as it is. If the patched game won’t start, try again with the headered option.':'';
+ for(const g of lib){const btn=document.createElement('button');btn.className='item';btn.style.cssText='border:0;width:100%;text-align:left';
+  btn.innerHTML=`${g.cover?`<img src="${g.cover}" width="48" alt="">`:''}<div class="grow"><strong>${esc(g.name)}</strong></div>`;
+  btn.onclick=async()=>{$('#choose').hidden=true;try{await cb(g,$('#chHdr').checked);}catch(e){toast(e.message,5000);}};box.appendChild(btn);}
+ $('#choose').hidden=false;}
+$('#chClose').onclick=()=>$('#choose').hidden=true;
+
 
 async function startGame(id){
  try{await saveAuto();await loadCore();}catch(e){toast(e.message,6000);return;}
- const rom=await DB.get('roms',id);if(!rom){toast('That game isn’t on this device anymore.');return;}
+ const rom=await getRom(id);if(!rom){toast('That game isn’t on this device anymore.');return;}
  running=false;if(romPtr)M._free(romPtr);romPtr=M._malloc(rom.length);H8().set(rom,romPtr);
  if(!M._s9x_load(romPtr,rom.length)){toast('This file didn’t load. Check that it’s an SNES game.');return;}
  for(const k of['video','audio','vram','cgram','oam','wram','regs','scroll'])P[k]=M['_s9x_'+k]();
@@ -467,23 +589,23 @@ async function startGame(id){
  const meta=lib.find(g=>g.id===id);meta.played=Date.now();DB.put('data','lib',lib);
  game={id,name:meta.name,profile:normProfile(await DB.get('data','prof:'+id),meta.name)};
  $('#title').textContent=game.name;$('#empty').hidden=true;
- TC.fresh=false;MO.f=0;TX.on=false;TX.age.fill(0);await restoreSram();applyCheats();renderActions();patchIndex();rewindSetup();renderAllTools();WK.player=null;WK.target=null;
+ TC.fresh=false;MO.f=0;TX.on=false;TX.age.fill(0);TX.base=null;await restoreSram();applyCheats();renderActions();patchIndex();rewindSetup();renderAllTools();WK.player=null;WK.target=null;
  const auto=await DB.get('data',`state:${id}:auto`);if(auto){loadStateBytes(auto.bytes);toast('Picked up where you left off');}
  await audioOn();anode?.port.postMessage({k:M._s9x_rate()/actx.sampleRate});lightTick();running=true;}
 
 /* ---------- game data (profile) ---------- */
 function normProfile(p,name){p=p||{};return{v:1,name:p.name||name,actions:p.actions||[],walk:Object.assign({layer:0,diagonal:true},p.walk),
  watches:p.watches||[],cheats:p.cheats||[],tiles:p.tiles||{},depth:{tiles:p.depth?.tiles||{},stand:p.depth?.stand||{},flat:p.depth?.flat||{},glow:p.depth?.glow||{},water:p.depth?.water||{},overlay:p.depth?.overlay??(p.depth?.flatBG3?[2]:null)},light:Object.assign({source:'off',addr:'',max:24},p.light),
- fx:Object.assign({mode:'off',addr:''},p.fx),notes:p.notes||''};}
+ fx:Object.assign({mode:'off',addr:''},p.fx),packs:p.packs||[],gestures:Object.assign({talk:['A'],menu:['X'],tool:['Y'],back:['B']},p.gestures),notes:p.notes||''};}
 const saveProfile=()=>game&&DB.put('data','prof:'+game.id,game.profile);
 
 /* ---------- saves ---------- */
 function stateBytes(){const n=M._s9x_state_size(),p=M._malloc(n);M._s9x_state_save(p,n);const b=H8().slice(p,p+n);M._free(p);return b;}
 function loadStateBytes(b){TC.fresh=false;const p=M._malloc(b.length);H8().set(b,p);const ok=M._s9x_state_load(p,b.length);M._free(p);PT.full=true;PT.patched.clear();return ok;}
-function thumb(){const c=document.createElement('canvas');c.width=128;c.height=Math.round(128/(cv.width/cv.height));c.getContext('2d').drawImage(cv,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.7);}
+function thumb(){if(G.on&&M&&game)blit();const c=document.createElement('canvas');c.width=128;c.height=Math.round(128/(cv.width/cv.height));c.getContext('2d').drawImage(cv,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.7);}
 async function saveSlot(slot){if(!game)return;await DB.put('data',`state:${game.id}:${slot}`,{bytes:stateBytes(),img:thumb(),t:Date.now()});}
 async function loadSlot(slot){if(!game)return false;const s=await DB.get('data',`state:${game.id}:${slot}`);if(!s)return false;loadStateBytes(s.bytes);rw.buf=[];return true;}
-async function saveAuto(){if(!game||!running)return;await sramCheck(true);await saveSlot('auto');}
+async function saveAuto(){if(!game||!running)return;await sramCheck(true);await saveSlot('auto');const m=lib.find(g=>g.id===game.id);if(m){m.cover=thumb();await DB.put('data','lib',lib);}}
 let sramSig=0;
 async function restoreSram(){const n=M._s9x_sram_size();sramSig=0;if(!n)return;const s=await DB.get('data','sram:'+game.id);if(s&&s.length===n){H8().set(s,P.sram);sramSig=fnv(s);}}
 async function sramCheck(){const n=M._s9x_sram_size();if(!n||!game)return;const a=H8().subarray(P.sram,P.sram+n),h=fnv(a);if(h!==sramSig){sramSig=h;await DB.put('data','sram:'+game.id,a.slice());}}
@@ -599,7 +721,7 @@ function patchesOff(){for(const p of PT.patched.values()){const e=PT.map.get(p.k
 $('#patchOn').onchange=e=>{PT.on=e.target.checked;if(!M||!game)return;if(PT.on)PT.full=true;else patchesOff();};
 
 /* ---------- tap to walk ---------- */
-const WK={on:false,player:null,target:null,hold:false,lost:0,still:0,lastW:null,slide:0,ptr:null,timer:0};
+const WK={on:false,talk:null,player:null,target:null,hold:false,lost:0,still:0,lastW:null,slide:0,ptr:null,timer:0};
 const wrap10=d=>((d%1024)+1536)%1024-512;
 function camera(s){const L=game.profile.walk.layer|0;return{h:s.S[L*2]&0x3FF,v:s.S[L*2+1]&0x3FF};}
 function lockOn(pt){const s=snap();for(const sp of sprites(s)){const lx=Math.floor(pt.x-sp.x),ly=Math.floor(pt.y-sp.y);
@@ -611,35 +733,73 @@ function track(s){const p=WK.player;if(!p)return null;let x=0,y=0,n=0;
 function walkTick(){inp.walk=0;if(!WK.on||!game)return;const s=snap(),p=track(s);if(!WK.target)return;
  const me=p||(WK.player?null:{x:128,y:112});if(!me)return;const c=camera(s);
  const dx=wrap10(WK.target.wx-c.h-me.x),dy=wrap10(WK.target.wy-c.v-me.y);
- if(Math.abs(dx)<4&&Math.abs(dy)<4){if(!WK.hold)WK.target=null;return;}
+ if(Math.abs(dx)<4&&Math.abs(dy)<4){if(WK.talk){talkNow();return;}if(!WK.hold)WK.target=null;return;}
  const w={x:me.x+c.h,y:me.y+c.v};
  if(WK.lastW&&Math.hypot(wrap10(w.x-WK.lastW.x),wrap10(w.y-WK.lastW.y))<0.5)WK.still++;else{WK.still=0;WK.slide=0;}WK.lastW=w;
- if(WK.player&&WK.still>90){WK.target=null;WK.still=0;toast('Something’s in the way. Tap a spot past it.');return;}
+ if(WK.talk&&WK.still>24&&Math.hypot(dx,dy)<28){talkNow();return;}
+ if(WK.player&&WK.still>90){WK.target=null;WK.still=0;WK.talk=null;toast('Something’s in the way. Tap a spot past it.');return;}
  let h=Math.abs(dx)>3?(dx>0?'Right':'Left'):null,v=Math.abs(dy)>3?(dy>0?'Down':'Up'):null;
  if(WK.player&&WK.still>20&&h&&v){WK.slide++;if((WK.slide>>4)&1)h=null;else v=null;}
  else if(!game.profile.walk.diagonal&&h&&v){if(Math.abs(dx)>Math.abs(dy))v=null;else h=null;}
  inp.walk=(h?BIT(h):0)|(v?BIT(v):0);}
 function setTarget(pt){const c=camera(snap());WK.target={wx:pt.x+c.h,wy:pt.y+c.v};WK.still=0;WK.lastW=null;}
-$('#walkBtn').onclick=()=>{WK.on=!WK.on;$('#walkBtn').classList.toggle('on',WK.on);WK.target=null;inp.walk=0;
- if(WK.on)toast(WK.player?'Tap to walk there, or hold to steer':'Tap your character to lock on, then tap where to go');};
+$('#walkBtn').onclick=()=>{WK.on=!WK.on;$('#walkBtn').classList.toggle('on',WK.on);WK.target=null;WK.talk=null;inp.walk=0;
+ if(WK.on)toast(WK.player?'Tap to walk, tap someone to talk, drag to steer':'Tap your character to lock on',3000);};
+/* ---------- screen gestures: tap to walk or talk, drag to steer, hold for a quick menu, two-finger tap for Back ---------- */
+const GS={p:null,timer:0,count:0,two:null};
+const gest=()=>game.profile.gestures;
+function pressButtons(names,frames=6,pre){const steps=[...(pre||[]),{mask:(names||[]).reduce((m,n)=>m|BIT(n),0),frames},{mask:0,frames:2}];macro={steps,i:0,left:steps[0].frames};}
+// Someone you can talk to: a sprite group under the finger that isn't your own character.
+function npcAt(pt){const s=snap(),all=sprites(s),x=pt.x,y=pt.y,hit=all.find(sp=>x>=sp.x-3&&y>=sp.y-3&&x<sp.x+sp.w+3&&y<sp.y+sp.h+3);if(!hit)return null;
+ const cl=cluster(all,hit),x0=Math.min(...cl.map(p=>p.x)),y0=Math.min(...cl.map(p=>p.y)),x1=Math.max(...cl.map(p=>p.x+p.w)),y1=Math.max(...cl.map(p=>p.y+p.h)),P=WK.player;
+ if(P&&P.x>=x0-2&&P.x<=x1+2&&P.y>=y0-2&&P.y<=y1+2)return null;if(x1-x0>64||y1-y0>64)return null;return{x0,y0,x1,y1,cx:(x0+x1)/2,cy:(y0+y1)/2};}
+function walkToTalk(n){const P=WK.player,dx=P.x-n.cx,dy=P.y-n.cy;let t,face;
+ if(Math.abs(dy)>=Math.abs(dx)){t={x:n.cx,y:dy>0?n.y1+8:n.y0-6};face=dy>0?'Up':'Down';}else{t={x:dx>0?n.x1+7:n.x0-7,y:n.cy};face=dx>0?'Left':'Right';}
+ setTarget(t);WK.talk={face};}
+function talkNow(){const f=WK.talk.face;WK.talk=null;WK.target=null;pressButtons(gest().talk,6,[{mask:BIT(f),frames:4},{mask:0,frames:2}]);}
+function tapWalk(pt){if(!WK.player){if(lockOn(pt))toast('Locked on. Tap to walk, tap someone to talk.');else toast('Tap your character first to lock on');return;}
+ const n=npcAt(pt);if(n){walkToTalk(n);return;}WK.talk=null;setTarget(pt);}
+const QM={el:$('#qmenu'),items:[]};
+function quickItems(){const g=gest(),it=[{icon:'💬',label:'Talk',run:()=>pressButtons(g.talk)},{icon:'📋',label:'Menu',run:()=>pressButtons(g.menu)},
+  {icon:'🛠️',label:'Tool',run:()=>pressButtons(g.tool)},{icon:'↩️',label:'Back',run:()=>pressButtons(g.back)}];
+ for(const a of game.profile.actions.slice(0,3))it.push({icon:a.icon||'⭐',label:a.label,run:()=>pressButtons(a.press||[])});
+ it.push({icon:'💾',label:'Quick save',run:()=>$('#qsBtn').click()});return it;}
+function openQuick(cx,cy){const it=QM.items=quickItems(),el=QM.el,R=Math.min(100,Math.max(78,innerWidth/4));el.innerHTML='';
+ it.forEach((q,i)=>{const a=-Math.PI/2+i*2*Math.PI/it.length,b=document.createElement('button');b.className='qi';b.dataset.i=i;
+  b.innerHTML=`<span>${q.icon}</span><small>${esc(q.label)}</small>`;
+  b.style.left=Math.max(42,Math.min(innerWidth-42,cx+Math.cos(a)*R))+'px';b.style.top=Math.max(42,Math.min(innerHeight-42,cy+Math.sin(a)*R))+'px';
+  b.onclick=()=>{closeQuick();q.run();};el.appendChild(b);});el.hidden=false;}
+function closeQuick(){QM.el.hidden=true;}
+function quickHover(e){const b=document.elementFromPoint(e.clientX,e.clientY)?.closest('.qi');for(const q of QM.el.children)q.classList.toggle('on',q===b);return b;}
+QM.el.addEventListener('pointerdown',e=>{if(e.target===QM.el)closeQuick();});
 const wrapEl=$('#wrap');
 wrapEl.addEventListener('pointerdown',e=>{if(!game)return;
  if(photo){e.preventDefault();photo.drag={x:e.clientX,y:e.clientY,py:G.py,pt:G.pt,id:e.pointerId};try{wrapEl.setPointerCapture(e.pointerId);}catch{}return;}
  if(pickMode){e.preventDefault();pdrag={id:e.pointerId,a:toSnes(e),cx:e.clientX,cy:e.clientY,moved:false};try{wrapEl.setPointerCapture(e.pointerId);}catch{}return;}
- if(!WK.on)return;e.preventDefault();const pt=toSnes(e);WK.ptr=e.pointerId;try{wrapEl.setPointerCapture(e.pointerId);}catch{}
- if(!WK.player&&lockOn(pt)){toast('Locked on. Tap anywhere to walk there.');WK.ptr=null;return;}
- setTarget(pt);WK.hold=false;clearTimeout(WK.timer);WK.timer=setTimeout(()=>WK.hold=true,220);});
+ if(!WK.on&&!S.gestures)return;e.preventDefault();GS.count++;
+ if(GS.count===2&&GS.p&&performance.now()-GS.p.t<250&&!GS.p.moved){GS.two={t:performance.now()};clearTimeout(GS.timer);GS.p.cancel=true;return;}
+ GS.p={id:e.pointerId,pt:toSnes(e),cx:e.clientX,cy:e.clientY,t:performance.now(),moved:false,long:false,steer:false};try{wrapEl.setPointerCapture(e.pointerId);}catch{}
+ clearTimeout(GS.timer);if(S.gestures)GS.timer=setTimeout(()=>{const g=GS.p;if(g&&!g.moved&&!g.cancel){g.long=true;openQuick(g.cx,g.cy);}},450);});
 wrapEl.addEventListener('pointermove',e=>{
  if(photo&&photo.drag&&photo.drag.id===e.pointerId){const d=photo.drag;G.py=Math.max(-70,Math.min(70,d.py+(e.clientX-d.x)*.3));
   G.pt=Math.max(-S.tilt,Math.min(75-S.tilt,d.pt-(e.clientY-d.y)*.25));glDraw();return;}
  if(pdrag&&pdrag.id===e.pointerId){if(Math.hypot(e.clientX-pdrag.cx,e.clientY-pdrag.cy)>8)pdrag.moved=true;if(pdrag.moved){pdrag.b=toSnes(e);showBox(rectOf(pdrag.a,pdrag.b));}return;}
- if(WK.ptr===e.pointerId&&WK.hold)setTarget(toSnes(e));});
+ const g=GS.p;if(!g||g.id!==e.pointerId)return;
+ if(g.long){quickHover(e);return;}
+ if(!g.moved&&Math.hypot(e.clientX-g.cx,e.clientY-g.cy)>10){g.moved=true;clearTimeout(GS.timer);if(WK.on){g.steer=true;WK.hold=true;WK.talk=null;}}
+ if(g.steer)setTarget(toSnes(e));});
 for(const t of['pointerup','pointercancel'])wrapEl.addEventListener(t,e=>{
  if(photo){photo.drag=null;return;}
  if(pdrag&&pdrag.id===e.pointerId){const d=pdrag;pdrag=null;if(t==='pointercancel')return;
   if(d.moved&&d.b)showCands(pickArea(rectOf(d.a,d.b)),'Nothing to edit in that area.');else showCands(pickAt(d.a),'Nothing there. Try another spot.');return;}
- if(WK.ptr!==e.pointerId)return;clearTimeout(WK.timer);WK.ptr=null;
- if(WK.hold||!WK.player){WK.target=null;inp.walk=0;}WK.hold=false;});
+ GS.count=Math.max(0,GS.count-1);
+ if(GS.two){if(GS.count===0){if(t==='pointerup'&&performance.now()-GS.two.t<400)pressButtons(gest().back);GS.two=null;GS.p=null;}return;}
+ const g=GS.p;if(!g||g.id!==e.pointerId)return;GS.p=null;clearTimeout(GS.timer);
+ if(g.steer){WK.target=null;WK.hold=false;inp.walk=0;return;}
+ if(t==='pointercancel'||g.cancel)return;
+ if(g.long){const b=quickHover(e);if(b){closeQuick();QM.items[+b.dataset.i].run();}return;}
+ if(WK.on)tapWalk(g.pt);});
+document.addEventListener('visibilitychange',()=>{GS.count=0;GS.p=null;GS.two=null;});
 
 /* ---------- memory tools ---------- */
 function parseAddr(a){const s=String(a).replace(/[^0-9a-f]/gi,'');const n=parseInt(s,16)||0;return s.length>=6?((n>>16)&1)<<16|(n&0xFFFF):n&0x1FFFF;}
@@ -894,7 +1054,7 @@ function renderTiles(){const box=$('#tileList');box.innerHTML='';if(!game)return
 
 /* ---------- 3D depth view: layers and sprites lifted by drawing order, colors from the real frame ---------- */
 const G={on:false,gl:null,u:{},u2:{},H:224,ax:1,oy:0,ot:0,py:0,pt:0,zoom:1,tint:[1,1,1],hasOv:false,base:null,ovl:new Uint8Array(256*240*4),cgl:new Uint32Array(256),
- memoK:new Map(),wS:[0,1,2,3].map(()=>new Uint8Array(256*240)),aux:new Uint8Array(256*240*2),glows:[],glowSeen:new Set(),sun:{D:[.2,.6],L:.3,A:.3,K:.1,dark:0},bS:[0,1,2,3].map(()=>new Uint8Array(256*240)),obS:new Uint8Array(256*240),code:new Uint16Array(256*240),pm:new Uint8Array(256*240),
+ flatK:0,memoK:new Map(),wS:[0,1,2,3].map(()=>new Uint8Array(256*240)),aux:new Uint8Array(256*240*2),glows:[],glowSeen:new Set(),sun:{D:[.2,.6],L:.3,A:.3,K:.1,dark:0},bS:[0,1,2,3].map(()=>new Uint8Array(256*240)),obS:new Uint8Array(256*240),code:new Uint16Array(256*240),pm:new Uint8Array(256*240),
  hole:new Uint8Array(256*240),vis:new Uint8Array(256*240),rowOv:new Uint8Array(240),standIdx:new Uint8Array(128),cards:[],pack:{x:0,y:0,rh:0},
  atlas:new Uint8Array(512*512*4),cardData:new Float32Array(64*8),u3:{},u4:{},fbW:0,fbH:0,
  rl:new Uint8Array(2048),wl:new Int8Array(2048),rl2:new Uint8Array(2048),wl2:new Int8Array(2048),cg:[0,1,2,3].map(()=>new Uint8Array(256*240)),obC:new Uint8Array(256*240),M:null,inv:null,memo:new Map(),rgba:new Uint8Array(256*240*4),h:new Float32Array(256*240),
@@ -1061,7 +1221,7 @@ function standProps(H,nat){const vis=G.vis,cgl=G.cgl,stack=[];vis.fill(0);
     G.at32[(card.ay+y-y0)*512+card.ax+x-x0]=((front?nat(i):cgl[G.cg[bg][i]])|0xff000000)>>>0;}
    Object.assign(card,{box:{x:x0,y:y0,w,h},fx:x0+w/2,fy:y1+1,shadow:1});G.cards.push(card);}}}
 function compose3D(){const s=snap(),H=G.H=logical.h,vw=M._s9x_vw(),vh=M._s9x_vh(),xs=vw>256?2:1,ys=vh>240?2:1;
- const src=new Uint16Array(H8().buffer,P.video,vw*vh),px=new Uint32Array(G.rgba.buffer),ov32=new Uint32Array(G.ovl.buffer),ord=orderFor(s),fn=tileFns(s),k=S.depth/100,hd=S.stand&&!!ord;
+ const src=new Uint16Array(H8().buffer,P.video,vw*vh),px=new Uint32Array(G.rgba.buffer),ov32=new Uint32Array(G.ovl.buffer),ord=orderFor(s),fn=tileFns(s),k=S.depth/100*(1-G.flatK),hd=S.stand&&!!ord;
  const nat=i=>LUT[src[(i>>8)*ys*vw+(i&255)*xs]]&0x00ffffff;
  tcSync(s.V);
  const cgl=G.cgl;for(let i=0;i<256;i++)cgl[i]=rgba32(s.C[i])&0x00ffffff;G.groups=[];
@@ -1118,7 +1278,8 @@ function ensureFB(w,h){const gl=G.gl;if(G.fbW===w&&G.fbH===h)return G.fbOK;
 function glDraw(){const gl=G.gl,c=$('#gl'),r=c.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1),w=Math.max(1,Math.round(r.width*dpr)),h=Math.max(1,Math.round(r.height*dpr));
  if(c.width!==w||c.height!==h){c.width=w;c.height=h;}
  G.ax=S.aspect==='pixel'?1:(4/3)/(256/G.H);
- const tilt=Math.max(0,Math.min(75,S.tilt+G.ot+G.pt))*Math.PI/180,yaw=(G.oy+G.py)*Math.PI/180,fov=26*Math.PI/180,aspect=w/h;
+ G.flatK+=((S.talkFlat&&TX.on&&!photo?1:0)-G.flatK)*.12;if(G.flatK<.002)G.flatK=0;const lev=1-G.flatK;
+ const tilt=Math.max(0,Math.min(75,S.tilt+G.ot+G.pt))*lev*Math.PI/180,yaw=(G.oy+G.py)*lev*Math.PI/180,fov=26*Math.PI/180,aspect=w/h;
  let rad=Math.max(G.H/2,128*G.ax/aspect)/Math.tan(fov/2);rad*=(1-0.2*Math.sin(tilt))*G.zoom;
  const eye=[Math.sin(yaw)*Math.sin(tilt)*rad,-Math.cos(yaw)*Math.sin(tilt)*rad,Math.cos(tilt)*rad],V=m4.look(eye,[0,0,0],[-Math.sin(yaw),Math.cos(yaw),0]);
  G.M=m4.mul(m4.persp(fov,aspect,rad*0.1,rad*4),V);G.inv=m4.inv(G.M);G.R=[V[0],V[4],V[8]];G.U=[V[1],V[5],V[9]];G.F=[-V[2],-V[6],-V[10]];
@@ -1128,7 +1289,7 @@ function glDraw(){const gl=G.gl,c=$('#gl'),r=c.getBoundingClientRect(),dpr=Math.
  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,G.tex);gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
  gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,256,G.H,gl.RGBA,gl.UNSIGNED_BYTE,G.rgba.subarray(0,256*G.H*4));
  gl.uniform1i(G.u.uT,0);gl.uniformMatrix4fv(G.u.uM,false,G.M);gl.uniform1i(G.u.uW,256);gl.uniform1i(G.u.uH,G.H);
- gl.uniform1f(G.u.uS,S.depth/100);gl.uniform1f(G.u.uSh,S.shadow?1:0);gl.uniform1f(G.u.uAx,G.ax);gl.uniform3fv(G.u.uTint,G.tint);
+ gl.uniform1f(G.u.uS,S.depth/100*lev);gl.uniform1f(G.u.uSh,S.shadow?lev:0);gl.uniform1f(G.u.uAx,G.ax);gl.uniform3fv(G.u.uTint,G.tint);
  sunState();const sun=G.sun;
  gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,G.texX);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,256,G.H,gl.RG,gl.UNSIGNED_BYTE,G.aux.subarray(0,256*G.H*2));gl.activeTexture(gl.TEXTURE0);
  gl.uniform1i(G.u.uX,1);gl.uniform1f(G.u.uTime,performance.now()/1000);gl.uniform1f(G.u.uWater,S.waterFx?1:0);gl.uniform2f(G.u.uSunL,-sun.D[0],-sun.D[1]);gl.uniform1f(G.u.uSunK,sun.K);
@@ -1138,7 +1299,7 @@ function glDraw(){const gl=G.gl,c=$('#gl'),r=c.getBoundingClientRect(),dpr=Math.
   gl.useProgram(G.prog4);gl.bindVertexArray(G.vao4);gl.bindBuffer(gl.ARRAY_BUFFER,G.cardBuf);gl.bufferSubData(gl.ARRAY_BUFFER,0,d.subarray(0,n*8));
   gl.bindTexture(gl.TEXTURE_2D,G.texA);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,512,Math.min(512,G.pack.y+G.pack.rh+1),gl.RGBA,gl.UNSIGNED_BYTE,G.atlas);
   const u=G.u4;gl.uniform1i(u.uC,0);gl.uniformMatrix4fv(u.uM,false,G.M);gl.uniform3fv(u.uR,G.R);gl.uniform3fv(u.uU,G.U);gl.uniform3fv(u.uF,G.F);
-  gl.uniform1f(u.uAx,G.ax);gl.uniform1f(u.uHh,G.H/2);gl.uniform3fv(u.uTint,G.tint);gl.uniform1i(u.uX,1);gl.uniform2fv(u.uSunD,sun.D);gl.uniform1f(u.uSunLen,sun.L);gl.uniform1f(u.uShA,sun.A);
+  gl.uniform1f(u.uAx,G.ax);gl.uniform1f(u.uHh,G.H/2);gl.uniform3fv(u.uTint,G.tint);gl.uniform1i(u.uX,1);gl.uniform2fv(u.uSunD,sun.D);gl.uniform1f(u.uSunLen,sun.L);gl.uniform1f(u.uShA,sun.A*lev);
   if(S.shadow){gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);gl.uniform1i(u.uPass,1);gl.drawArraysInstanced(gl.TRIANGLES,0,6,n);gl.disable(gl.BLEND);gl.depthMask(true);}
   gl.uniform1i(u.uPass,0);gl.drawArraysInstanced(gl.TRIANGLES,0,6,n);}
  if(dof){gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,w,h);gl.disable(gl.DEPTH_TEST);gl.useProgram(G.prog3);gl.bindVertexArray(G.vao2);
@@ -1257,8 +1418,11 @@ $('#profIn').onclick=async()=>{if(!game)return;const j=await pickJSON();if(!j)re
 $('#profEdit').onclick=()=>{if(!game)return;$('#profBox').hidden=!$('#profBox').hidden;$('#profText').value=JSON.stringify(game.profile,null,1);};
 $('#profSave').onclick=()=>{try{game.profile=normProfile(JSON.parse($('#profText').value),game.name);saveProfile();reloadProfile();toast('Saved');}catch(e){toast('That text isn’t valid JSON: '+e.message,5000);}};
 function reloadProfile(){applyCheats();renderActions();patchesOff();patchIndex();renderAllTools();}
-function renderAllTools(){renderTiles();renderWatches();renderCheats();renderActList();renderRS();
- if(game){$('#walkLayer').value=game.profile.walk.layer;$('#walkDiag').checked=game.profile.walk.diagonal;renderOverlay();renderLookFx();$('#notes').value=game.profile.notes||'';}}
+function renderGest(){const box=$('#gestRow');if(!game){box.innerHTML='';return;}const g=game.profile.gestures;
+ box.innerHTML=[['talk','Talk'],['menu','Menu'],['tool','Tool'],['back','Back']].map(([k,l])=>`<label>${l} <select data-g="${k}">${Object.keys(BTN).map(n=>`<option ${g[k][0]===n?'selected':''}>${n}</option>`).join('')}</select></label>`).join('');
+ for(const sel of box.querySelectorAll('select'))sel.onchange=()=>{g[sel.dataset.g]=[sel.value];saveProfile();};}
+function renderAllTools(){renderGest();renderTiles();renderWatches();renderCheats();renderActList();renderRS();
+ if(game){$('#walkLayer').value=game.profile.walk.layer;$('#walkDiag').checked=game.profile.walk.diagonal;renderOverlay();renderLookFx();renderPacks();$('#notes').value=game.profile.notes||'';}}
 
 
 /* ---------- sheet + settings ---------- */
@@ -1272,13 +1436,13 @@ function applySettings(){$('#crt').hidden=!S.crt||G.on;cv.style.filter=$('#gl').
  anode?.port.postMessage({v:S.vol/100});saveSettings();}
 const bind=(id,key,get=e=>e.target.value)=>{const el=$(id);if(el.type==='checkbox')el.checked=S[key];else el.value=S[key];
  el.addEventListener(el.type==='range'?'input':'change',e=>{S[key]=el.type==='checkbox'?el.checked:typeof SETDEF[key]==='number'?+get(e):get(e);applySettings();if(key==='rw'||key==='rwSec'){if(game)rewindSetup();}});};
-bind('#setAspect','aspect');bind('#setCrt','crt');bind('#setSmooth','smooth');bind('#setWatch','watch');bind('#setOp','op');bind('#setVol','vol');bind('#setFF','ff');bind('#setRw','rw');bind('#setRwSec','rwSec');bind('#setLook','look');bind('#setFxAmt','fxAmt');bind('#setPadHide','padHide');bind('#setStand','stand');bind('#setSun','sunShadow');bind('#setGlow','glowFx');bind('#setBloom','bloom');bind('#setWater','waterFx');bind('#setFastText','fastText');bind('#setMoments','moments');bind('#setDof','dof');bind('#setTilt','tilt');bind('#setDepth','depth');bind('#setShadow','shadow');bind('#setMotion','motion');
+bind('#setAspect','aspect');bind('#setCrt','crt');bind('#setSmooth','smooth');bind('#setWatch','watch');bind('#setOp','op');bind('#setVol','vol');bind('#setFF','ff');bind('#setRw','rw');bind('#setRwSec','rwSec');bind('#setLook','look');bind('#setFxAmt','fxAmt');bind('#setPadHide','padHide');bind('#setStand','stand');bind('#setResume','resume');bind('#setGest','gestures');bind('#setTalkFlat','talkFlat');bind('#setSun','sunShadow');bind('#setGlow','glowFx');bind('#setBloom','bloom');bind('#setWater','waterFx');bind('#setFastText','fastText');bind('#setMoments','moments');bind('#setDof','dof');bind('#setTilt','tilt');bind('#setDepth','depth');bind('#setShadow','shadow');bind('#setMotion','motion');
 $('#setMotion').addEventListener('change',motionPermission);$('#setD3').checked=S.d3;
 applySettings();if(S.d3)set3D(true);
 
 document.addEventListener('visibilitychange',()=>{if(document.hidden){saveAuto();ptrs.clear();refreshTouch();inp.key=0;}});
 addEventListener('pagehide',()=>saveAuto());
-loadLib();
+loadLib().then(()=>{if(!S.resume||!lib.length)return;const last=[...lib].sort((a,b)=>(b.played||0)-(a.played||0))[0];if(last&&last.played)startGame(last.id);});
 if('serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
