@@ -230,9 +230,9 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
    <div class="row"><label>Shape <select id="setAspect"><option value="4:3">TV (4:3)</option><option value="pixel">Square pixels</option></select></label></div>
    <div class="row"><label class="ck"><input type="checkbox" id="setCrt"> Scanlines</label><label class="ck"><input type="checkbox" id="setSmooth"> Smooth pixels</label><label class="ck"><input type="checkbox" id="setWatch" checked> Show watches</label></div>
    <h3>3D</h3>
-   <div class="row"><label class="ck"><input type="checkbox" id="setD3"> 3D depth view</label><label class="ck"><input type="checkbox" id="setShadow"> Shadows</label><label class="ck"><input type="checkbox" id="setMotion"> Move with phone</label></div>
+   <div class="row"><label class="ck"><input type="checkbox" id="setD3"> 3D depth view</label><label class="ck"><input type="checkbox" id="setStand"> Standing characters (HD-2D)</label><label class="ck"><input type="checkbox" id="setDof"> Depth of field</label><label class="ck"><input type="checkbox" id="setShadow"> Shadows</label><label class="ck"><input type="checkbox" id="setMotion"> Move with phone</label></div>
    <div class="row"><label>Tilt <input type="range" id="setTilt" min="0" max="60"></label><label>Depth <input type="range" id="setDepth" min="0" max="300"></label><button class="btn" id="photoBtn2">Photo mode</button></div>
-   <p class="note">Lifts sprites and front layers off the background using the game’s own drawing order. Give any tile extra height from Tools, Pick. Taps still work in 3D.</p>
+   <p class="note">Characters stand up like paper cutouts on a 3D stage, with soft shadows and a tilt-shift blur at the edges. Stand up trees, fences or signs, or give tiles extra height, from Tools, Pick. Move with phone gently follows how you hold it and settles back to center.</p>
    <h3>Controls</h3>
    <div class="row"><label>Opacity <input type="range" id="setOp" min="30" max="100"></label></div>
    <div class="row"><label class="ck"><input type="checkbox" id="setPadHide"> Hide touch controls when a controller connects</label></div>
@@ -296,7 +296,7 @@ const DB=(()=>{let p,mem=null;const memStore=s=>(mem[s]||(mem[s]=new Map()));
   return new Promise((res,rej)=>{const t=d.transaction(st,mode);const r=fn(t.objectStore(st));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);});};
  return{get:(s,k)=>run(s,'readonly',o=>o.get(k),m=>m.get(k)),put:(s,k,v)=>run(s,'readwrite',o=>o.put(v,k),m=>{m.set(k,v);}),
   del:(s,k)=>run(s,'readwrite',o=>o.delete(k),m=>{m.delete(k);}),keys:s=>run(s,'readonly',o=>o.getAllKeys(),m=>[...m.keys()])};})();
-const SETDEF={look:'original',fxAmt:40,padHide:true,aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10,d3:false,tilt:28,depth:100,shadow:true,motion:false};
+const SETDEF={stand:true,dof:true,look:'original',fxAmt:40,padHide:true,aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10,d3:false,tilt:28,depth:100,shadow:true,motion:false};
 let S=Object.assign({},SETDEF,JSON.parse(localStorage.getItem('ht.settings')||'{}'));
 const saveSettings=()=>localStorage.setItem('ht.settings',JSON.stringify(S));
 const fnv=(a,o=0,n=a.length)=>{let h=0x811c9dc5;for(let i=o;i<o+n;i++){h^=a[i];h=Math.imul(h,16777619);}return h>>>0;};
@@ -444,7 +444,7 @@ async function startGame(id){
 
 /* ---------- game data (profile) ---------- */
 function normProfile(p,name){p=p||{};return{v:1,name:p.name||name,actions:p.actions||[],walk:Object.assign({layer:0,diagonal:true},p.walk),
- watches:p.watches||[],cheats:p.cheats||[],tiles:p.tiles||{},depth:{tiles:p.depth?.tiles||{},overlay:p.depth?.overlay??(p.depth?.flatBG3?[2]:null)},light:Object.assign({source:'off',addr:'',max:24},p.light),
+ watches:p.watches||[],cheats:p.cheats||[],tiles:p.tiles||{},depth:{tiles:p.depth?.tiles||{},stand:p.depth?.stand||{},flat:p.depth?.flat||{},overlay:p.depth?.overlay??(p.depth?.flatBG3?[2]:null)},light:Object.assign({source:'off',addr:'',max:24},p.light),
  fx:Object.assign({mode:'off',addr:''},p.fx),notes:p.notes||''};}
 const saveProfile=()=>game&&DB.put('data','prof:'+game.id,game.profile);
 
@@ -702,7 +702,7 @@ function spriteObj(s,sps,label){const ox=Math.min(...sps.map(p=>p.x)),oy=Math.mi
 function bgObj(s,b,rx,ry,rw,rh,label){const x0=rx-((rx+b.h)&7),y0=ry-((ry+b.v)&7),cells=[];
  for(let y=y0;y<ry+rh;y+=8)for(let x=x0;x<rx+rw;x+=8){const t=bgEntry(s,b,x,y);
   cells.push(mkCell(s,{x:x-x0,y:y-y0,wa:t.wa,bpp:b.bpp,cg:cgBase('bg',b,t.pal),hf:t.e>>14&1,vf:t.e>>15&1,z:0}));}
- const W=Math.ceil((rx+rw-x0)/8)*8,H=Math.ceil((ry+rh-y0)/8)*8;return{label,W,H,cells,box:{x:x0,y:y0,w:W,h:H}};}
+ const W=Math.ceil((rx+rw-x0)/8)*8,H=Math.ceil((ry+rh-y0)/8)*8;return{label,W,H,cells,bg:b.bg,box:{x:x0,y:y0,w:W,h:H}};}
 // Sprites that touch or overlap each other form one object (a character is often 2–8 sprites).
 function cluster(all,first){const set=[first];let grew=true;
  while(grew&&set.length<32){grew=false;for(const sp of all){if(set.includes(sp))continue;
@@ -727,12 +727,24 @@ function showCands(cands,empty){const box=$('#pickList');box.innerHTML='';$('#pi
  cands.forEach((c,i)=>{const d=document.createElement('div');d.className='item';d.appendChild(compCanvas(c,64));
   const keys=[...new Set(c.cells.filter(x=>!x.orig.every(v=>!v)).map(x=>x.key))],dt=game.profile.depth.tiles;let h=dt[keys[0]]||0;
   const t=document.createElement('div');t.className='grow';
-  t.innerHTML=`<strong>${c.label}</strong><small>${c.cells.some(x=>x.vi>=0)?'Has your edits':'Original'}</small><div class="row" style="margin:4px 0 0"><span class="note" style="margin:0">3D height</span><button class="btn" style="padding:4px 11px">−</button><b>${h}</b><button class="btn" style="padding:4px 11px">+</button></div>`;
+  t.innerHTML=`<strong>${c.label}</strong><small>${c.cells.some(x=>x.vi>=0)?'Has your edits':'Original'}</small><div class="row" style="margin:4px 0 0"><span class="note" style="margin:0">3D height</span><button class="btn" style="padding:4px 11px">−</button><b>${h}</b><button class="btn" style="padding:4px 11px">+</button><label class="ck"><input type="checkbox" ${standsUp(c,keys)?'checked':''}> Stands up</label></div>`;
+  t.querySelector('input').onchange=e=>setStands(c,keys,e.target.checked);
   const[dn,up]=t.querySelectorAll('button'),hv=t.querySelector('b');
   const setH=n=>{h=Math.max(0,Math.min(24,n));hv.textContent=h;for(const k of keys){if(h)dt[k]=h;else delete dt[k];}saveProfile();};
   dn.onclick=()=>setH(h-1);up.onclick=()=>setH(h+1);d.appendChild(t);
   const b=document.createElement('button');b.className='btn main';b.textContent='Edit';b.onclick=()=>openEditor(c);d.appendChild(b);
   if(i===0)showBox(c.box);d.onpointerdown=()=>showBox(c.box);box.appendChild(d);});}
+const isSpriteObj=c=>c.cells[0].cg>=128;
+function standsUp(c,keys){const d=game.profile.depth;return isSpriteObj(c)?!keys.some(k=>d.flat[k]):keys.some(k=>d.stand[k]);}
+// How often each tile appears on screen in a layer; tiles that cover much of the screen are ground, not props.
+function keyCounts(bg){const s=snap(),b=bgInfo(s,bg),m=new Map();G.memoK.clear();
+ for(let y=0;y<logical.h;y+=8)for(let x=0;x<256;x+=8){const t=bgEntry(s,b,x,y),k=keyAt(s,t.wa,b.bpp);m.set(k,(m.get(k)||0)+1);}return m;}
+function setStands(c,keys,on){const d=game.profile.depth;
+ if(isSpriteObj(c)){for(const k of keys){if(on)delete d.flat[k];else d.flat[k]=1;}}
+ else if(!on)for(const k of keys)delete d.stand[k];
+ else{const cnt=keyCounts(c.bg);let skip=0;for(const k of keys){if((cnt.get(k)||0)>24){skip++;continue;}d.stand[k]=1;}
+  if(skip)toast(`${skip} tile${skip>1?'s':''} that cover lots of the screen, like grass, stay flat.`,4000);}
+ saveProfile();if(!G.on)toast('Turn on 3D to see it stand up');}
 function showBox(b){const a=toCss(b.x,b.y),z=toCss(b.x+b.w,b.y+b.h),el=$('#pickbox');el.hidden=false;
  el.style.left=Math.min(a.left,z.left)+'px';el.style.top=Math.min(a.top,z.top)+'px';el.style.width=Math.abs(z.left-a.left)+'px';el.style.height=Math.abs(z.top-a.top)+'px';}
 function tileCanvas(grid,bpp,pal,scale){const H=grid.length*8,W=grid[0].length*8,c=document.createElement('canvas');c.width=W;c.height=H;
@@ -851,6 +863,9 @@ function renderTiles(){const box=$('#tileList');box.innerHTML='';if(!game)return
 
 /* ---------- 3D depth view: layers and sprites lifted by drawing order, colors from the real frame ---------- */
 const G={on:false,gl:null,u:{},u2:{},H:224,ax:1,oy:0,ot:0,py:0,pt:0,zoom:1,tint:[1,1,1],hasOv:false,base:null,ovl:new Uint8Array(256*240*4),cgl:new Uint32Array(256),
+ memoK:new Map(),bS:[0,1,2,3].map(()=>new Uint8Array(256*240)),obS:new Uint8Array(256*240),code:new Uint16Array(256*240),pm:new Uint8Array(256*240),
+ hole:new Uint8Array(256*240),vis:new Uint8Array(256*240),rowOv:new Uint8Array(240),standIdx:new Uint8Array(128),cards:[],pack:{x:0,y:0,rh:0},
+ atlas:new Uint8Array(512*512*4),cardData:new Float32Array(64*8),u3:{},u4:{},fbW:0,fbH:0,
  rl:new Uint8Array(2048),wl:new Int8Array(2048),rl2:new Uint8Array(2048),wl2:new Int8Array(2048),cg:[0,1,2,3].map(()=>new Uint8Array(256*240)),obC:new Uint8Array(256*240),M:null,inv:null,memo:new Map(),rgba:new Uint8Array(256*240*4),h:new Float32Array(256*240),
  bg:[0,1,2,3].map(()=>new Uint8Array(256*240)),bgB:[0,1,2,3].map(()=>new Uint8Array(256*240)),bgOn:[0,0,0,0],ob:new Uint8Array(256*240),obB:new Uint8Array(256*240)};
 const VS=`#version 300 es
@@ -871,6 +886,21 @@ uniform float uK;out vec2 v;const vec2 Q[6]=vec2[6](vec2(-1,-1),vec2(1,-1),vec2(
 void main(){vec2 p=Q[gl_VertexID];v=vec2(p.x*.5+.5,(.5-p.y*.5)*uK);gl_Position=vec4(p,0.0,1.0);}`;
 const FS2=`#version 300 es
 precision mediump float;uniform sampler2D uO;in vec2 v;out vec4 o;void main(){vec4 c=texture(uO,v);if(c.a<.5)discard;o=vec4(c.rgb,1.0);}`;
+const VS4=`#version 300 es
+precision highp float;layout(location=0) in vec2 aQ;layout(location=1) in vec4 aA;layout(location=2) in vec4 aB;
+uniform mat4 uM;uniform vec3 uR;uniform vec3 uU;uniform vec3 uF;uniform float uAx;uniform float uHh;uniform int uPass;out vec2 vUV;out vec2 vQ;
+void main(){vec3 base=vec3((aA.x-128.0)*uAx,uHh-aA.y,aA.z);vQ=aQ;
+ if(uPass==1){vec3 p=base+vec3((aQ.x-.5)*aB.x*uAx*.95,(.5-aQ.y)*max(5.0,aB.x*.45),.12);gl_Position=uM*vec4(p,1.0);vUV=vec2(0.0);return;}
+ vec3 p=base-uF*6.0+uR*((aQ.x-.5)*aB.x*uAx)+uU*((1.0-aQ.y)*aB.y);gl_Position=uM*vec4(p,1.0);vUV=(aB.zw+aQ*aB.xy)/512.0;}`;
+const FS4=`#version 300 es
+precision mediump float;uniform sampler2D uC;uniform vec3 uTint;uniform highp int uPass;in vec2 vUV;in vec2 vQ;out vec4 o;
+void main(){if(uPass==1){vec2 d=(vQ-.5)*2.0;float r=dot(d,d);if(r>1.0)discard;o=vec4(0.0,0.0,0.0,.34*(1.0-r));return;}
+ vec4 c=texture(uC,vUV);if(c.a<.5)discard;o=vec4(c.rgb*uTint,1.0);}`;
+const FS3=`#version 300 es
+precision mediump float;uniform sampler2D uS;uniform vec2 uPx;uniform float uDof;in vec2 v;out vec4 o;
+void main(){vec2 uv=vec2(v.x,1.0-v.y);float f=smoothstep(.16,.46,abs(v.y-.52)),r=uDof*f;vec3 c=texture(uS,uv).rgb;
+ if(r>.05){vec3 a=c;for(int i=0;i<8;i++){float an=float(i)*.785398;vec2 d=vec2(cos(an),sin(an))*r*uPx;a+=texture(uS,uv+d).rgb+texture(uS,uv+d*.5).rgb;}c=a/17.0;}
+ float vg=1.0-.2*smoothstep(.45,.95,length((v-.5)*vec2(1.2,1.0)));o=vec4(c*vg,1.0);}`;
 const FS=`#version 300 es
 precision mediump float;flat in vec3 vC;out vec4 o;void main(){o=vec4(vC,1.0);}`;
 const m4={
@@ -891,7 +921,7 @@ function glInit(){if(G.gl)return true;const gl=$('#gl').getContext('webgl2',{ant
  const sh=(t,src)=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;};
  const prog=(a,b)=>{const p=gl.createProgram();gl.attachShader(p,sh(gl.VERTEX_SHADER,a));gl.attachShader(p,sh(gl.FRAGMENT_SHADER,b));gl.linkProgram(p);
   if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p));return p;};
- const p=prog(VS,FS),p2=prog(VS2,FS2);
+ const p=prog(VS,FS),p2=prog(VS2,FS2),p3=prog(VS2,FS3),p4=prog(VS4,FS4);
  const v=[],q=(a,b,c,d,f)=>{for(const P of[a,b,c,a,c,d])v.push(...P,f);};
  q([0,0,1],[1,0,1],[1,1,1],[0,1,1],0);q([1,0,0],[1,1,0],[1,1,1],[1,0,1],1);q([0,1,0],[0,0,0],[0,0,1],[0,1,1],2);
  q([1,1,0],[0,1,0],[0,1,1],[1,1,1],3);q([0,0,0],[1,0,0],[1,0,1],[0,0,1],4);
@@ -899,10 +929,17 @@ function glInit(){if(G.gl)return true;const gl=$('#gl').getContext('webgl2',{ant
  gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,16,0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,1,gl.FLOAT,false,16,12);
  const mkTex=()=>{const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,256,240,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
   for(const[k,val]of[[gl.TEXTURE_MIN_FILTER,gl.NEAREST],[gl.TEXTURE_MAG_FILTER,gl.NEAREST],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])gl.texParameteri(gl.TEXTURE_2D,k,val);return t;};
- const tex=mkTex(),tex2=mkTex(),vao2=gl.createVertexArray();
+ const tex=mkTex(),tex2=mkTex(),vao2=gl.createVertexArray(),texA=mkTex();
+ gl.bindTexture(gl.TEXTURE_2D,texA);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,512,512,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+ const vao4=gl.createVertexArray();gl.bindVertexArray(vao4);gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([0,0,1,0,1,1,0,0,1,1,0,1]),gl.STATIC_DRAW);
+ gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,8,0);const cardBuf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,cardBuf);gl.bufferData(gl.ARRAY_BUFFER,64*32,gl.DYNAMIC_DRAW);
+ gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,4,gl.FLOAT,false,32,0);gl.vertexAttribDivisor(1,1);gl.enableVertexAttribArray(2);gl.vertexAttribPointer(2,4,gl.FLOAT,false,32,16);gl.vertexAttribDivisor(2,1);
+ gl.bindVertexArray(null);
  for(const n of['uT','uM','uW','uH','uS','uSh','uAx','uTint'])G.u[n]=gl.getUniformLocation(p,n);
  for(const n of['uO','uK'])G.u2[n]=gl.getUniformLocation(p2,n);
- Object.assign(G,{gl,prog:p,prog2:p2,vao,vao2,tex,tex2,nv:v.length/4});gl.enable(gl.DEPTH_TEST);return true;}
+ for(const n of['uS','uK','uPx','uDof'])G.u3[n]=gl.getUniformLocation(p3,n);
+ for(const n of['uC','uM','uR','uU','uF','uAx','uHh','uTint','uPass'])G.u4[n]=gl.getUniformLocation(p4,n);
+ G.at32=new Uint32Array(G.atlas.buffer);Object.assign(G,{gl,prog:p,prog2:p2,prog3:p3,prog4:p4,vao,vao2,vao4,cardBuf,tex,tex2,texA,nv:v.length/4});gl.enable(gl.DEPTH_TEST);return true;}
 // Front-to-back drawing order per graphics mode. 0-7 = BG(n)·priority, 8-11 = sprites·priority.
 const B=(bg,p)=>bg*2+p,O=p=>8+p;
 const ORDER={0:[O(3),B(0,1),B(1,1),O(2),B(0,0),B(1,0),O(1),B(2,1),B(3,1),O(0),B(2,0),B(3,0)],
@@ -910,71 +947,151 @@ const ORDER={0:[O(3),B(0,1),B(1,1),O(2),B(0,0),B(1,0),O(1),B(2,1),B(3,1),O(0),B(
  1:[O(3),B(0,1),B(1,1),O(2),B(0,0),B(1,0),O(1),B(2,1),O(0),B(2,0)],
  2:[O(3),B(0,1),O(2),B(1,1),O(1),B(0,0),O(0),B(1,0)]};
 const orderFor=s=>{const m=s.R[5]&7;return m===0?ORDER[0]:m===1?ORDER[s.R[5]&8?'1hi':1]:m<7?ORDER[2]:null;};
-function boostFn(s){const dt=game.profile.depth.tiles;if(!Object.keys(dt).length)return null;G.memo.clear();
- return(wa,bpp)=>{const k=wa*8+bpp;let v=G.memo.get(k);if(v===undefined){const h=bpp+':'+hex(fnv(s.V,wa*2,bpp*8)),e=PT.vmap.get(h);v=dt[e?e.key:h]||0;G.memo.set(k,v);}return v;};}
+// Per-tile data from the game file (3D height, stands up, stays flat), looked up by each tile's original fingerprint.
+function keyAt(s,wa,bpp){const k=wa*8+bpp;let v=G.memoK.get(k);if(v===undefined){const h=bpp+':'+hex(fnv(s.V,wa*2,bpp*8)),e=PT.vmap.get(h);v=e?e.key:h;G.memoK.set(k,v);}return v;}
+function tileFns(s){G.memoK.clear();const d=game.profile.depth,has=o=>o&&Object.keys(o).length;
+ return{boost:has(d.tiles)?(wa,bpp)=>d.tiles[keyAt(s,wa,bpp)]||0:null,stand:has(d.stand)?(wa,bpp)=>d.stand[keyAt(s,wa,bpp)]?1:0:null,flat:has(d.flat)?(wa,bpp)=>!!d.flat[keyAt(s,wa,bpp)]:null};}
 // Decoded-tile cache for the 3D view: each 8×8 tile is decoded once and redone only when its video memory changes.
 const TC={2:{d:new Uint8Array(4096*64),ok:new Uint8Array(4096)},4:{d:new Uint8Array(2048*64),ok:new Uint8Array(2048)},8:{d:new Uint8Array(1024*64),ok:new Uint8Array(1024)},sh:new Uint8Array(65536),fresh:false};
 function tcSync(V){const sh=TC.sh;if(!TC.fresh){for(const k of[2,4,8])TC[k].ok.fill(0);TC.fresh=true;sh.set(V);return;}
  for(let b=0;b<4096;b++){const o=b*16;for(let j=0;j<16;j++)if(V[o+j]!==sh[o+j]){TC[2].ok[b]=0;TC[4].ok[b>>1]=0;TC[8].ok[b>>2]=0;sh.set(V.subarray(o,o+16),o);break;}}}
 function tcGet(V,wa,bpp){const c=TC[bpp],ti=(wa*2)/(bpp*8)|0,o=ti*64;if(!c.ok[ti]){const base=ti*bpp*8;
   for(let y=0;y<8;y++)for(let x=0;x<8;x++){let v=0;const sh=7-x,r=base+y*2;for(let p=0;p<bpp;p+=2){v|=(V[r+p*8]>>sh&1)<<p;v|=(V[r+p*8+1]>>sh&1)<<(p+1);}c.d[o+y*8+x]=v;}c.ok[ti]=1;}return o;}
-function opBG(s,b,op,bst,cga,H,boost){const ts=b.big?16:8,mw=b.size&1?64:32,mh=b.size&2?64:32,V=s.V,D=TC[b.bpp].d;op.fill(0);if(boost)bst.fill(0);
- for(let sy=0;sy<H;sy++){const y=(sy+b.v)&(mh*ts-1),ty=y/ts|0;let lt=-1,pr=0,o0=0,o1=0,hf=0,b0=0,b1=0,cgb=0;
+function opBG(s,b,op,bst,cga,sta,H,boost,stand){const ts=b.big?16:8,mw=b.size&1?64:32,mh=b.size&2?64:32,V=s.V,D=TC[b.bpp].d;op.fill(0);if(boost)bst.fill(0);if(stand)sta.fill(0);
+ for(let sy=0;sy<H;sy++){const y=(sy+b.v)&(mh*ts-1),ty=y/ts|0;let lt=-1,pr=0,o0=0,o1=0,hf=0,b0=0,b1=0,s0=0,s1=0,cgb=0;
   for(let sx=0;sx<256;sx++){const x=(sx+b.h)&(mw*ts-1),tx=x/ts|0;
    if(tx!==lt){lt=tx;const si=(tx>=32?1:0)+(ty>=32?(b.size===3?2:1):0),a=(b.sc+si*0x400+(ty&31)*32+(tx&31))&0x7FFF,e=V[a*2]|V[a*2+1]<<8;
     hf=e>>14&1;let py=y%ts;if(e>>15&1)py=ts-1-py;pr=(e>>13&1)+1;cgb=cgBase('bg',b,e>>10&7);const base=e&0x3FF,ra=py>>3?16:0,r8=(py&7)*8;
-    const w0=(b.nb+((base+(ts===16&&hf?1:0)+ra)&0x3FF)*b.bpp*4)&0x7FFF;o0=tcGet(V,w0,b.bpp)+r8;
-    if(ts===16){const w1=(b.nb+((base+(hf?0:1)+ra)&0x3FF)*b.bpp*4)&0x7FFF;o1=tcGet(V,w1,b.bpp)+r8;if(boost){b0=boost(w0,b.bpp);b1=boost(w1,b.bpp);}}
-    else if(boost)b0=b1=boost(w0,b.bpp);}
-   const k=x%ts,h=k>>3,kk=k&7,c=D[(h?o1:o0)+(hf?7-kk:kk)];if(c){const i=sy*256+sx;op[i]=pr;cga[i]=(cgb+c)&255;if(boost)bst[i]=h?b1:b0;}}}}
-function opOBJ(s,H,boost){const ob=G.ob,bb=G.obB,oc=G.obC,V=s.V,D=TC[4].d;ob.fill(0);bb.fill(0);const sps=sprites(s);
- for(let k=sps.length-1;k>=0;k--){const sp=sps[k];for(let y=0;y<sp.h;y++){const Y=sp.y+y;if(Y<0||Y>=H)continue;const py=sp.vf?sp.h-1-y:y;
+    const w0=(b.nb+((base+(ts===16&&hf?1:0)+ra)&0x3FF)*b.bpp*4)&0x7FFF;o0=tcGet(V,w0,b.bpp)+r8;let w1=w0;
+    if(ts===16){w1=(b.nb+((base+(hf?0:1)+ra)&0x3FF)*b.bpp*4)&0x7FFF;o1=tcGet(V,w1,b.bpp)+r8;}
+    if(boost){b0=boost(w0,b.bpp);b1=ts===16?boost(w1,b.bpp):b0;}if(stand){s0=stand(w0,b.bpp);s1=ts===16?stand(w1,b.bpp):s0;}}
+   const k=x%ts,h=k>>3,kk=k&7,c=D[(h?o1:o0)+(hf?7-kk:kk)];
+   if(c){const i=sy*256+sx;op[i]=pr;cga[i]=(cgb+c)&255;if(boost)bst[i]=h?b1:b0;if(stand)sta[i]=h?s1:s0;}}}}
+function opOBJ(s,sps,H,boost){const ob=G.ob,bb=G.obB,oc=G.obC,os=G.obS,V=s.V,D=TC[4].d;ob.fill(0);bb.fill(0);os.fill(0);
+ for(let k=sps.length-1;k>=0;k--){const sp=sps[k],st=G.standIdx[sp.i];for(let y=0;y<sp.h;y++){const Y=sp.y+y;if(Y<0||Y>=H)continue;const py=sp.vf?sp.h-1-y:y;
   for(let x=0;x<sp.w;x++){const X=sp.x+x;if(X<0||X>=256)continue;const px=sp.hf?sp.w-1-x:x,wa=objWA(sp,px>>3,py>>3),c=D[tcGet(V,wa,4)+(py&7)*8+(px&7)];
-   if(c){const i=Y*256+X;ob[i]=sp.prio+1;oc[i]=128+sp.pal*16+c;bb[i]=2+(boost?boost(wa,4):0);}}}}}
+   if(c){const i=Y*256+X;ob[i]=sp.prio+1;oc[i]=128+sp.pal*16+c;os[i]=st;bb[i]=2+(boost?boost(wa,4):0);}}}}}
 // Layers drawn flat on top in 3D (menus, text boxes, HUD). Auto: BG3 in mode 1, where nearly every game puts text.
 function overlayMask(s){const o=game.profile.depth.overlay;if(Array.isArray(o))return o.reduce((m,b)=>m|1<<b,0);return(s.R[5]&7)===1?4:0;}
 function buildLUT(ord,skip,RL,WL){const n=ord.length;
  for(let c=0;c<2048;c++){let r=0,w=-1;for(let j=0;j<n;j++){const id=ord[j];
    if(id<8){const bg=id>>1;if(skip>>bg&1)continue;if(G.bgOn[bg]&&(c>>(bg*2)&3)===(id&1)+1){r=n-j;w=bg;break;}}
    else if((c>>8)===id-7){r=n-j;w=4;break;}}RL[c]=r;WL[c]=w;}}
+// Rows mostly covered by an overlay layer are a text box or status bar: the whole row stays flat. Handles see-through,
+// checkered boxes like Harvest Moon's, and fills the gaps between lines of text.
+function findOverlayRows(H,ovm){const r=G.rowOv;r.fill(0);if(!ovm)return;const q=[0,1,2,3].map(b=>ovm>>b&1&&G.bgOn[b]?G.bg[b]:null);
+ for(let y=0;y<H;y++){let n=0;for(let x=0;x<256;x++){const i=y*256+x;if(q[0]&&q[0][i]||q[1]&&q[1][i]||q[2]&&q[2][i]||q[3]&&q[3][i])n++;}r[y]=n>=48?1:0;}
+ let last=-99;for(let y=0;y<H;y++)if(r[y]){if(y-last>1&&y-last<=5)for(let j=last+1;j<y;j++)r[j]=1;last=y;}
+ for(let y=0;y<H;){if(!r[y]){y++;continue;}let e=y;while(e<H&&r[e])e++;if(e-y<3)for(let j=y;j<e;j++)r[j]=0;y=e;}}
+// Card atlas: each standing character or prop gets its own patch of one texture.
+function cardAlloc(w,h){const p=G.pack;if(p.x+w>512){p.x=0;p.y+=p.rh+1;p.rh=0;}if(p.y+h>512||G.cards.length>=64)return null;
+ const c={ax:p.x,ay:p.y,w,h};p.x+=w+1;p.rh=Math.max(p.rh,h);for(let y=0;y<h;y++)G.at32.fill(0,(c.ay+y)*512+c.ax,(c.ay+y)*512+c.ax+w);return c;}
+// Characters: sprites that touch form one standing card, anchored at its feet.
+function standSprites(s,sps,H,flat){G.groups=[];const n=sps.length;if(!n)return;const par=[...Array(n).keys()],f=i=>par[i]===i?i:(par[i]=f(par[i]));
+ for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=sps[i],b=sps[j];if(a.x<=b.x+b.w&&b.x<=a.x+a.w&&a.y<=b.y+b.h&&b.y<=a.y+a.h)par[f(i)]=f(j);}
+ const groups=new Map();for(let i=0;i<n;i++){const r=f(i);if(!groups.has(r))groups.set(r,[]);groups.get(r).push(sps[i]);}
+ for(const grp of groups.values()){const x0=Math.min(...grp.map(p=>p.x)),y0=Math.min(...grp.map(p=>p.y)),x1=Math.max(...grp.map(p=>p.x+p.w)),y1=Math.max(...grp.map(p=>p.y+p.h)),w=x1-x0,h=y1-y0;
+  if(w>96||h>96||w*h>6000)continue;
+  const ya=Math.max(0,y0),yb=Math.min(H,y1);let ov=0;for(let y=ya;y<yb;y++)ov+=G.rowOv[y];if(yb<=ya||ov*2>=yb-ya)continue;
+  if(flat&&grp.some(sp=>{for(let cy=0;cy<sp.h/8;cy++)for(let cx=0;cx<sp.w/8;cx++)if(flat(objWA(sp,cx,cy),4))return true;return false;}))continue;
+  for(const sp of grp)G.standIdx[sp.i]=1;G.groups.push({grp,x0,y0,y1,w,h});}}
+function paintSpriteCards(s){const V=s.V,D=TC[4].d,cgl=G.cgl;
+ for(const{grp,x0,y0,y1,w,h}of G.groups){const card=cardAlloc(w,h);if(!card)continue;
+  for(const sp of[...grp].sort((a,b)=>b.i-a.i)){for(let y=0;y<sp.h;y++){const py=sp.vf?sp.h-1-y:y;for(let x=0;x<sp.w;x++){const px=sp.hf?sp.w-1-x:x,
+   c=D[tcGet(V,objWA(sp,px>>3,py>>3),4)+(py&7)*8+(px&7)];if(c)G.at32[(card.ay+sp.y-y0+y)*512+card.ax+sp.x-x0+x]=(cgl[128+sp.pal*16+c]|0xff000000)>>>0;}}}
+  Object.assign(card,{box:{x:x0,y:y0,w,h},fx:x0+w/2,fy:y1,shadow:1});G.cards.push(card);}}
+// Props: background tiles marked "stands up" (trees, fences, signs) are grouped into pieces and stood up the same way.
+function standProps(H,nat){const vis=G.vis,cgl=G.cgl,stack=[];vis.fill(0);
+ for(let bg=0;bg<4;bg++){if(!G.bgOn[bg])continue;const st=G.bS[bg],op=G.bg[bg];
+  for(let i0=0;i0<256*H;i0++){if(!st[i0]||!op[i0]||vis[i0])continue;const pts=[];stack.push(i0);vis[i0]=1;let x0=255,y0=H,x1=0,y1=0;
+   while(stack.length){const i=stack.pop(),x=i&255,y=i>>8;pts.push(i);if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;
+    for(let dy=-3;dy<=3;dy++){const yy=y+dy;if(yy<0||yy>=H)continue;for(let dx=-3;dx<=3;dx++){const xx=x+dx;if(xx<0||xx>255)continue;const j=yy*256+xx;if(!vis[j]&&st[j]&&op[j]){vis[j]=1;stack.push(j);}}}}
+   const w=x1-x0+1,h=y1-y0+1;if(pts.length<12||w>160||h>160)continue;const card=cardAlloc(w,h);if(!card)continue;
+   for(const i of pts){G.pm[i]|=1<<bg;const x=i&255,y=i>>8,front=G.wl[G.code[i]]===bg;
+    G.at32[(card.ay+y-y0)*512+card.ax+x-x0]=((front?nat(i):cgl[G.cg[bg][i]])|0xff000000)>>>0;}
+   Object.assign(card,{box:{x:x0,y:y0,w,h},fx:x0+w/2,fy:y1+1,shadow:1});G.cards.push(card);}}}
 function compose3D(){const s=snap(),H=G.H=logical.h,vw=M._s9x_vw(),vh=M._s9x_vh(),xs=vw>256?2:1,ys=vh>240?2:1;
- const src=new Uint16Array(H8().buffer,P.video,vw*vh),px=new Uint32Array(G.rgba.buffer),ov32=new Uint32Array(G.ovl.buffer),ord=orderFor(s),bst=boostFn(s),k=S.depth/100;
- tcSync(s.V);const cgl=G.cgl;for(let i=0;i<256;i++)cgl[i]=rgba32(s.C[i])&0x00ffffff;
- const ovm=ord?overlayMask(s):0;
- if(ord){for(let bg=0;bg<4;bg++){const b=bgInfo(s,bg);G.bgOn[bg]=b.bpp&&(s.R[0x2C]>>bg&1);if(G.bgOn[bg])opBG(s,b,G.bg[bg],G.bgB[bg],G.cg[bg],H,bst);}
-  if(s.R[0x2C]&16)opOBJ(s,H,bst);else G.ob.fill(0);
-  buildLUT(ord,0,G.rl,G.wl);buildLUT(ord,ovm,G.rl2,G.wl2);}
- const RL=G.rl,WL=G.wl,RL2=G.rl2,WL2=G.wl2,on=G.bgOn,obj=s.R[0x2C]&16,ob=G.ob;
- const q=[0,1,2,3].map(b=>on[b]?G.bg[b]:null);let any=false;
- for(let y=0;y<H;y++){const row=y*ys*vw,base=y*256;
-  // A row that is mostly overlay layer (a text box or status bar) is drawn flat across its whole width.
-  let rowOv=false;if(ovm){let cnt=0;for(let x=0;x<256;x++){const i=base+x;for(let b=0;b<4;b++)if(ovm>>b&1&&q[b]&&q[b][i]){cnt++;break;}}rowOv=cnt>=160;}
-  for(let x=0;x<256;x++){const i=base+x,nat=LUT[src[row+x*xs]]&0x00ffffff;let h4=0,col=nat,ovp=0;
-   if(ord){const c=(q[0]?q[0][i]:0)|(q[1]?q[1][i]<<2:0)|(q[2]?q[2][i]<<4:0)|(q[3]?q[3][i]<<6:0)|(obj?ob[i]<<8:0),w=WL[c];
-    if(rowOv||(w>=0&&w<4&&ovm>>w&1)){ovp=1;const w2=WL2[c];
-     if(w2>=0){h4=RL2[c]*6+(w2===4?G.obB[i]*4:bst?G.bgB[w2][i]*4:0);col=w2===4?cgl[G.obC[i]]:cgl[G.cg[w2][i]];}else col=cgl[0];}
-    else if(w>=0)h4=RL[c]*6+(w===4?G.obB[i]*4:bst?G.bgB[w][i]*4:0);}
-   if(h4>255)h4=255;G.h[i]=h4*k/4;px[i]=(col|h4<<24)>>>0;ov32[i]=ovp?(nat|0xff000000)>>>0:0;if(ovp)any=true;}}
+ const src=new Uint16Array(H8().buffer,P.video,vw*vh),px=new Uint32Array(G.rgba.buffer),ov32=new Uint32Array(G.ovl.buffer),ord=orderFor(s),fn=tileFns(s),k=S.depth/100,hd=S.stand&&!!ord;
+ const nat=i=>LUT[src[(i>>8)*ys*vw+(i&255)*xs]]&0x00ffffff;
+ tcSync(s.V);
+ const cgl=G.cgl;for(let i=0;i<256;i++)cgl[i]=rgba32(s.C[i])&0x00ffffff;G.groups=[];
+ const ovm=ord?overlayMask(s):0,sps=sprites(s),obj=s.R[0x2C]&16;G.cards=[];G.pack={x:0,y:0,rh:0};G.standIdx.fill(0);
+ if(ord){for(let bg=0;bg<4;bg++){const b=bgInfo(s,bg);G.bgOn[bg]=b.bpp&&(s.R[0x2C]>>bg&1);
+   if(G.bgOn[bg])opBG(s,b,G.bg[bg],G.bgB[bg],G.cg[bg],G.bS[bg],H,fn.boost,hd?fn.stand:null);}}
+ findOverlayRows(H,ovm);
+ if(hd&&obj)standSprites(s,sps,H,fn.flat);
+ if(ord){if(obj)opOBJ(s,sps,H,fn.boost);else{G.ob.fill(0);G.obS.fill(0);}buildLUT(ord,0,G.rl,G.wl);buildLUT(ord,ovm,G.rl2,G.wl2);}
+ const code=G.code,q=[0,1,2,3].map(b=>G.bgOn[b]?G.bg[b]:null),ob=G.ob;
+ if(ord)for(let i=0;i<256*H;i++)code[i]=(q[0]?q[0][i]:0)|(q[1]?q[1][i]<<2:0)|(q[2]?q[2][i]<<4:0)|(q[3]?q[3][i]<<6:0)|(obj?ob[i]<<8:0);
+ // Match decoded colors to the real picture's brightness (fades, darkened rooms) by comparing them where both are known.
+ if(ord){let acc=0,cnt=0;const lum=v=>(v&255)+(v>>8&255)+(v>>16&255);
+  for(let i=7;i<256*H;i+=53){const w=G.wl[code[i]];if(w<0||w>3||ovm>>w&1||G.rowOv[i>>8])continue;const d=lum(cgl[G.cg[w][i]]);if(d<60)continue;acc+=lum(nat(i))/d;cnt++;}
+  const br=cnt>8?Math.min(1.15,acc/cnt):1;if(Math.abs(br-1)>.03)for(let i=0;i<256;i++){const v=cgl[i];cgl[i]=Math.min(255,(v&255)*br|0)|Math.min(255,(v>>8&255)*br|0)<<8|Math.min(255,(v>>16&255)*br|0)<<16;}}
+ paintSpriteCards(s);
+ G.pm.fill(0);if(hd&&fn.stand&&ord)standProps(H,nat);
+ const RL=G.rl,WL=G.wl,RL2=G.rl2,WL2=G.wl2,rowOv=G.rowOv,hole=G.hole;let any=false;hole.fill(0);
+ for(let y=0;y<H;y++){for(let x=0;x<256;x++){const i=y*256+x,nv=nat(i);let h4=0,col=nv,ovp=0;
+   if(ord){let c=code[i];const orig=WL[c];let dec=false;
+    if(G.obS[i]&&c>>8){c&=0xFF;if(orig===4)dec=true;}
+    const pm=G.pm[i];if(pm)for(let b=0;b<4;b++)if(pm>>b&1){c&=~(3<<(b*2));if(orig===b)dec=true;}
+    const w=WL[c];
+    if(rowOv[y]||(w>=0&&w<4&&ovm>>w&1)){ovp=1;const w2=WL2[c];
+     if(w2>=0){h4=RL2[c]*6+(w2===4?G.obB[i]*4:fn.boost?G.bgB[w2][i]*4:0);col=w2===4?cgl[G.obC[i]]:cgl[G.cg[w2][i]];}else col=cgl[0];}
+    else if(w>=0){h4=RL[c]*6+(w===4?G.obB[i]*4:fn.boost?G.bgB[w][i]*4:0);if(dec)col=w===4?cgl[G.obC[i]]:cgl[G.cg[w][i]];}
+    else if(dec)hole[i]=1;}
+   if(h4>255)h4=255;G.h[i]=h4*k/4;px[i]=(col|h4<<24)>>>0;ov32[i]=ovp?(nv|0xff000000)>>>0:0;if(ovp)any=true;}}
+ // Where a standing prop left nothing behind it, continue the ground from just below.
+ if(G.pm.some(v=>v))for(let x=0;x<256;x++){let last=-1;for(let y=H-1;y>=0;y--){const i=y*256+x;if(hole[i]){if(last>=0){px[i]=px[last];G.h[i]=G.h[last];hole[i]=0;}}else last=i;}
+  last=-1;for(let y=0;y<H;y++){const i=y*256+x;if(hole[i]&&last>=0){px[i]=px[last];G.h[i]=G.h[last];}else if(!hole[i])last=i;}}
+ for(const c of G.cards){const fx=Math.max(0,Math.min(255,Math.round(c.fx))),fy=Math.max(0,Math.min(H-1,c.fy-1));c.z=G.h[fy*256+fx];}
  G.hasOv=any;}
+function ensureFB(w,h){const gl=G.gl;if(G.fbW===w&&G.fbH===h)return G.fbOK;
+ if(G.fb){gl.deleteFramebuffer(G.fb);gl.deleteTexture(G.fbTex);gl.deleteRenderbuffer(G.fbDepth);}
+ G.fbTex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,G.fbTex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+ for(const[k,v]of[[gl.TEXTURE_MIN_FILTER,gl.LINEAR],[gl.TEXTURE_MAG_FILTER,gl.LINEAR],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])gl.texParameteri(gl.TEXTURE_2D,k,v);
+ G.fbDepth=gl.createRenderbuffer();gl.bindRenderbuffer(gl.RENDERBUFFER,G.fbDepth);gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_COMPONENT24,w,h);
+ G.fb=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,G.fb);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,G.fbTex,0);
+ gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,G.fbDepth);G.fbOK=gl.checkFramebufferStatus(gl.FRAMEBUFFER)===gl.FRAMEBUFFER_COMPLETE;
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);G.fbW=w;G.fbH=h;return G.fbOK;}
 function glDraw(){const gl=G.gl,c=$('#gl'),r=c.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1),w=Math.max(1,Math.round(r.width*dpr)),h=Math.max(1,Math.round(r.height*dpr));
- if(c.width!==w||c.height!==h){c.width=w;c.height=h;}gl.viewport(0,0,w,h);
+ if(c.width!==w||c.height!==h){c.width=w;c.height=h;}
  G.ax=S.aspect==='pixel'?1:(4/3)/(256/G.H);
  const tilt=Math.max(0,Math.min(75,S.tilt+G.ot+G.pt))*Math.PI/180,yaw=(G.oy+G.py)*Math.PI/180,fov=26*Math.PI/180,aspect=w/h;
  let rad=Math.max(G.H/2,128*G.ax/aspect)/Math.tan(fov/2);rad*=(1-0.2*Math.sin(tilt))*G.zoom;
- const eye=[Math.sin(yaw)*Math.sin(tilt)*rad,-Math.cos(yaw)*Math.sin(tilt)*rad,Math.cos(tilt)*rad];
- G.M=m4.mul(m4.persp(fov,aspect,rad*0.1,rad*4),m4.look(eye,[0,0,0],[-Math.sin(yaw),Math.cos(yaw),0]));G.inv=m4.inv(G.M);
+ const eye=[Math.sin(yaw)*Math.sin(tilt)*rad,-Math.cos(yaw)*Math.sin(tilt)*rad,Math.cos(tilt)*rad],V=m4.look(eye,[0,0,0],[-Math.sin(yaw),Math.cos(yaw),0]);
+ G.M=m4.mul(m4.persp(fov,aspect,rad*0.1,rad*4),V);G.inv=m4.inv(G.M);G.R=[V[0],V[4],V[8]];G.U=[V[1],V[5],V[9]];G.F=[-V[2],-V[6],-V[10]];
+ const dof=S.dof&&tilt>0.05&&ensureFB(w,h);
+ gl.bindFramebuffer(gl.FRAMEBUFFER,dof?G.fb:null);gl.viewport(0,0,w,h);
  gl.clearColor(0,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(G.prog);gl.bindVertexArray(G.vao);gl.enable(gl.DEPTH_TEST);
  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,G.tex);gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
  gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,256,G.H,gl.RGBA,gl.UNSIGNED_BYTE,G.rgba.subarray(0,256*G.H*4));
  gl.uniform1i(G.u.uT,0);gl.uniformMatrix4fv(G.u.uM,false,G.M);gl.uniform1i(G.u.uW,256);gl.uniform1i(G.u.uH,G.H);
  gl.uniform1f(G.u.uS,S.depth/100);gl.uniform1f(G.u.uSh,S.shadow?1:0);gl.uniform1f(G.u.uAx,G.ax);gl.uniform3fv(G.u.uTint,G.tint);
  gl.drawArraysInstanced(gl.TRIANGLES,0,G.nv,256*G.H);
+ const n=G.cards.length;
+ if(n){const d=G.cardData;G.cards.forEach((c,i)=>d.set([c.fx,c.fy,c.z,0,c.w,c.h,c.ax,c.ay],i*8));
+  gl.useProgram(G.prog4);gl.bindVertexArray(G.vao4);gl.bindBuffer(gl.ARRAY_BUFFER,G.cardBuf);gl.bufferSubData(gl.ARRAY_BUFFER,0,d.subarray(0,n*8));
+  gl.bindTexture(gl.TEXTURE_2D,G.texA);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,512,Math.min(512,G.pack.y+G.pack.rh+1),gl.RGBA,gl.UNSIGNED_BYTE,G.atlas);
+  const u=G.u4;gl.uniform1i(u.uC,0);gl.uniformMatrix4fv(u.uM,false,G.M);gl.uniform3fv(u.uR,G.R);gl.uniform3fv(u.uU,G.U);gl.uniform3fv(u.uF,G.F);
+  gl.uniform1f(u.uAx,G.ax);gl.uniform1f(u.uHh,G.H/2);gl.uniform3fv(u.uTint,G.tint);
+  if(S.shadow){gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);gl.uniform1i(u.uPass,1);gl.drawArraysInstanced(gl.TRIANGLES,0,6,n);gl.disable(gl.BLEND);gl.depthMask(true);}
+  gl.uniform1i(u.uPass,0);gl.drawArraysInstanced(gl.TRIANGLES,0,6,n);}
+ if(dof){gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,w,h);gl.disable(gl.DEPTH_TEST);gl.useProgram(G.prog3);gl.bindVertexArray(G.vao2);
+  gl.bindTexture(gl.TEXTURE_2D,G.fbTex);gl.uniform1i(G.u3.uS,0);gl.uniform1f(G.u3.uK,1);gl.uniform2f(G.u3.uPx,1/w,1/h);
+  gl.uniform1f(G.u3.uDof,2.6*dpr*Math.min(1.4,Math.sin(tilt)/Math.sin(28*Math.PI/180)));gl.drawArrays(gl.TRIANGLES,0,6);gl.enable(gl.DEPTH_TEST);}
  if(G.hasOv&&!(photo&&!$('#phHud').checked)){gl.useProgram(G.prog2);gl.bindVertexArray(G.vao2);gl.disable(gl.DEPTH_TEST);gl.bindTexture(gl.TEXTURE_2D,G.tex2);
   gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,256,G.H,gl.RGBA,gl.UNSIGNED_BYTE,G.ovl.subarray(0,256*G.H*4));
   gl.uniform1i(G.u2.uO,0);gl.uniform1f(G.u2.uK,G.H/240);gl.drawArrays(gl.TRIANGLES,0,6);gl.enable(gl.DEPTH_TEST);}}
 // Taps: follow the finger's ray into the scene until it hits a raised pixel or the ground.
 function glPick(cx,cy){const r=$('#gl').getBoundingClientRect(),nx=(cx-r.left)/r.width*2-1,ny=1-(cy-r.top)/r.height*2;
  const a=m4.xf(G.inv,[nx,ny,-1,1]),b=m4.xf(G.inv,[nx,ny,1,1]),p0=a.slice(0,3).map(v=>v/a[3]),p1=b.slice(0,3).map(v=>v/b[3]),dz=p1[2]-p0[2]||1e-6;
+ // Standing cards first: a tap on a character's head should find the character, not the ground behind it.
+ const dot=(u,v)=>u[0]*v[0]+u[1]*v[1]+u[2]*v[2],dir=[0,1,2].map(i=>p1[i]-p0[i]);let best=null;
+ for(const c of G.cards||[]){const base=[(c.fx-128)*G.ax-G.F[0]*6,G.H/2-c.fy-G.F[1]*6,c.z-G.F[2]*6],den=dot(dir,G.F);if(Math.abs(den)<1e-9)continue;
+  const t=dot([0,1,2].map(i=>base[i]-p0[i]),G.F)/den,P=[0,1,2].map(i=>p0[i]+dir[i]*t-base[i]),u=dot(P,G.R)/G.ax/c.w+.5,v=1-dot(P,G.U)/c.h;
+  if(u<0||u>=1||v<0||v>=1)continue;if(!(G.at32[(c.ay+Math.floor(v*c.h))*512+c.ax+Math.floor(u*c.w)]>>>24))continue;
+  if(!best||t<best.t)best={t,x:c.box.x+u*c.w,y:c.box.y+v*c.h};}
+ if(best)return{x:best.x,y:best.y};
  const at=t=>[p0[0]+(p1[0]-p0[0])*t,p0[1]+(p1[1]-p0[1])*t,p0[2]+(p1[2]-p0[2])*t],t0=(80-p0[2])/dz,t1=(0-p0[2])/dz;
  for(let k=0;k<=300;k++){const[X,Y,Z]=at(t0+(t1-t0)*k/300),x=X/G.ax+128,y=G.H/2-Y,ix=Math.floor(x),iy=Math.floor(y);
   if(ix>=0&&iy>=0&&ix<256&&iy<G.H&&G.h[iy*256+ix]>=Z)return{x,y};}
@@ -988,8 +1105,14 @@ function set3D(on){if(on){try{if(!glInit()){toast('3D view needs WebGL 2, which 
 $('#d3Btn').onclick=()=>set3D(!G.on);$('#setD3').onchange=e=>set3D(e.target.checked);
 function motionPermission(){if(S.motion&&typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission)
  DeviceOrientationEvent.requestPermission().then(r=>{if(r!=='granted'){S.motion=false;$('#setMotion').checked=false;saveSettings();toast('Motion access wasn’t allowed');}}).catch(()=>{});G.base=null;G.oy=G.ot=0;}
-addEventListener('deviceorientation',e=>{if(!S.motion||!G.on||e.beta==null)return;if(!G.base)G.base={b:e.beta,g:e.gamma};
- G.oy=Math.max(-12,Math.min(12,(e.gamma-G.base.g)*.4));G.ot=Math.max(-12,Math.min(12,(e.beta-G.base.b)*.4));});
+// Phone tilt: axes follow the screen's rotation, and the resting angle slowly re-centers so the picture never stays skewed.
+const scrAngle=()=>((screen.orientation?.angle??window.orientation??0)%360+360)%360;
+addEventListener('deviceorientation',e=>{if(!S.motion||!G.on||e.beta==null)return;const a=scrAngle();
+ const[side,fwd]=a===90?[e.beta,-e.gamma]:a===270?[-e.beta,e.gamma]:a===180?[-e.gamma,-e.beta]:[e.gamma,e.beta];
+ if(!G.base||G.base.a!==a)G.base={s:side,f:fwd,a};const wrap=v=>((v+180)%360+360)%360-180;let ds=wrap(side-G.base.s),df=wrap(fwd-G.base.f);
+ if(Math.abs(ds)>45||Math.abs(df)>45){G.base={s:side,f:fwd,a};ds=df=0;}G.base.s+=ds*.015;G.base.f+=df*.015;
+ G.oy=Math.max(-7,Math.min(7,ds*.3));G.ot=Math.max(-7,Math.min(7,df*.3));});
+addEventListener('orientationchange',()=>{G.base=null;G.oy=G.ot=0;});screen.orientation?.addEventListener?.('change',()=>{G.base=null;G.oy=G.ot=0;});
 
 /* ---------- lighting, weather and looks ---------- */
 const LIGHT=[[0,[74,90,168],.55],[5,[74,90,168],.5],[6.5,[255,179,138],.3],[8,[255,255,255],0],[16,[255,255,255],0],[18,[255,154,92],.32],[19.5,[138,106,208],.42],[21,[74,90,168],.55],[24,[74,90,168],.55]];
@@ -1084,7 +1207,7 @@ function applySettings(){$('#crt').hidden=!S.crt||G.on;cv.style.filter=$('#gl').
  anode?.port.postMessage({v:S.vol/100});saveSettings();}
 const bind=(id,key,get=e=>e.target.value)=>{const el=$(id);if(el.type==='checkbox')el.checked=S[key];else el.value=S[key];
  el.addEventListener(el.type==='range'?'input':'change',e=>{S[key]=el.type==='checkbox'?el.checked:typeof SETDEF[key]==='number'?+get(e):get(e);applySettings();if(key==='rw'||key==='rwSec'){if(game)rewindSetup();}});};
-bind('#setAspect','aspect');bind('#setCrt','crt');bind('#setSmooth','smooth');bind('#setWatch','watch');bind('#setOp','op');bind('#setVol','vol');bind('#setFF','ff');bind('#setRw','rw');bind('#setRwSec','rwSec');bind('#setLook','look');bind('#setFxAmt','fxAmt');bind('#setPadHide','padHide');bind('#setTilt','tilt');bind('#setDepth','depth');bind('#setShadow','shadow');bind('#setMotion','motion');
+bind('#setAspect','aspect');bind('#setCrt','crt');bind('#setSmooth','smooth');bind('#setWatch','watch');bind('#setOp','op');bind('#setVol','vol');bind('#setFF','ff');bind('#setRw','rw');bind('#setRwSec','rwSec');bind('#setLook','look');bind('#setFxAmt','fxAmt');bind('#setPadHide','padHide');bind('#setStand','stand');bind('#setDof','dof');bind('#setTilt','tilt');bind('#setDepth','depth');bind('#setShadow','shadow');bind('#setMotion','motion');
 $('#setMotion').addEventListener('change',motionPermission);$('#setD3').checked=S.d3;
 applySettings();if(S.d3)set3D(true);
 
