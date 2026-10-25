@@ -1,0 +1,18 @@
+{
+ "name": "Harvest Touch",
+ "short_name": "Harvest Touch",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "any",
+ "background_color": "#cfccd9",
+ "theme_color": "#cfccd9",
+ "icons": [
+  {
+   "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAEsUlEQVR42u3cTWoUQRgGYFMMeAFX3sD7eAQXYggeQTyCSIILj+BRBJeSC2TlBYQgLgLDMDMdku76/ep5t5lJZ1JPv9U/03Xx6+ftC5FzSf4FAofAIXAIHAKHwCFwCBwCh8AhAofAIXAIHAKHwCFjZNfVX3P54cqQXN987eQvuWj+NUEguoXSDAcT/SupjYOJgZQkMsZKzf9hpebAYsQKSWSokDbNgcXQFZLIUCG1cZARwEcig496OMgI4yORwUcNHGQE8+GWvZTHoTbilUcigw/TirTAoTailkcigw/TisAh+bLpln2MOSW9+bj0o3+/vwT4gKvv6e+m3S0eMXH6mhhK4MjD4uxbZiOyfloZcU5ZwSLGXLNuZpnogDSLjIy/x9lKNBlT+Uhk8JEZx0AHHOVGcSAf68YreHOUHr/Y/ZHI4MPZisDRYoeOWh6aQybDUX9XDlkemkPgEDgaNny8mUVzCBwCh8AhcAgcAofAIXB0m1bfDo/34ILmEDgEjlYNH/JhOM0hixnmWdndu1dLP7r//ufsrlztNulSbXzb/V16y/v7l3AUNHH6mrNK6ucRE6ev6VnJbmgWZ9+yJ1KnPA5r4ykszirpk8guBoslIqV97GWsYNE/kRRMxunvKXcekUvGluKZCEcuGRV8ZJfRoY8UVUZRH4Vk9OYjBZZRyEdRGV35SLFlnPrYQuTw7aXHrwcfKbyM062sIHL0ljoj19zHvEtN7gc7/Dqko+KoUxv7bS1daO92h/62+9vw4ocbb9Iljpq1kWuL9Y8DGh55aA6BQwbCUX9O2b7dVg3faruaQ+AQOAQOgUPgEDgEDoFjY1o9Y7Jlu61ukLbaruYQOGQsHPVnlu1brN/wvuwjPabx1wTvv/+pdnt2qTZ+fLpbesvbz6/P7srVbpO2fUBy3i8YP2Li9DVnlTjmCHLkcbiVH5/uniLjSMnhW+rs0M2fq+7imKO0j/3vX8FiiUjpkevhifteDkjL+TiUkXc+Kjd+nazF0NHZSgkf2WVU8NHPKh19ncrm9VFIRlEfXa3f0t11jlw+isoo5KO3lX16PJV9GNfV1z+OTkxKnw8/nOU+jOvq6x/WBCtO5Kh1Sss48rGOiNUEM8wOz12HtGH2420d0k6PRerUxml5DCdgpANSgaP4rhx+i3AIHAJH7IaPN7NoDoFD4BA4BA6BQ+AQOASObtPqGZN4z7ZoDoFD4GjV8CGfl9QcMh+Omrty1MesNYdMiaPODh14dYbgzVF65GKv27ESx/XNVz4GkrFuvKY45igxijOs9TPLAWnesZxkFaiJzlZyjeg864Nd/Pp5u/rNlx+uRvzMq78mPiiL1QeIM64m+DDGzyIy52qC8y41uR/v565DOk82TSvjzizzZMtFB5fPBQ6pj2OgS6XmlAbNwUdIGaYVKY9DecSrjZzNwUcwGaYVqYVDeUSqjfzNwUcYGUWmFT5iyCh1zMFHABkFD0j5GF1G2bMVPoaW8WL7LfunxG39QXe/FOAzkDFwc6iQQXe2FPJTkTFec2iRsfarZjgo6b9r2+MApdvJty8c0lXcshc4BA6BQ+AQOAQOgUPgEDgEDhE4BA6BQ+AQOKSv/AfC9BIKaWDyfwAAAABJRU5ErkJggg==",
+   "sizes": "180x180",
+   "type": "image/png",
+   "purpose": "any"
+  }
+ ]
+}

@@ -1,0 +1,73 @@
+name: Build SNES core
+
+# Rebuilds snes.js + snes.wasm only when the bridge or this file changes.
+# Run it by hand from the Actions tab with "Run workflow".
+on:
+  push:
+    paths: ['bridge.cpp', '.github/workflows/build.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get Emscripten and Snes9x
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git
+          ./emsdk/emsdk install 3.1.74
+          ./emsdk/emsdk activate 3.1.74
+          git clone --depth 1 https://github.com/snes9xgit/snes9x.git s9x
+          echo "Snes9x commit: $(git -C s9x rev-parse HEAD)"
+
+      - name: Compile
+        run: |
+          set -e
+          source ./emsdk/emsdk_env.sh
+          cd s9x/libretro
+          # Ask the Snes9x libretro makefile for its own source list and include paths.
+          cat > print.mk <<'EOF'
+          .RECIPEPREFIX := >
+          CORE_DIR := ..
+          LIBRETRO_DIR := .
+          LIBRETRO_COMM_DIR := ./libretro-common
+          include Makefile.common
+          srcs:
+          >@echo $(SOURCES_CXX) $(SOURCES_C)
+          incs:
+          >@echo $(INCFLAGS)
+          EOF
+          SRCS=$(make -s -f print.mk srcs)
+          INCS="-I. -I.. $(make -s -f print.mk incs)"
+          case "$SRCS" in *libretro.cpp*) ;; *) SRCS="$SRCS ./libretro.cpp";; esac
+          echo "Sources: $SRCS"
+          echo "Includes: $INCS"
+          DEFS="-D__LIBRETRO__ -DLSB_FIRST -DHAVE_STDINT_H -DHAVE_INTTYPES_H -DHAVE_STRINGS_H -DRIGHTSHIFT_IS_SAR -DALLOW_CPU_OVERCLOCK"
+          mkdir -p obj
+          for f in $SRCS; do
+            o="obj/$(echo "$f" | tr '/.' '__').o"
+            case "$f" in
+              *.c) echo "emcc -O3 -w $DEFS $INCS -c $f -o $o" ;;
+              *)   echo "em++ -O3 -w -std=gnu++17 $DEFS $INCS -c $f -o $o" ;;
+            esac
+          done > jobs.txt
+          xargs -P 4 -I{} sh -c '{}' < jobs.txt
+          em++ -O3 -w -std=gnu++17 $DEFS $INCS "$GITHUB_WORKSPACE/bridge.cpp" obj/*.o \
+            -o "$GITHUB_WORKSPACE/snes.js" \
+            -sMODULARIZE=1 -sEXPORT_NAME=createSnes -sENVIRONMENT=web \
+            -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=67108864 \
+            -sEXPORTED_FUNCTIONS=_malloc,_free \
+            -sEXPORTED_RUNTIME_METHODS=HEAPU8,HEAPU16,HEAP16
+          ls -la "$GITHUB_WORKSPACE"/snes.*
+
+      - name: Commit the built core
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add snes.js snes.wasm
+          git commit -m "Build SNES core" || echo "Core unchanged"
+          git push

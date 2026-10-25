@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Harvest Touch">
+<meta name="theme-color" content="#cfccd9">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAEsUlEQVR42u3cTWoUQRgGYFMMeAFX3sD7eAQXYggeQTyCSIILj+BRBJeSC2TlBYQgLgLDMDMdku76/ep5t5lJZ1JPv9U/03Xx6+ftC5FzSf4FAofAIXAIHAKHwCFwCBwCh8AhAofAIXAIHAKHwCFjZNfVX3P54cqQXN987eQvuWj+NUEguoXSDAcT/SupjYOJgZQkMsZKzf9hpebAYsQKSWSokDbNgcXQFZLIUCG1cZARwEcig496OMgI4yORwUcNHGQE8+GWvZTHoTbilUcigw/TirTAoTailkcigw/TisAh+bLpln2MOSW9+bj0o3+/vwT4gKvv6e+m3S0eMXH6mhhK4MjD4uxbZiOyfloZcU5ZwSLGXLNuZpnogDSLjIy/x9lKNBlT+Uhk8JEZx0AHHOVGcSAf68YreHOUHr/Y/ZHI4MPZisDRYoeOWh6aQybDUX9XDlkemkPgEDgaNny8mUVzCBwCh8AhcAgcAofAIXB0m1bfDo/34ILmEDgEjlYNH/JhOM0hixnmWdndu1dLP7r//ufsrlztNulSbXzb/V16y/v7l3AUNHH6mrNK6ucRE6ev6VnJbmgWZ9+yJ1KnPA5r4ykszirpk8guBoslIqV97GWsYNE/kRRMxunvKXcekUvGluKZCEcuGRV8ZJfRoY8UVUZRH4Vk9OYjBZZRyEdRGV35SLFlnPrYQuTw7aXHrwcfKbyM062sIHL0ljoj19zHvEtN7gc7/Dqko+KoUxv7bS1daO92h/62+9vw4ocbb9Iljpq1kWuL9Y8DGh55aA6BQwbCUX9O2b7dVg3faruaQ+AQOAQOgUPgEDgEDoFjY1o9Y7Jlu61ukLbaruYQOGQsHPVnlu1brN/wvuwjPabx1wTvv/+pdnt2qTZ+fLpbesvbz6/P7srVbpO2fUBy3i8YP2Li9DVnlTjmCHLkcbiVH5/uniLjSMnhW+rs0M2fq+7imKO0j/3vX8FiiUjpkevhifteDkjL+TiUkXc+Kjd+nazF0NHZSgkf2WVU8NHPKh19ncrm9VFIRlEfXa3f0t11jlw+isoo5KO3lX16PJV9GNfV1z+OTkxKnw8/nOU+jOvq6x/WBCtO5Kh1Sss48rGOiNUEM8wOz12HtGH2420d0k6PRerUxml5DCdgpANSgaP4rhx+i3AIHAJH7IaPN7NoDoFD4BA4BA6BQ+AQOASObtPqGZN4z7ZoDoFD4GjV8CGfl9QcMh+Omrty1MesNYdMiaPODh14dYbgzVF65GKv27ESx/XNVz4GkrFuvKY45igxijOs9TPLAWnesZxkFaiJzlZyjeg864Nd/Pp5u/rNlx+uRvzMq78mPiiL1QeIM64m+DDGzyIy52qC8y41uR/v565DOk82TSvjzizzZMtFB5fPBQ6pj2OgS6XmlAbNwUdIGaYVKY9DecSrjZzNwUcwGaYVqYVDeUSqjfzNwUcYGUWmFT5iyCh1zMFHABkFD0j5GF1G2bMVPoaW8WL7LfunxG39QXe/FOAzkDFwc6iQQXe2FPJTkTFec2iRsfarZjgo6b9r2+MApdvJty8c0lXcshc4BA6BQ+AQOAQOgUPgEDgEDhE4BA6BQ+AQOKSv/AfC9BIKaWDyfwAAAABJRU5ErkJggg==">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Harvest Touch</title>
+<style>
+:root{--plastic:#cfccd9;--plastic2:#bab6c8;--groove:#a29db3;--ink:#2a2733;--soft:#5f5a6e;--bezel:#3a3646;--sheet:#efeef4;--a:#d23a3f;--b:#e6b52c;--x:#3c5fb5;--y:#3e9a5a;--sel:#6b5aa6;--ar:4/3;--arn:1.3333;
+ font-family:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,sans-serif;color:var(--ink);color-scheme:light}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;background:var(--plastic);overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{touch-action:manipulation;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--sel);outline-offset:2px}
+#app{height:100dvh;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto 1fr;grid-template-areas:"bar" "stage" "ctl";
+ padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#bar{grid-area:bar;display:flex;align-items:center;gap:4px;padding:6px 10px;min-width:0}
+#bar h1{flex:1;min-width:0;font-size:15px;font-weight:700;margin:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--soft)}
+.ib{min-width:36px;height:36px;padding:0 6px;flex:none;border-radius:10px;border:0;background:var(--plastic2);font-size:17px;display:grid;place-items:center}
+.ib.on{background:var(--sel);color:#fff}
+#stage{grid-area:stage;display:grid;place-items:center;padding:0 10px;min-height:0}
+#bezel{background:var(--bezel);border-radius:14px;padding:8px;box-shadow:inset 0 2px 0 #ffffff22,0 2px 0 #ffffff99;display:grid;place-items:center}
+#wrap{position:relative;aspect-ratio:var(--ar);width:min(calc(100vw - 36px),calc(56dvh * var(--arn)))}
+#screen{width:100%;height:100%;display:block;image-rendering:pixelated;background:#000;border-radius:3px}
+#screen.smooth{image-rendering:auto}
+#crt{position:absolute;inset:0;pointer-events:none;border-radius:3px;background:repeating-linear-gradient(#0000 0 2px,#0004 2px 3px)}
+#empty{position:absolute;inset:0;display:grid;place-content:center;gap:10px;text-align:center;color:#e9e6f2;padding:16px}
+#empty p{margin:0;font-size:14px;color:#bcb7cb;max-width:28ch}
+#hud{position:absolute;left:6px;top:6px;display:flex;flex-direction:column;gap:4px;pointer-events:none}
+.chip{background:#000a;color:#fff;font-size:12px;padding:2px 7px;border-radius:8px;width:max-content}
+#ffbadge{position:absolute;right:6px;top:6px}
+#marker{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 2px #0008;pointer-events:none}
+#pickbox{position:absolute;border:2px solid #ffe066;box-shadow:0 0 0 2px #000a;pointer-events:none}
+#ctl{grid-area:ctl;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr auto auto;grid-template-areas:"lsh rsh" "dpad face" "mid mid" "act act";
+ padding:8px 14px 8px;align-items:center;opacity:var(--op,1);touch-action:none;min-height:0}
+.sh{height:34px;width:100px;border:0;border-radius:14px 14px 6px 6px;background:var(--groove);font-weight:700;color:#fff;box-shadow:inset 0 -3px 0 #0002}
+#lsh{grid-area:lsh;justify-self:start}#rsh{grid-area:rsh;justify-self:end}
+#dpad{grid-area:dpad;justify-self:center;width:150px;height:150px;position:relative;touch-action:none}
+#dpad::before,#dpad::after{content:"";position:absolute;background:#33303c;border-radius:9px;box-shadow:0 3px 0 #0003}
+#dpad::before{left:50px;right:50px;top:4px;bottom:4px}#dpad::after{top:50px;bottom:50px;left:4px;right:4px}
+#dpad i{position:absolute;z-index:1;width:0;height:0;border:9px solid transparent;opacity:.35}
+#dpad i.on{opacity:1}
+#dpad [data-d=u]{left:66px;top:12px;border-bottom-color:#fff;border-top-width:0}
+#dpad [data-d=d]{left:66px;bottom:12px;border-top-color:#fff;border-bottom-width:0}
+#dpad [data-d=l]{top:66px;left:12px;border-right-color:#fff;border-left-width:0}
+#dpad [data-d=r]{top:66px;right:12px;border-left-color:#fff;border-right-width:0}
+#mid{grid-area:mid;display:flex;gap:14px;justify-self:center;padding:6px 4px 16px}
+.pill{width:46px;height:16px;border:0;border-radius:8px;background:#5b5768;transform:rotate(-26deg);font-size:0}
+.pill.on{background:var(--sel)}
+.lbl{display:block;font-size:10px;color:var(--soft);text-align:center;margin-top:8px}
+#face{grid-area:face;justify-self:center;width:156px;height:156px;position:relative;touch-action:none}
+#face button{position:absolute;width:54px;height:54px;border-radius:50%;border:0;color:#fff;font-weight:800;font-size:17px;box-shadow:inset 0 -4px 0 #0003,0 2px 0 #fff7}
+#face button.on,.sh.on{filter:brightness(.8);transform:translateY(2px)}
+#face [data-b=X]{left:51px;top:0;background:var(--x)}#face [data-b=Y]{left:0;top:51px;background:var(--y)}
+#face [data-b=A]{right:0;top:51px;background:var(--a)}#face [data-b=B]{left:51px;bottom:0;background:var(--b);color:#3d2f00}
+#act{grid-area:act;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding-bottom:6px}
+@media (max-width:360px){#dpad,#face{transform:scale(.86)}}
+.act{height:42px;padding:0 16px;border:0;border-radius:21px;background:var(--plastic2);font-weight:650;display:flex;gap:6px;align-items:center;box-shadow:inset 0 -3px 0 #0002}
+.act.on{background:var(--sel);color:#fff}
+@media (orientation:landscape) and (max-height:560px){
+ #app{grid-template-columns:1fr auto 1fr;grid-template-rows:auto 1fr auto;grid-template-areas:"lsh bar rsh" "dpad stage face" "mid stage act"}
+ #ctl{display:contents}
+ #bar{padding:4px 6px}
+ #wrap{width:min(62vw,calc((100dvh - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * var(--arn)))}
+ #lsh,#rsh{margin:6px 10px 0}#mid{justify-self:center;align-self:end;padding-bottom:14px}#act{align-self:end;padding:0 6px 10px}
+}
+#sheet,#editor{position:fixed;inset:0;background:#2a273366;display:flex;align-items:flex-end;z-index:20}
+.panel{background:var(--sheet);width:100%;max-width:680px;margin:0 auto;max-height:90dvh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);user-select:text;-webkit-user-select:text}
+.tabs{display:flex;gap:4px;padding:10px 10px 6px;align-items:center}
+.tabrow{display:flex;gap:2px;overflow-x:auto;flex:1;min-width:0}
+.tab{border:0;background:transparent;padding:8px 8px;font-size:14px;border-radius:10px;font-weight:650;color:var(--soft);white-space:nowrap}
+.tab.on{background:var(--ink);color:#fff}
+.close{margin-left:auto}
+.pages{overflow:auto;padding:4px 14px 18px}
+h2{font-size:17px;margin:14px 0 6px}h3{font-size:15px;margin:12px 0 6px}
+p.note{font-size:13px;color:var(--soft);margin:4px 0 10px;line-height:1.45}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.btn{border:0;border-radius:10px;background:var(--plastic2);padding:9px 13px;font-weight:650}
+.btn.main{background:var(--ink);color:#fff}.btn.warn{background:#f2d3d4;color:#7a1f23}
+.list{display:flex;flex-direction:column;gap:6px}
+.item{display:flex;gap:10px;align-items:center;background:#fff;border-radius:12px;padding:8px 10px}
+.item .grow{flex:1;min-width:0}.item small{display:block;color:var(--soft);font-size:12px}
+.item img,.item canvas{border-radius:6px;image-rendering:pixelated;background:#0001;flex:none}
+details{background:#fff;border-radius:12px;padding:6px 12px;margin:8px 0}
+summary{font-weight:700;padding:6px 0;cursor:pointer}
+input[type=text],input[type=number],select,textarea{border:1px solid var(--groove);border-radius:9px;padding:7px 9px;background:#fff;min-width:0}
+textarea{width:100%;min-height:220px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+label.ck{display:flex;gap:6px;align-items:center;font-size:14px}
+#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 10px);transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 14px;border-radius:12px;z-index:40;font-size:14px;max-width:90vw;text-align:center}
+#pickp{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--sheet);border-radius:18px 18px 0 0;padding:10px 14px calc(12px + env(safe-area-inset-bottom));max-height:46dvh;overflow:auto;box-shadow:0 -6px 20px #0003}
+#edgrid{touch-action:none;image-rendering:pixelated;border-radius:6px;background:#fff;display:block;margin:0 auto}
+#edpal{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+#edpal button{width:30px;height:30px;border-radius:7px;border:2px solid #fff;box-shadow:0 0 0 1px #0003}
+#edpal button.on{box-shadow:0 0 0 3px var(--ink)}
+.tool.on{background:var(--ink);color:#fff}
+.checker{background:conic-gradient(#ddd 25%,#fff 0 50%,#ddd 0 75%,#fff 0) 0 0/10px 10px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+ <div id="bar">
+  <button class="ib" id="menuBtn" aria-label="Menu">☰</button>
+  <h1 id="title">Harvest Touch</h1>
+  <button class="ib" id="rwBtn" aria-label="Hold to rewind">⏪</button>
+  <button class="ib" id="ffBtn" aria-label="Fast forward">⏩</button>
+  <button class="ib" id="walkBtn" aria-label="Tap to walk">👆</button>
+  <button class="ib" id="qsBtn" aria-label="Quick save">💾</button>
+  <button class="ib" id="qlBtn" aria-label="Quick load">↺</button>
+ </div>
+ <div id="stage"><div id="bezel"><div id="wrap">
+  <canvas id="screen" width="256" height="224"></canvas>
+  <div id="crt" hidden></div>
+  <div id="hud"></div>
+  <span id="ffbadge" class="chip" hidden>Fast</span>
+  <div id="marker" hidden></div>
+  <div id="pickbox" hidden></div>
+  <div id="empty"><strong>Add a game to start</strong><p>Pick a .sfc or .smc file you own. It stays on this device.</p><button class="btn main" id="emptyAdd">Add a game</button></div>
+ </div></div></div>
+ <div id="ctl">
+  <button class="sh" data-b="L" id="lsh">L</button>
+  <button class="sh" data-b="R" id="rsh">R</button>
+  <div id="dpad" aria-label="D-pad"><i data-d="u"></i><i data-d="d"></i><i data-d="l"></i><i data-d="r"></i></div>
+  <div id="mid"><div><button class="pill" data-b="Select" aria-label="Select">Select</button><span class="lbl">Select</span></div><div><button class="pill" data-b="Start" aria-label="Start">Start</button><span class="lbl">Start</span></div></div>
+  <div id="face"><button data-b="X">X</button><button data-b="Y">Y</button><button data-b="A">A</button><button data-b="B">B</button></div>
+  <div id="act"></div>
+ </div>
+</div>
+
+<div id="sheet" hidden><div class="panel">
+ <div class="tabs">
+  <div class="tabrow"><button class="tab on" data-p="games">Games</button><button class="tab" data-p="saves">Saves</button><button class="tab" data-p="tools">Tools</button><button class="tab" data-p="setup">Setup</button><button class="tab" data-p="settings">Settings</button></div>
+  <button class="ib close" id="sheetClose" aria-label="Close">✕</button>
+ </div>
+ <div class="pages">
+  <section class="page" data-p="games">
+   <div class="row"><button class="btn main" id="addGame">Add a game</button></div>
+   <div class="list" id="gameList"></div>
+   <p class="note">Games are stored only in this browser. Use Harvest Touch from your Home Screen so Safari keeps them.</p>
+  </section>
+  <section class="page" data-p="saves" hidden>
+   <div class="list" id="slotList"></div>
+   <h3>This game</h3>
+   <div class="row"><button class="btn" id="resetGame">Restart game</button><button class="btn" id="shot">Share screenshot</button></div>
+   <h3>Backup</h3>
+   <p class="note">Backs up in-game saves, game setups and tile edits for every game. Games themselves aren’t included.</p>
+   <div class="row"><button class="btn" id="backupOut">Export backup</button><button class="btn" id="backupIn">Import backup</button></div>
+  </section>
+  <section class="page" data-p="tools" hidden>
+   <details id="pickTool" open><summary>Edit tiles and sprites</summary>
+    <p class="note">Tap Pick, then tap anything on screen. Your edit replaces that tile everywhere it appears, using the game’s own colors.</p>
+    <div class="row"><button class="btn main" id="pickBtn">Pick from screen</button><label class="ck"><input type="checkbox" id="patchOn" checked> Show my edits</label></div>
+    <div class="list" id="tileList"></div>
+   </details>
+   <details id="layerTool"><summary>Layer viewer</summary>
+    <div class="row" id="layerToggles"></div>
+    <canvas id="layerCv" width="256" height="224" style="width:100%;image-rendering:pixelated;border-radius:8px;background:#000"></canvas>
+    <p class="note" id="layerInfo"></p>
+   </details>
+   <details id="ramTool"><summary>Memory search and watches</summary>
+    <p class="note">Find where the game keeps a number: start a search, change the number in-game, then filter. Repeat until a few addresses remain.</p>
+    <div class="row"><select id="rsSize"><option value="1">1 byte</option><option value="2">2 bytes</option></select><button class="btn main" id="rsStart">New search</button><span id="rsCount" class="note"></span></div>
+    <div class="row"><button class="btn" data-rs="changed">Changed</button><button class="btn" data-rs="same">Unchanged</button><button class="btn" data-rs="up">Went up</button><button class="btn" data-rs="down">Went down</button><input type="number" id="rsVal" placeholder="Value" style="width:90px"><button class="btn" data-rs="eq">Equals</button></div>
+    <div class="list" id="rsList"></div>
+    <h3>Watches</h3><div class="list" id="watchList"></div>
+   </details>
+   <details id="cheatTool"><summary>Cheat codes</summary>
+    <p class="note">Game Genie or Pro Action Replay codes.</p>
+    <div class="row"><input type="text" id="cheatCode" placeholder="Code" style="flex:1"><input type="text" id="cheatName" placeholder="Name" style="flex:1"><button class="btn main" id="cheatAdd">Add</button></div>
+    <div class="list" id="cheatList"></div>
+   </details>
+  </section>
+  <section class="page" data-p="setup" hidden>
+   <h2>Action buttons</h2>
+   <p class="note">Extra buttons under the controller, saved for this game only.</p>
+   <div class="list" id="actList"></div>
+   <div class="row"><input type="text" id="actIcon" placeholder="Icon" style="width:64px"><input type="text" id="actLabel" placeholder="Label, like Use tool" style="flex:1"></div>
+   <div class="row" id="actBtns"></div>
+   <div class="row"><select id="actMode"><option value="hold">Hold while pressed</option><option value="turbo">Turbo while pressed</option><option value="toggle">Tap to hold, tap to release</option></select><button class="btn main" id="actAdd">Add button</button></div>
+   <h2>Tap to walk</h2>
+   <div class="row"><label>Camera follows <select id="walkLayer"><option value="0">BG1</option><option value="1">BG2</option><option value="2">BG3</option><option value="3">BG4</option></select></label><label class="ck"><input type="checkbox" id="walkDiag" checked> Diagonal walking</label></div>
+   <h2>Game data</h2>
+   <p class="note">Everything above, plus tile edits, watches and cheats, lives in this file. Share it or edit it by hand.</p>
+   <div class="row"><button class="btn" id="profOut">Export</button><button class="btn" id="profIn">Import</button><button class="btn" id="profEdit">Edit as text</button></div>
+   <div id="profBox" hidden><textarea id="profText" spellcheck="false"></textarea><div class="row"><button class="btn main" id="profSave">Save changes</button></div></div>
+  </section>
+  <section class="page" data-p="settings" hidden>
+   <h3>Screen</h3>
+   <div class="row"><label>Shape <select id="setAspect"><option value="4:3">TV (4:3)</option><option value="pixel">Square pixels</option></select></label></div>
+   <div class="row"><label class="ck"><input type="checkbox" id="setCrt"> Scanlines</label><label class="ck"><input type="checkbox" id="setSmooth"> Smooth pixels</label><label class="ck"><input type="checkbox" id="setWatch" checked> Show watches</label></div>
+   <h3>Controls</h3>
+   <div class="row"><label>Opacity <input type="range" id="setOp" min="30" max="100"></label></div>
+   <h3>Sound</h3>
+   <div class="row"><label>Volume <input type="range" id="setVol" min="0" max="100"></label></div>
+   <h3>Time</h3>
+   <div class="row"><label>Fast-forward speed <select id="setFF"><option>2</option><option>3</option><option>4</option><option>6</option></select></label></div>
+   <div class="row"><label class="ck"><input type="checkbox" id="setRw"> Rewind</label><label>Seconds <select id="setRwSec"><option>5</option><option>10</option><option>20</option></select></label></div>
+   <p class="note">Rewind keeps recent moments in memory. Longer rewind uses more memory, which older iPhones may not have.</p>
+  </section>
+ </div>
+</div></div>
+
+<div id="pickp" hidden>
+ <div class="row" style="justify-content:space-between"><strong id="pickHead">Tap anything on screen</strong><button class="btn" id="pickDone">Done</button></div>
+ <div class="list" id="pickList"></div>
+</div>
+
+<div id="editor" hidden><div class="panel" style="max-height:96dvh">
+ <div class="tabs"><strong id="edTitle" style="padding:0 6px">Edit</strong><button class="ib close" id="edClose" aria-label="Close">✕</button></div>
+ <div class="pages">
+  <canvas id="edgrid" class="checker"></canvas>
+  <div id="edpal"></div>
+  <div class="row"><button class="btn tool on" data-t="pen">Draw</button><button class="btn tool" data-t="fill">Fill</button><button class="btn tool" data-t="pick">Pick color</button><button class="btn tool" data-t="erase">Erase</button><button class="btn" id="edUndo">Undo</button></div>
+  <div class="row"><canvas id="edprev" class="checker" style="border-radius:6px;image-rendering:pixelated"></canvas><p class="note" id="edNote" style="flex:1"></p></div>
+  <div class="row"><button class="btn main" id="edSave">Save</button><button class="btn" id="edVar">Save as new variation</button><button class="btn warn" id="edRevert">Restore original</button></div>
+ </div>
+</div></div>
+
+<div id="toast" hidden></div>
+<input type="file" id="romFile" hidden>
+<input type="file" id="jsonFile" accept=".json,application/json" hidden>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const BTN={B:0,Y:1,Select:2,Start:3,Up:4,Down:5,Left:6,Right:7,A:8,X:9,L:10,R:11};
+const BIT=n=>1<<BTN[n];
+let toastT;function toast(m,ms=2400){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,ms);}
+
+/* ---------- storage ---------- */
+const DB=(()=>{let p;const open=()=>p||(p=new Promise((res,rej)=>{const r=indexedDB.open('harvest-touch',1);
+ r.onupgradeneeded=()=>{for(const s of['roms','data'])r.result.createObjectStore(s);};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}));
+ const run=async(st,mode,fn)=>{const d=await open();return new Promise((res,rej)=>{const t=d.transaction(st,mode);const r=fn(t.objectStore(st));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);});};
+ return{get:(s,k)=>run(s,'readonly',o=>o.get(k)),put:(s,k,v)=>run(s,'readwrite',o=>o.put(v,k)),del:(s,k)=>run(s,'readwrite',o=>o.delete(k)),keys:s=>run(s,'readonly',o=>o.getAllKeys())};})();
+const SETDEF={aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10};
+let S=Object.assign({},SETDEF,JSON.parse(localStorage.getItem('ht.settings')||'{}'));
+const saveSettings=()=>localStorage.setItem('ht.settings',JSON.stringify(S));
+const fnv=(a,o=0,n=a.length)=>{let h=0x811c9dc5;for(let i=o;i<o+n;i++){h^=a[i];h=Math.imul(h,16777619);}return h>>>0;};
+const hex=h=>h.toString(16).padStart(8,'0');
+const b64=u=>{let s='';for(let i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);};
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+function download(name,text){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);}
+function pickJSON(){return new Promise(res=>{const f=$('#jsonFile');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return res(null);try{res(JSON.parse(await file.text()));}catch{toast('That file isn’t valid game data.');res(null);}};f.click();});}
+
+/* ---------- core ---------- */
+let M=null,P={},game=null,romPtr=0;
+async function loadCore(){
+ if(M)return M;
+ await new Promise((res,rej)=>{const s=document.createElement('script');s.src='snes.js';s.onload=res;
+  s.onerror=()=>rej(new Error('snes.js is missing. Run “Build SNES core” in your repo’s Actions tab, then reload.'));document.head.appendChild(s);});
+ M=await createSnes({locateFile:f=>f});M._s9x_init();return M;}
+const H8=()=>M.HEAPU8;
+function snap(){const h=H8(),b=h.buffer;return{V:h.subarray(P.vram,P.vram+65536),C:new Uint16Array(b,P.cgram,256),O:h.subarray(P.oam,P.oam+544),R:h.subarray(P.regs,P.regs+64),S:new Uint16Array(b,P.scroll,8),W:h.subarray(P.wram,P.wram+0x20000)};}
+
+/* ---------- video ---------- */
+const cv=$('#screen'),cx=cv.getContext('2d');let img=null;
+const LUT=new Uint32Array(65536);for(let i=0;i<65536;i++){const r=i>>11&31,g=i>>5&63,b=i&31;LUT[i]=0xff000000|(b<<3|b>>2)<<16|(g<<2|g>>4)<<8|(r<<3|r>>2);}
+let logical={w:256,h:224};
+function draw(){
+ const w=M._s9x_vw(),h=M._s9x_vh();
+ if(!img||img.width!==w||img.height!==h){cv.width=w;cv.height=h;img=cx.createImageData(w,h);logical={w:256,h:h>240?h/2:h};applyAspect();}
+ const src=new Uint16Array(H8().buffer,P.video,w*h),dst=new Uint32Array(img.data.buffer);
+ for(let i=0;i<dst.length;i++)dst[i]=LUT[src[i]];
+ cx.putImageData(img,0,0);hudTick();}
+function applyAspect(){const n=S.aspect==='pixel'?logical.w/logical.h:4/3;document.documentElement.style.setProperty('--ar',String(n));document.documentElement.style.setProperty('--arn',String(n));}
+
+/* ---------- audio ---------- */
+let actx=null,anode=null;
+const WORKLET=`class O extends AudioWorkletProcessor{constructor(){super();this.n=32768;this.b=new Float32Array(this.n*2);this.w=0;this.r=0;this.k=1;this.v=1;
+this.port.onmessage=e=>{const d=e.data;if(d.k)this.k=d.k;if(d.v!==undefined)this.v=d.v;if(d.s){const s=d.s,n=this.n,b=this.b;for(let i=0;i<s.length;i+=2){const j=(this.w%n)*2;b[j]=s[i];b[j+1]=s[i+1];this.w++;}
+const max=sampleRate*this.k*0.12;if(this.w-this.r>max)this.r=this.w-max/2;}};}
+process(_,o){const L=o[0][0],R=o[0][1]||L,n=this.n,b=this.b;for(let i=0;i<L.length;i++){if(this.w-this.r<2){L[i]=R[i]=0;continue;}
+const f=Math.floor(this.r),t=this.r-f,a=(f%n)*2,c=((f+1)%n)*2;L[i]=(b[a]+(b[c]-b[a])*t)*this.v;R[i]=(b[a+1]+(b[c+1]-b[a+1])*t)*this.v;this.r+=this.k;}return true;}}
+registerProcessor('snes-out',O);`;
+async function audioOn(){
+ try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch{}
+ if(actx){if(actx.state!=='running')actx.resume();return;}
+ actx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
+ await actx.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET],{type:'text/javascript'})));
+ anode=new AudioWorkletNode(actx,'snes-out',{outputChannelCount:[2]});anode.connect(actx.destination);
+ anode.port.postMessage({v:S.vol/100});if(M&&game)anode.port.postMessage({k:M._s9x_rate()/actx.sampleRate});}
+function pushAudio(){const n=M._s9x_audio_frames();if(!n||!anode)return;const src=new Int16Array(H8().buffer,P.audio,n*2),f=new Float32Array(n*2);
+ for(let i=0;i<f.length;i++)f[i]=src[i]/32768;anode.port.postMessage({s:f},[f.buffer]);}
+document.addEventListener('pointerdown',()=>{if(game)audioOn();},{capture:true});
+
+/* ---------- input ---------- */
+const inp={touch:0,key:0,pad:0,walk:0,act:0,turbo:0,toggle:0};let frameNo=0,macro=null;
+const ptrs=new Map();
+function dpadMask(e){const r=$('#dpad').getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
+ if(Math.hypot(dx,dy)<r.width*0.14)return 0;const s=((Math.round(Math.atan2(dy,dx)/(Math.PI/4))%8)+8)%8;
+ return[BIT('Right'),BIT('Right')|BIT('Down'),BIT('Down'),BIT('Down')|BIT('Left'),BIT('Left'),BIT('Left')|BIT('Up'),BIT('Up'),BIT('Up')|BIT('Right')][s];}
+function btnMask(e){const el=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-b]');return el?BIT(el.dataset.b):0;}
+function refreshTouch(){let m=0;for(const p of ptrs.values())m|=p.m;inp.touch=m;
+ for(const el of $$('#ctl [data-b]'))el.classList.toggle('on',!!(m&BIT(el.dataset.b)));
+ const d={u:'Up',d:'Down',l:'Left',r:'Right'};for(const i of $$('#dpad i'))i.classList.toggle('on',!!(m&BIT(d[i.dataset.d])));}
+const ctl=$('#ctl');
+ctl.addEventListener('pointerdown',e=>{if(e.target.closest('#act'))return;const dp=!!e.target.closest('#dpad');if(!dp&&!e.target.closest('[data-b]'))return;
+ e.preventDefault();ptrs.set(e.pointerId,{dp,m:dp?dpadMask(e):btnMask(e)});refreshTouch();});
+ctl.addEventListener('pointermove',e=>{const p=ptrs.get(e.pointerId);if(!p)return;e.preventDefault();p.m=p.dp?dpadMask(e):btnMask(e);refreshTouch();});
+for(const t of['pointerup','pointercancel'])window.addEventListener(t,e=>{if(ptrs.delete(e.pointerId))refreshTouch();});
+const KEYS={ArrowUp:'Up',ArrowDown:'Down',ArrowLeft:'Left',ArrowRight:'Right',KeyX:'A',KeyZ:'B',KeyS:'X',KeyA:'Y',KeyQ:'L',KeyW:'R',Enter:'Start',ShiftLeft:'Select',ShiftRight:'Select'};
+addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select'))return;const k=KEYS[e.code];if(k){inp.key|=BIT(k);e.preventDefault();}});
+addEventListener('keyup',e=>{const k=KEYS[e.code];if(k)inp.key&=~BIT(k);});
+function pollPads(){inp.pad=0;const gp=navigator.getGamepads?.()||[];for(const g of gp){if(!g)continue;const b=i=>g.buttons[i]?.pressed;
+ const map=[[0,'B'],[1,'A'],[2,'Y'],[3,'X'],[4,'L'],[5,'R'],[8,'Select'],[9,'Start'],[12,'Up'],[13,'Down'],[14,'Left'],[15,'Right']];
+ for(const[i,n]of map)if(b(i))inp.pad|=BIT(n);const ax=g.axes[0]||0,ay=g.axes[1]||0;
+ if(ax<-.5)inp.pad|=BIT('Left');if(ax>.5)inp.pad|=BIT('Right');if(ay<-.5)inp.pad|=BIT('Up');if(ay>.5)inp.pad|=BIT('Down');}}
+function inputMask(){let m=inp.touch|inp.key|inp.pad|inp.walk|inp.act|inp.toggle;if(inp.turbo&&(frameNo>>2&1))m|=inp.turbo;
+ if(macro){const st=macro.steps[macro.i];if(st){m|=st.mask;if(--macro.left<=0){macro.i++;macro.left=macro.steps[macro.i]?.frames||0;}}else macro=null;}return m;}
+
+/* ---------- action buttons (from game data) ---------- */
+function renderActions(){const box=$('#act');box.innerHTML='';inp.act=inp.turbo=inp.toggle=0;
+ (game?.profile.actions||[]).forEach(a=>{const b=document.createElement('button');b.className='act';b.innerHTML=`<span>${esc(a.icon||'')}</span><span>${esc(a.label)}</span>`;
+  const mask=(a.press||[]).reduce((m,n)=>m|BIT(n),0);
+  b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);
+   if(a.mode==='toggle'){inp.toggle^=mask;b.classList.toggle('on',!!(inp.toggle&mask));return;}
+   if(a.mode==='macro'&&a.steps){macro={steps:a.steps.map(s=>({mask:(s.press||[]).reduce((m,n)=>m|BIT(n),0),frames:s.frames||6})),i:0};macro.left=macro.steps[0].frames;return;}
+   b.classList.add('on');if(a.mode==='turbo')inp.turbo|=mask;else inp.act|=mask;});
+  const up=()=>{if(a.mode==='toggle'||a.mode==='macro')return;b.classList.remove('on');inp.turbo&=~mask;inp.act&=~mask;};
+  b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);box.appendChild(b);});}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- main loop ---------- */
+let running=false,paused=false,ff=false,rewinding=false,acc=0,last=0,fps=60.0988;
+function loop(now){requestAnimationFrame(loop);if(!running||paused){last=now;return;}
+ acc+=Math.min(100,now-last);last=now;const ft=1000/fps;let n=0;while(acc>=ft){acc-=ft;n++;}if(n>4){n=4;acc=0;}if(!n)return;
+ pollPads();
+ if(rewinding){rewindStep();draw();return;}
+ const k=ff?n*S.ff:n;for(let i=0;i<k;i++)step(!ff);draw();}
+function step(audio){frameNo++;M._s9x_set_input(inputMask());applyFreezes();M._s9x_frame();if(audio)pushAudio();
+ walkTick();patchTick();rewindCapture();if(frameNo%120===0)sramCheck();if(frameNo%15===0)layerTick();}
+requestAnimationFrame(loop);
+
+/* ---------- games ---------- */
+let lib=[];
+async function loadLib(){lib=(await DB.get('data','lib'))||[];renderGames();}
+function renderGames(){const box=$('#gameList');box.innerHTML='';
+ if(!lib.length){box.innerHTML='<p class="note">No games yet.</p>';return;}
+ [...lib].sort((a,b)=>(b.played||0)-(a.played||0)).forEach(g=>{const d=document.createElement('div');d.className='item';
+  d.innerHTML=`<div class="grow"><strong>${esc(g.name)}</strong><small>${g.played?'Last played '+new Date(g.played).toLocaleDateString():'Not played yet'}</small></div><button class="btn main">Play</button><button class="btn warn" aria-label="Remove">✕</button>`;
+  const[play,del]=d.querySelectorAll('button');play.onclick=()=>{closeSheet();play.disabled=true;startGame(g.id).finally(()=>play.disabled=false);};
+  del.onclick=async()=>{if(!confirm(`Remove ${g.name} from this device? Its saves stay unless you clear them.`))return;await DB.del('roms',g.id);lib=lib.filter(x=>x.id!==g.id);await DB.put('data','lib',lib);renderGames();};
+  box.appendChild(d);});}
+async function unzip(buf){const dv=new DataView(buf.buffer,buf.byteOffset,buf.byteLength);let e=-1;
+ for(let i=buf.length-22;i>=Math.max(0,buf.length-65557);i--)if(dv.getUint32(i,true)===0x06054b50){e=i;break;}
+ if(e<0)throw new Error('This zip file is damaged.');let p=dv.getUint32(e+16,true);const n=dv.getUint16(e+10,true);
+ for(let k=0;k<n;k++){const method=dv.getUint16(p+10,true),size=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),lo=dv.getUint32(p+42,true);
+  const name=new TextDecoder().decode(buf.subarray(p+46,p+46+nl));p+=46+nl+dv.getUint16(p+30,true)+dv.getUint16(p+32,true);
+  if(!/\.(sfc|smc|fig|swc)$/i.test(name))continue;
+  const at=lo+30+dv.getUint16(lo+26,true)+dv.getUint16(lo+28,true),data=buf.subarray(at,at+size);
+  if(method===0)return{name,data:data.slice()};
+  if(method===8)return{name,data:new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())};}
+ throw new Error('This zip has no SNES game inside.');}
+async function addGame(){const f=$('#romFile');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return;
+ let buf=new Uint8Array(await file.arrayBuffer()),fname=file.name;
+ if(buf[0]===0x50&&buf[1]===0x4B){try{const z=await unzip(buf);buf=z.data;fname=z.name.split('/').pop();}catch(e){toast(e.message,4000);return;}}
+ if(buf.length%1024===512)buf=buf.slice(512);
+ if(buf.length<0x8000){toast('That file is too small to be an SNES game.');return;}
+ const id=hex(fnv(buf))+buf.length.toString(16);const name=fname.replace(/\.[^.]+$/,'');
+ await DB.put('roms',id,buf);if(!lib.find(g=>g.id===id)){lib.push({id,name,added:Date.now()});await DB.put('data','lib',lib);}
+ renderGames();closeSheet();startGame(id);};f.click();}
+$('#addGame').onclick=addGame;$('#emptyAdd').onclick=addGame;
+
+async function startGame(id){
+ try{await saveAuto();await loadCore();}catch(e){toast(e.message,6000);return;}
+ const rom=await DB.get('roms',id);if(!rom){toast('That game isn’t on this device anymore.');return;}
+ running=false;if(romPtr)M._free(romPtr);romPtr=M._malloc(rom.length);H8().set(rom,romPtr);
+ if(!M._s9x_load(romPtr,rom.length)){toast('This file didn’t load. Check that it’s an SNES game.');return;}
+ for(const k of['video','audio','vram','cgram','oam','wram','regs','scroll'])P[k]=M['_s9x_'+k]();
+ P.sram=M._s9x_sram();fps=M._s9x_fps();
+ const meta=lib.find(g=>g.id===id);meta.played=Date.now();DB.put('data','lib',lib);
+ game={id,name:meta.name,profile:normProfile(await DB.get('data','prof:'+id),meta.name)};
+ $('#title').textContent=game.name;$('#empty').hidden=true;
+ await restoreSram();applyCheats();renderActions();patchIndex();rewindSetup();renderAllTools();WK.player=null;WK.target=null;
+ const auto=await DB.get('data',`state:${id}:auto`);if(auto){loadStateBytes(auto.bytes);toast('Picked up where you left off');}
+ await audioOn();anode?.port.postMessage({k:M._s9x_rate()/actx.sampleRate});running=true;}
+
+/* ---------- game data (profile) ---------- */
+function normProfile(p,name){p=p||{};return{v:1,name:p.name||name,actions:p.actions||[],walk:Object.assign({layer:0,diagonal:true},p.walk),
+ watches:p.watches||[],cheats:p.cheats||[],tiles:p.tiles||{},notes:p.notes||''};}
+const saveProfile=()=>game&&DB.put('data','prof:'+game.id,game.profile);
+
+/* ---------- saves ---------- */
+function stateBytes(){const n=M._s9x_state_size(),p=M._malloc(n);M._s9x_state_save(p,n);const b=H8().slice(p,p+n);M._free(p);return b;}
+function loadStateBytes(b){const p=M._malloc(b.length);H8().set(b,p);const ok=M._s9x_state_load(p,b.length);M._free(p);PT.full=true;PT.patched.clear();return ok;}
+function thumb(){const c=document.createElement('canvas');c.width=128;c.height=Math.round(128/(cv.width/cv.height));c.getContext('2d').drawImage(cv,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.7);}
+async function saveSlot(slot){if(!game)return;await DB.put('data',`state:${game.id}:${slot}`,{bytes:stateBytes(),img:thumb(),t:Date.now()});}
+async function loadSlot(slot){if(!game)return false;const s=await DB.get('data',`state:${game.id}:${slot}`);if(!s)return false;loadStateBytes(s.bytes);rw.buf=[];return true;}
+async function saveAuto(){if(!game||!running)return;await sramCheck(true);await saveSlot('auto');}
+let sramSig=0;
+async function restoreSram(){const n=M._s9x_sram_size();sramSig=0;if(!n)return;const s=await DB.get('data','sram:'+game.id);if(s&&s.length===n){H8().set(s,P.sram);sramSig=fnv(s);}}
+async function sramCheck(){const n=M._s9x_sram_size();if(!n||!game)return;const a=H8().subarray(P.sram,P.sram+n),h=fnv(a);if(h!==sramSig){sramSig=h;await DB.put('data','sram:'+game.id,a.slice());}}
+$('#qsBtn').onclick=async()=>{if(!game)return;await saveSlot('quick');toast('Quick save stored');};
+$('#qlBtn').onclick=async()=>{if(await loadSlot('quick'))toast('Quick save loaded');else toast('No quick save yet. Tap 💾 to make one.');};
+async function renderSlots(){const box=$('#slotList');box.innerHTML='';if(!game){box.innerHTML='<p class="note">Start a game to see its saves.</p>';return;}
+ for(const slot of['quick','auto',1,2,3,4]){const s=await DB.get('data',`state:${game.id}:${slot}`);const d=document.createElement('div');d.className='item';
+  const name=slot==='quick'?'Quick save':slot==='auto'?'Last session':'Slot '+slot;
+  d.innerHTML=`${s?`<img src="${s.img}" width="64">`:'<canvas width="64" height="56"></canvas>'}<div class="grow"><strong>${name}</strong><small>${s?new Date(s.t).toLocaleString():'Empty'}</small></div>${typeof slot==='number'?'<button class="btn">Save</button>':''}<button class="btn main" ${s?'':'disabled'}>Load</button>`;
+  const bs=d.querySelectorAll('button');if(typeof slot==='number')bs[0].onclick=async()=>{await saveSlot(slot);toast(name+' saved');renderSlots();};
+  bs[bs.length-1].onclick=async()=>{await loadSlot(slot);closeSheet();toast(name+' loaded');};box.appendChild(d);}}
+$('#resetGame').onclick=()=>{if(game&&confirm('Restart the game? Unsaved progress since your last in-game save is lost.')){M._s9x_reset();PT.full=true;closeSheet();}};
+$('#shot').onclick=()=>cv.toBlob(async b=>{const f=new File([b],(game?.name||'snes')+'.png',{type:'image/png'});
+ if(navigator.canShare?.({files:[f]}))navigator.share({files:[f]}).catch(()=>{});else window.open(URL.createObjectURL(b));});
+$('#backupOut').onclick=async()=>{const keys=await DB.keys('data'),out={app:'harvest-touch',v:1,items:{}};
+ for(const k of keys){if(k.startsWith('state:'))continue;const v=await DB.get('data',k);out.items[k]=v instanceof Uint8Array?{u8:b64(v)}:v;}
+ download('harvest-touch-backup.json',JSON.stringify(out));};
+$('#backupIn').onclick=async()=>{const j=await pickJSON();if(!j||j.app!=='harvest-touch'){if(j)toast('That isn’t a Harvest Touch backup.');return;}
+ for(const[k,v]of Object.entries(j.items)){if(k==='lib'){const ids=new Set(lib.map(g=>g.id));for(const g of v)if(!ids.has(g.id))lib.push(g);await DB.put('data','lib',lib);continue;}
+  await DB.put('data',k,v&&v.u8?unb64(v.u8):v);}toast('Backup imported. Add any missing games to play them.');renderGames();};
+
+/* ---------- rewind / fast-forward ---------- */
+const rw={buf:[],max:0,size:0,tick:0,pace:0,ptr:0};
+function rewindSetup(){rw.buf=[];rw.size=M._s9x_state_size();if(rw.ptr)M._free(rw.ptr);rw.ptr=M._malloc(rw.size);
+ rw.max=S.rw?Math.min(S.rwSec*10,Math.floor(48e6/rw.size)):0;}
+function rewindCapture(){if(!rw.max||++rw.tick<6)return;rw.tick=0;M._s9x_state_save(rw.ptr,rw.size);
+ const b=rw.buf.length>=rw.max?rw.buf.shift():new Uint8Array(rw.size);b.set(H8().subarray(rw.ptr,rw.ptr+rw.size));rw.buf.push(b);}
+function rewindStep(){if(++rw.pace%2)return;const b=rw.buf.pop();if(!b){toast('That’s as far back as rewind goes');rewinding=false;$('#rwBtn').classList.remove('on');return;}
+ H8().set(b,rw.ptr);M._s9x_state_load(rw.ptr,rw.size);PT.full=true;M._s9x_set_input(0);M._s9x_frame();}
+const rwb=$('#rwBtn');
+rwb.addEventListener('pointerdown',e=>{e.preventDefault();if(!game)return;if(!rw.max){toast('Rewind is off. Turn it on in Settings.');return;}rewinding=true;rwb.classList.add('on');});
+for(const t of['pointerup','pointercancel','pointerleave'])rwb.addEventListener(t,()=>{rewinding=false;rwb.classList.remove('on');});
+$('#ffBtn').onclick=()=>{ff=!ff;$('#ffBtn').classList.toggle('on',ff);$('#ffbadge').hidden=!ff;};
+
+/* ---------- SNES video hardware decoding ---------- */
+const BPP=[[2,2,2,2],[4,4,2,0],[4,4,0,0],[8,4,0,0],[8,2,0,0],[4,2,0,0],[4,0,0,0],[0,0,0,0]];
+const OBJSZ=[[8,8,16,16],[8,8,32,32],[8,8,64,64],[16,16,32,32],[16,16,64,64],[32,32,64,64],[16,32,32,64],[16,32,32,32]];
+function bgInfo(s,bg){const R=s.R,mode=R[5]&7,nb=bg<2?(R[0x0B]>>(bg*4))&15:(R[0x0C]>>((bg-2)*4))&15;
+ return{bg,mode,bpp:BPP[mode][bg],big:(R[5]>>(4+bg))&1,sc:(R[7+bg]&0xFC)<<8,size:R[7+bg]&3,nb:nb<<12,h:s.S[bg*2]&0x3FF,v:s.S[bg*2+1]&0x3FF,
+  on:((R[0x2C]|R[0x2D])>>bg)&1};}
+function bgEntry(s,b,sx,sy){const ts=b.big?16:8,mw=b.size&1?64:32,mh=b.size&2?64:32;
+ const x=(sx+b.h)&(mw*ts-1),y=(sy+b.v)&(mh*ts-1),tx=x/ts|0,ty=y/ts|0;
+ const si=(tx>=32?1:0)+(ty>=32?(b.size===3?2:1):0),a=(b.sc+si*0x400+(ty&31)*32+(tx&31))&0x7FFF,e=s.V[a*2]|s.V[a*2+1]<<8;
+ let px=x%ts,py=y%ts;const hf=e>>14&1,vf=e>>15&1;if(hf)px=ts-1-px;if(vf)py=ts-1-py;
+ let t=e&0x3FF;if(ts===16){t=(t+(px>>3)+(py>>3)*16)&0x3FF;px&=7;py&=7;}
+ return{e,base:e&0x3FF,wa:(b.nb+t*b.bpp*4)&0x7FFF,px,py,pal:e>>10&7,prio:e>>13&1,tx,ty,x,y};}
+const tileWA=(b,t)=>(b.nb+(t&0x3FF)*b.bpp*4)&0x7FFF;
+function pix(V,wa,bpp,px,py){const base=wa*2+py*2,sh=7-px;let c=0;
+ for(let p=0;p<bpp;p+=2){c|=(V[base+p*8]>>sh&1)<<p;c|=(V[base+p*8+1]>>sh&1)<<(p+1);}return c;}
+function cgBase(kind,b,pal){if(kind==='obj')return 128+pal*16;if(b.bpp===8)return 0;if(b.mode===0)return b.bg*32+pal*4;return b.bpp===2?pal*4:pal*16;}
+function sprites(s){const R=s.R,O=s.O,ob=R[1],sz=OBJSZ[ob>>5],base=(ob&7)<<13,off=(((ob>>3)&3)+1)<<12,out=[];
+ for(let i=0;i<128;i++){const hi=O[512+(i>>2)]>>((i&3)*2);let x=O[i*4]|(hi&1)<<8;if(x>=256)x-=512;const big=hi>>1&1,w=sz[big*2],h=sz[big*2+1];
+  let y=O[i*4+1]+1;if(y>=240)y-=256;if(x+w<=0||x>=256||y+h<=0||y>=240)continue;const a=O[i*4+3];
+  out.push({i,x,y,w,h,c:O[i*4+2],n:a&1,pal:a>>1&7,prio:a>>4&3,hf:a>>6&1,vf:a>>7&1,base,off});}return out;}
+const objWA=(sp,cx,cy)=>(sp.base+(sp.n?sp.off:0)+((((sp.c>>4)+cy)&15)*16+(((sp.c&15)+cx)&15))*16)&0x7FFF;
+function objPix(s,sp,px,py){if(sp.hf)px=sp.w-1-px;if(sp.vf)py=sp.h-1-py;return pix(s.V,objWA(sp,px>>3,py>>3),4,px&7,py&7);}
+const rgb=c=>[(c&31)<<3|(c&31)>>2,(c>>5&31)<<3|(c>>5&31)>>2,(c>>10&31)<<3|(c>>10&31)>>2];
+const rgba32=c=>{const[r,g,b]=rgb(c);return 0xff000000|b<<16|g<<8|r;};
+const toSnes=e=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*logical.w,y:(e.clientY-r.top)/r.height*logical.h};};
+const toCss=(x,y)=>{const r=cv.getBoundingClientRect(),w=$('#wrap').getBoundingClientRect();return{left:r.left-w.left+x/logical.w*r.width,top:r.top-w.top+y/logical.h*r.height,sx:r.width/logical.w,sy:r.height/logical.h};};
+
+/* ---------- tile replacement (native: written into VRAM, so priorities and effects stay correct) ---------- */
+const PT={vmap:new Map(),map:new Map(),bpps:[],patched:new Map(),shadow:new Uint8Array(65536),dirty:new Uint8Array(4096),full:true,on:true,ptr:0};
+const tileKey=(bpp,bytes)=>bpp+':'+hex(fnv(bytes));
+function patchIndex(){PT.map.clear();PT.vmap.clear();const bp=new Set();
+ for(const[k,e]of Object.entries(game.profile.tiles)){if(!e.variants?.length||e.off)continue;
+  const en={key:k,bpp:e.bpp,rule:e.rule||{type:'first'},dec:e.variants.map(v=>unb64(v.data)),orig:unb64(e.orig),cur:-1};
+  PT.map.set(k,en);for(const d of en.dec)PT.vmap.set(tileKey(e.bpp,d),en);bp.add(e.bpp);}
+ PT.bpps=[...bp];PT.full=true;}
+function variantOf(e){const n=e.dec.length,r=e.rule;if(n<2)return 0;
+ if(r.type==='cycle')return Math.floor(frameNo/Math.max(1,r.frames||30))%n;
+ if(r.type==='random')return e.rnd??=(Math.random()*n|0);
+ if(r.type==='memory'){const v=readRam(parseAddr(r.addr),1);const m=r.map?.[v];return m===undefined?0:Math.min(n-1,m|0);}
+ return Math.min(n-1,r.index|0);}
+function writeTile(wa,bytes){if(!PT.ptr)PT.ptr=M._malloc(128);H8().set(bytes,PT.ptr);M._s9x_vram_write(wa,PT.ptr,bytes.length>>1);}
+function patchTick(){
+ if(!PT.on||!PT.map.size)return;
+ for(const e of PT.map.values()){const v=variantOf(e);if(v!==e.cur){const had=e.cur!==-1;e.cur=v;
+  if(had)for(const p of PT.patched.values())if(p.key===e.key)writeTile(p.wa,e.dec[v]);}}
+ const V=H8().subarray(P.vram,P.vram+65536),sh=PT.shadow,dt=PT.dirty;let any=PT.full;
+ for(let b=0;b<4096;b++){let d=PT.full?1:0;if(!d){const o=b*16;for(let j=0;j<16;j++)if(V[o+j]!==sh[o+j]){d=1;break;}}dt[b]=d;if(d)any=true;}
+ if(!any)return;
+ for(const bpp of PT.bpps){const span=bpp/2,len=bpp*8;
+  for(let s=0;s<4096/span;s++){let d=0;for(let j=0;j<span;j++)if(dt[s*span+j]){d=1;break;}if(!d)continue;
+   const off=s*len,id=bpp*65536+off,h=bpp+':'+hex(fnv(V,off,len)),e=PT.map.get(h)||PT.vmap.get(h);
+   if(e){const want=e.dec[Math.max(0,e.cur)];let same=true;for(let j=0;j<len;j++)if(V[off+j]!==want[j]){same=false;break;}
+    if(!same)writeTile(off>>1,want);PT.patched.set(id,{key:e.key,wa:off>>1,bpp});}
+   else PT.patched.delete(id);}}
+ PT.shadow.set(H8().subarray(P.vram,P.vram+65536));PT.full=false;}
+function patchesOff(){for(const p of PT.patched.values()){const e=PT.map.get(p.key);if(e)writeTile(p.wa,e.orig);}PT.patched.clear();}
+$('#patchOn').onchange=e=>{PT.on=e.target.checked;if(!M||!game)return;if(PT.on)PT.full=true;else patchesOff();};
+
+/* ---------- tap to walk ---------- */
+const WK={on:false,player:null,target:null,hold:false,lost:0,still:0,lastW:null,slide:0,ptr:null,timer:0};
+const wrap10=d=>((d%1024)+1536)%1024-512;
+function camera(s){const L=game.profile.walk.layer|0;return{h:s.S[L*2]&0x3FF,v:s.S[L*2+1]&0x3FF};}
+function lockOn(pt){const s=snap();for(const sp of sprites(s)){const lx=Math.floor(pt.x-sp.x),ly=Math.floor(pt.y-sp.y);
+  if(lx>=-4&&ly>=-4&&lx<sp.w+4&&ly<sp.h+4&&(lx<0||ly<0||lx>=sp.w||ly>=sp.h||objPix(s,sp,lx,ly))){WK.player={pal:sp.pal,x:sp.x+sp.w/2,y:sp.y+sp.h/2};WK.lost=0;return true;}}return false;}
+function track(s){const p=WK.player;if(!p)return null;let x=0,y=0,n=0;
+ for(const sp of sprites(s)){if(sp.pal!==p.pal)continue;const cx=sp.x+sp.w/2,cy=sp.y+sp.h/2;if(Math.hypot(cx-p.x,cy-p.y)<34){x+=cx;y+=cy;n++;}}
+ if(!n){if(++WK.lost>45){WK.player=null;WK.target=null;toast('Lost your character. Tap them to lock on again.');}return null;}
+ WK.lost=0;p.x=x/n;p.y=y/n;return p;}
+function walkTick(){inp.walk=0;if(!WK.on||!game)return;const s=snap(),p=track(s);if(!WK.target)return;
+ const me=p||(WK.player?null:{x:128,y:112});if(!me)return;const c=camera(s);
+ const dx=wrap10(WK.target.wx-c.h-me.x),dy=wrap10(WK.target.wy-c.v-me.y);
+ if(Math.abs(dx)<4&&Math.abs(dy)<4){if(!WK.hold)WK.target=null;return;}
+ const w={x:me.x+c.h,y:me.y+c.v};
+ if(WK.lastW&&Math.hypot(wrap10(w.x-WK.lastW.x),wrap10(w.y-WK.lastW.y))<0.5)WK.still++;else{WK.still=0;WK.slide=0;}WK.lastW=w;
+ if(WK.player&&WK.still>90){WK.target=null;WK.still=0;toast('Something’s in the way. Tap a spot past it.');return;}
+ let h=Math.abs(dx)>3?(dx>0?'Right':'Left'):null,v=Math.abs(dy)>3?(dy>0?'Down':'Up'):null;
+ if(WK.player&&WK.still>20&&h&&v){WK.slide++;if((WK.slide>>4)&1)h=null;else v=null;}
+ else if(!game.profile.walk.diagonal&&h&&v){if(Math.abs(dx)>Math.abs(dy))v=null;else h=null;}
+ inp.walk=(h?BIT(h):0)|(v?BIT(v):0);}
+function setTarget(pt){const c=camera(snap());WK.target={wx:pt.x+c.h,wy:pt.y+c.v};WK.still=0;WK.lastW=null;}
+$('#walkBtn').onclick=()=>{WK.on=!WK.on;$('#walkBtn').classList.toggle('on',WK.on);WK.target=null;inp.walk=0;
+ if(WK.on)toast(WK.player?'Tap to walk there, or hold to steer':'Tap your character to lock on, then tap where to go');};
+const wrapEl=$('#wrap');
+wrapEl.addEventListener('pointerdown',e=>{if(!game)return;
+ if(pickMode){e.preventDefault();showPick(toSnes(e));return;}
+ if(!WK.on)return;e.preventDefault();const pt=toSnes(e);WK.ptr=e.pointerId;try{wrapEl.setPointerCapture(e.pointerId);}catch{}
+ if(!WK.player&&lockOn(pt)){toast('Locked on. Tap anywhere to walk there.');WK.ptr=null;return;}
+ setTarget(pt);WK.hold=false;clearTimeout(WK.timer);WK.timer=setTimeout(()=>WK.hold=true,220);});
+wrapEl.addEventListener('pointermove',e=>{if(WK.ptr===e.pointerId&&WK.hold)setTarget(toSnes(e));});
+for(const t of['pointerup','pointercancel'])wrapEl.addEventListener(t,e=>{if(WK.ptr!==e.pointerId)return;clearTimeout(WK.timer);WK.ptr=null;
+ if(WK.hold||!WK.player){WK.target=null;inp.walk=0;}WK.hold=false;});
+
+/* ---------- memory tools ---------- */
+function parseAddr(a){const s=String(a).replace(/[^0-9a-f]/gi,'');const n=parseInt(s,16)||0;return s.length>=6?((n>>16)&1)<<16|(n&0xFFFF):n&0x1FFFF;}
+const fmtAddr=a=>(a>=0x10000?'7F':'7E')+':'+(a&0xFFFF).toString(16).toUpperCase().padStart(4,'0');
+function readRam(a,size,W){W=W||H8().subarray(P.wram,P.wram+0x20000);return size===2?W[a]|W[(a+1)&0x1FFFF]<<8:W[a];}
+function applyFreezes(){for(const w of game.profile.watches){if(w.freeze==null)continue;const a=parseAddr(w.addr),h=H8();
+ h[P.wram+a]=w.freeze&255;if(w.size===2)h[P.wram+((a+1)&0x1FFFF)]=w.freeze>>8&255;}}
+const RS={size:1,prev:null,cands:null};
+$('#rsStart').onclick=()=>{if(!game)return;RS.size=+$('#rsSize').value;RS.prev=H8().slice(P.wram,P.wram+0x20000);
+ RS.cands=new Int32Array(0x20000/RS.size).map((_,i)=>i*RS.size);renderRS();};
+for(const b of $$('[data-rs]'))b.onclick=()=>{if(!RS.cands){toast('Start a new search first');return;}
+ const cur=H8().slice(P.wram,P.wram+0x20000),op=b.dataset.rs,val=+$('#rsVal').value,keep=[];
+ for(const a of RS.cands){const n=readRam(a,RS.size,cur),o=readRam(a,RS.size,RS.prev);
+  if(op==='changed'?n!==o:op==='same'?n===o:op==='up'?n>o:op==='down'?n<o:n===val)keep.push(a);}
+ RS.cands=Int32Array.from(keep);RS.prev=cur;renderRS();};
+function renderRS(){$('#rsCount').textContent=RS.cands?`${RS.cands.length.toLocaleString()} left`:'';const box=$('#rsList');box.innerHTML='';
+ if(!RS.cands||RS.cands.length>40)return;for(const a of RS.cands){const d=document.createElement('div');d.className='item';
+  d.innerHTML=`<div class="grow"><strong>${fmtAddr(a)}</strong><small>Now ${readRam(a,RS.size)}</small></div><button class="btn">Watch</button>`;
+  d.querySelector('button').onclick=()=>{const label=prompt('Name this value, like Stamina or Money','');if(label===null)return;
+   game.profile.watches.push({label:label||fmtAddr(a),addr:fmtAddr(a),size:RS.size,freeze:null});saveProfile();renderWatches();};box.appendChild(d);}}
+function renderWatches(){const box=$('#watchList');box.innerHTML='';if(!game)return;
+ if(!game.profile.watches.length){box.innerHTML='<p class="note">No watches yet. Find an address above, then tap Watch.</p>';return;}
+ game.profile.watches.forEach((w,i)=>{const d=document.createElement('div');d.className='item';
+  d.innerHTML=`<div class="grow"><strong>${esc(w.label)}</strong><small>${w.addr}${w.freeze!=null?', locked at '+w.freeze:''}</small></div><button class="btn">${w.freeze!=null?'Unlock':'Lock value'}</button><button class="btn warn" aria-label="Remove">✕</button>`;
+  const[f,x]=d.querySelectorAll('button');
+  f.onclick=()=>{if(w.freeze!=null)w.freeze=null;else{const v=prompt('Lock at which value?',readRam(parseAddr(w.addr),w.size||1));if(v===null)return;w.freeze=+v|0;}saveProfile();renderWatches();};
+  x.onclick=()=>{game.profile.watches.splice(i,1);saveProfile();renderWatches();};box.appendChild(d);});}
+function hudTick(){if(frameNo%10)return;const hud=$('#hud');
+ const html=S.watch&&game?game.profile.watches.map(w=>`<span class="chip">${esc(w.label)}: ${readRam(parseAddr(w.addr),w.size||1)}</span>`).join(''):'';
+ if(hud.innerHTML!==html)hud.innerHTML=html;
+ const m=$('#marker');if(WK.on&&WK.target&&game){const c=camera(snap()),x=wrap10(WK.target.wx-c.h),y=wrap10(WK.target.wy-c.v),p=toCss(x,y);
+  m.hidden=false;m.style.left=p.left+'px';m.style.top=p.top+'px';}else m.hidden=true;}
+
+/* ---------- cheats ---------- */
+function applyCheats(){M._s9x_cheat_reset();game.profile.cheats.forEach((c,i)=>{if(!c.on)return;const b=new TextEncoder().encode(c.code+'\0'),p=M._malloc(b.length);
+ H8().set(b,p);M._s9x_cheat_set(i,1,p);M._free(p);});}
+$('#cheatAdd').onclick=()=>{if(!game)return;const code=$('#cheatCode').value.trim();if(!code)return;
+ game.profile.cheats.push({code,label:$('#cheatName').value.trim()||code,on:true});$('#cheatCode').value=$('#cheatName').value='';saveProfile();applyCheats();renderCheats();};
+function renderCheats(){const box=$('#cheatList');box.innerHTML='';if(!game)return;game.profile.cheats.forEach((c,i)=>{const d=document.createElement('div');d.className='item';
+ d.innerHTML=`<label class="ck grow"><input type="checkbox" ${c.on?'checked':''}> <span><strong>${esc(c.label)}</strong><small>${esc(c.code)}</small></span></label><button class="btn warn" aria-label="Remove">✕</button>`;
+ d.querySelector('input').onchange=e=>{c.on=e.target.checked;saveProfile();applyCheats();};
+ d.querySelector('button').onclick=()=>{game.profile.cheats.splice(i,1);saveProfile();applyCheats();renderCheats();};box.appendChild(d);});}
+
+/* ---------- layer viewer ---------- */
+const LAYERS=['BG1','BG2','BG3','BG4','Sprites'];let layerMask=31;
+$('#layerToggles').innerHTML=LAYERS.map((n,i)=>`<label class="ck"><input type="checkbox" data-l="${i}" checked> ${n}</label>`).join('');
+for(const c of $$('[data-l]'))c.onchange=()=>{layerMask=$$('[data-l]').reduce((m,c)=>m|(c.checked?1<<c.dataset.l:0),0);layerTick(true);};
+function layerTick(force){if(!game||(!force&&(!$('#layerTool').open||$('#sheet').hidden)))return;
+ const s=snap(),lc=$('#layerCv'),g=lc.getContext('2d'),im=g.createImageData(256,224),d=new Uint32Array(im.data.buffer),lut=new Uint32Array(256);
+ for(let i=0;i<256;i++)lut[i]=rgba32(s.C[i]);d.fill(0xff1e1c24);const mode=s.R[5]&7,info=[`Mode ${mode}`];
+ if(mode!==7)for(let bg=3;bg>=0;bg--){const b=bgInfo(s,bg);if(!b.bpp)continue;info.push(`BG${bg+1} ${b.bpp}-bit${b.on?'':' (hidden)'}`);if(!(layerMask>>bg&1))continue;
+  drawBG(s,b,d,lut);}
+ else info.push('Mode 7 backgrounds aren’t shown');
+ if(layerMask>>4&1){const sps=sprites(s);info.push(`${sps.length} sprites`);for(let k=sps.length-1;k>=0;k--){const sp=sps[k];
+  for(let y=0;y<sp.h;y++)for(let x=0;x<sp.w;x++){const X=sp.x+x,Y=sp.y+y;if(X<0||X>=256||Y<0||Y>=224)continue;const c=objPix(s,sp,x,y);if(c)d[Y*256+X]=lut[128+sp.pal*16+c];}}}
+ g.putImageData(im,0,0);$('#layerInfo').textContent=info.join(', ');}
+
+function drawBG(s,b,d,lut){const ts=b.big?16:8,mw=b.size&1?64:32,mh=b.size&2?64:32,V=s.V;
+ for(let sy=0;sy<224;sy++){const y=(sy+b.v)&(mh*ts-1),ty=y/ts|0;let lt=-1,e=0,cg=0;
+  for(let sx=0;sx<256;sx++){const x=(sx+b.h)&(mw*ts-1),tx=x/ts|0;
+   if(tx!==lt){lt=tx;const si=(tx>=32?1:0)+(ty>=32?(b.size===3?2:1):0),a=(b.sc+si*0x400+(ty&31)*32+(tx&31))&0x7FFF;e=V[a*2]|V[a*2+1]<<8;cg=cgBase('bg',b,e>>10&7);}
+   let px=x%ts,py=y%ts;if(e>>14&1)px=ts-1-px;if(e>>15&1)py=ts-1-py;let t=e&0x3FF;if(ts===16){t=(t+(px>>3)+(py>>3)*16)&0x3FF;px&=7;py&=7;}
+   const c=pix(V,(b.nb+t*b.bpp*4)&0x7FFF,b.bpp,px,py);if(c)d[sy*256+sx]=lut[cg+c];}}}
+
+/* ---------- picking ---------- */
+let pickMode=false;
+$('#pickBtn').onclick=()=>{if(!game){toast('Start a game first');return;}closeSheet();pickMode=true;paused=true;$('#pickp').hidden=false;$('#pickHead').textContent='Tap anything on screen';$('#pickList').innerHTML='';};
+$('#pickDone').onclick=()=>{pickMode=false;paused=false;$('#pickp').hidden=true;$('#pickbox').hidden=true;};
+function readTile(V,wa,bpp){return V.slice(wa*2,wa*2+bpp*8);}
+function pickAt(pt){const s=snap(),x=Math.floor(pt.x),y=Math.floor(pt.y),out=[],mode=s.R[5]&7;
+ for(const sp of sprites(s)){if(x<sp.x||y<sp.y||x>=sp.x+sp.w||y>=sp.y+sp.h)continue;if(!objPix(s,sp,x-sp.x,y-sp.y))continue;
+  const tiles=[];for(let ty=0;ty<sp.h/8;ty++){const r=[];for(let tx=0;tx<sp.w/8;tx++)r.push(objWA(sp,tx,ty));tiles.push(r);}
+  out.push({label:`Sprite ${sp.i}, ${sp.w}×${sp.h}`,bpp:4,cg:128+sp.pal*16,tiles,box:{x:sp.x,y:sp.y,w:sp.w,h:sp.h}});}
+ if(mode!==7)for(let bg=0;bg<4;bg++){const b=bgInfo(s,bg);if(!b.bpp||!b.on)continue;const t=bgEntry(s,b,x,y);if(!pix(s.V,t.wa,b.bpp,t.px,t.py))continue;
+  const ts=b.big?16:8,tiles=b.big?[[tileWA(b,t.base),tileWA(b,t.base+1)],[tileWA(b,t.base+16),tileWA(b,t.base+17)]]:[[tileWA(b,t.base)]];
+  out.push({label:`BG${bg+1} tile, ${b.bpp}-bit`,bpp:b.bpp,cg:cgBase('bg',b,t.pal),tiles,box:{x:x-(t.x%ts),y:y-(t.y%ts),w:ts,h:ts}});}
+ return out;}
+function paletteFor(s,cg,bpp){const n=1<<bpp,out=[];for(let i=0;i<n;i++)out.push(s.C[(cg+i)&255]);return out;}
+function showPick(pt){const s=snap(),cands=pickAt(pt),box=$('#pickList');box.innerHTML='';$('#pickHead').textContent=cands.length?'What do you want to edit?':'Nothing there. Try another spot.';
+ cands.forEach((c,i)=>{const pal=paletteFor(s,c.cg,c.bpp),cur=c.tiles.map(r=>r.map(wa=>tileState(s,wa,c.bpp)));
+  const d=document.createElement('div');d.className='item';const th=tileCanvas(cur,c.bpp,pal,4);d.appendChild(th);
+  const t=document.createElement('div');t.className='grow';t.innerHTML=`<strong>${c.label}</strong><small>${cur.flat().some(x=>x.vi>=0)?'Has your edits':'Original'}</small>`;d.appendChild(t);
+  const b=document.createElement('button');b.className='btn main';b.textContent='Edit';b.onclick=()=>openEditor({title:c.label,bpp:c.bpp,pal,tiles:cur});d.appendChild(b);
+  if(i===0)showBox(c.box);d.onpointerdown=()=>showBox(c.box);box.appendChild(d);});}
+function showBox(b){const p=toCss(b.x,b.y),el=$('#pickbox');el.hidden=false;el.style.left=p.left+'px';el.style.top=p.top+'px';el.style.width=b.w*p.sx+'px';el.style.height=b.h*p.sy+'px';}
+// What a VRAM tile is right now, and which original it stands for if it's one of our edits.
+function tileState(s,wa,bpp){const now=readTile(s.V,wa,bpp),p=PT.patched.get(bpp*65536+wa*2);
+ if(p&&PT.map.has(p.key)){const e=PT.map.get(p.key);return{key:p.key,orig:e.orig,cur:now,vi:Math.max(0,e.cur)};}
+ return{key:tileKey(bpp,now),orig:now,cur:now,vi:-1};}
+function tileCanvas(grid,bpp,pal,scale){const H=grid.length*8,W=grid[0].length*8,c=document.createElement('canvas');c.width=W;c.height=H;
+ c.style.width=W*scale+'px';c.style.height=H*scale+'px';const g=c.getContext('2d'),im=g.createImageData(W,H),d=new Uint32Array(im.data.buffer);
+ grid.forEach((r,ty)=>r.forEach((t,tx)=>{for(let y=0;y<8;y++)for(let x=0;x<8;x++){const v=pix(t.cur,0,bpp,x,y);if(v)d[(ty*8+y)*W+tx*8+x]=rgba32(pal[v]);}}));
+ g.putImageData(im,0,0);return c;}
+
+/* ---------- tile editor ---------- */
+const ED={};
+function decodeGrid(grid,bpp){const H=grid.length*8,W=grid[0].length*8,a=new Uint8Array(W*H);
+ grid.forEach((r,ty)=>r.forEach((t,tx)=>{for(let y=0;y<8;y++)for(let x=0;x<8;x++)a[(ty*8+y)*W+tx*8+x]=pix(t.cur,0,bpp,x,y);}));return{W,H,a};}
+function encodeTile(a,W,ox,oy,bpp){const out=new Uint8Array(bpp*8);for(let y=0;y<8;y++)for(let x=0;x<8;x++){const c=a[(oy+y)*W+ox+x];
+ for(let p=0;p<bpp;p+=2){const base=p*8+y*2;if(c>>p&1)out[base]|=0x80>>x;if(c>>(p+1)&1)out[base+1]|=0x80>>x;}}return out;}
+function openEditor(o){Object.assign(ED,o,decodeGrid(o.tiles,o.bpp),{undo:[],tool:'pen',color:1});
+ $('#edTitle').textContent=o.title;$('#editor').hidden=false;
+ const z=Math.max(4,Math.min(40,Math.floor(Math.min(innerWidth-40,420)/ED.W),Math.floor(innerHeight*0.42/ED.H)));ED.z=z;
+ const g=$('#edgrid');g.width=ED.W*z;g.height=ED.H*z;
+ const pal=$('#edpal');pal.innerHTML='';ED.pal.forEach((c,i)=>{const b=document.createElement('button');b.setAttribute('aria-label','Color '+i);
+  if(i===0){b.className='checker';b.title='Transparent';}else b.style.background=`rgb(${rgb(c).join()})`;b.onclick=()=>{ED.color=i;if(ED.tool==='erase'||ED.tool==='pick')setTool('pen');paintPal();};pal.appendChild(b);});
+ const blank=o.tiles.flat().filter(t=>t.orig.every(v=>!v)).length;
+ $('#edNote').textContent=(blank?'Empty parts can’t be drawn on, because empty tiles are shared by the whole screen. ':'')+
+  (o.bpp===2?'This tile has 3 colors plus transparent.':o.bpp===4?'Sprites and most backgrounds have 15 colors plus transparent.':'This tile can use 255 colors.');
+ $('#edVar').hidden=$('#edRevert').hidden=!o.tiles.flat().some(t=>game.profile.tiles[t.key]);
+ setTool('pen');paintPal();edDraw();}
+function setTool(t){ED.tool=t;for(const b of $$('.tool'))b.classList.toggle('on',b.dataset.t===t);}
+for(const b of $$('.tool'))b.onclick=()=>setTool(b.dataset.t);
+function paintPal(){[...$('#edpal').children].forEach((b,i)=>b.classList.toggle('on',i===ED.color));}
+function edDraw(){const g=$('#edgrid').getContext('2d'),z=ED.z;g.clearRect(0,0,ED.W*z,ED.H*z);
+ for(let y=0;y<ED.H;y++)for(let x=0;x<ED.W;x++){const c=ED.a[y*ED.W+x];if(!c)continue;g.fillStyle=`rgb(${rgb(ED.pal[c]).join()})`;g.fillRect(x*z,y*z,z,z);}
+ g.strokeStyle='#0002';g.lineWidth=1;g.beginPath();for(let x=0;x<=ED.W;x++){g.moveTo(x*z+.5,0);g.lineTo(x*z+.5,ED.H*z);}for(let y=0;y<=ED.H;y++){g.moveTo(0,y*z+.5);g.lineTo(ED.W*z,y*z+.5);}g.stroke();
+ g.strokeStyle='#0006';g.beginPath();for(let x=0;x<=ED.W;x+=8){g.moveTo(x*z+.5,0);g.lineTo(x*z+.5,ED.H*z);}for(let y=0;y<=ED.H;y+=8){g.moveTo(0,y*z+.5);g.lineTo(ED.W*z,y*z+.5);}g.stroke();
+ const pv=$('#edprev'),rep=ED.title.startsWith('BG')?3:1;pv.width=ED.W*rep;pv.height=ED.H*rep;pv.style.width=ED.W*rep*2+'px';pv.style.height=ED.H*rep*2+'px';
+ const pg=pv.getContext('2d'),im=pg.createImageData(ED.W,ED.H),d=new Uint32Array(im.data.buffer);for(let i=0;i<ED.a.length;i++)if(ED.a[i])d[i]=rgba32(ED.pal[ED.a[i]]);
+ pg.clearRect(0,0,pv.width,pv.height);for(let ry=0;ry<rep;ry++)for(let rx=0;rx<rep;rx++)pg.putImageData(im,rx*ED.W,ry*ED.H);}
+function lockedAt(x,y){const t=ED.tiles[y>>3]?.[x>>3];return!t||t.orig.every(v=>!v);}
+function edPaint(e){const r=$('#edgrid').getBoundingClientRect(),x=Math.floor((e.clientX-r.left)/r.width*ED.W),y=Math.floor((e.clientY-r.top)/r.height*ED.H);
+ if(x<0||y<0||x>=ED.W||y>=ED.H)return;const i=y*ED.W+x;
+ if(ED.tool==='pick'){ED.color=ED.a[i];paintPal();setTool('pen');return;}
+ if(lockedAt(x,y))return;
+ if(ED.tool==='fill'){const from=ED.a[i],to=ED.color;if(from===to)return;const st=[[x,y]];while(st.length){const[px,py]=st.pop();if(px<0||py<0||px>=ED.W||py>=ED.H)continue;
+  const k=py*ED.W+px;if(ED.a[k]!==from||lockedAt(px,py))continue;ED.a[k]=to;st.push([px+1,py],[px-1,py],[px,py+1],[px,py-1]);}}
+ else ED.a[i]=ED.tool==='erase'?0:ED.color;edDraw();}
+const edg=$('#edgrid');let edDown=false;
+edg.addEventListener('pointerdown',e=>{e.preventDefault();edDown=true;edg.setPointerCapture(e.pointerId);ED.undo.push(ED.a.slice());if(ED.undo.length>40)ED.undo.shift();edPaint(e);});
+edg.addEventListener('pointermove',e=>{if(edDown&&ED.tool!=='fill'&&ED.tool!=='pick')edPaint(e);});
+edg.addEventListener('pointerup',()=>edDown=false);
+$('#edUndo').onclick=()=>{const u=ED.undo.pop();if(u){ED.a=u;edDraw();}};
+$('#edClose').onclick=()=>{$('#editor').hidden=true;};
+function edSave(asNew){const tiles=game.profile.tiles;let n=0;
+ ED.tiles.forEach((r,ty)=>r.forEach((t,tx)=>{if(t.orig.every(v=>!v))return;const bytes=encodeTile(ED.a,ED.W,tx*8,ty*8,ED.bpp);
+  let e=tiles[t.key];const same=bytes.every((v,i)=>v===t.orig[i]);
+  if(!e){if(same)return;e=tiles[t.key]={bpp:ED.bpp,orig:b64(t.orig),pal:ED.pal.slice(),rule:{type:'first'},variants:[]};}
+  const v={data:b64(bytes)};if(asNew||!e.variants.length)e.variants.push(v);else e.variants[Math.max(0,t.vi)]=v;
+  if(asNew&&e.variants.length===2&&(e.rule.type==='first'))e.rule={type:'cycle',frames:30};n++;}));
+ saveProfile();patchIndex();renderTiles();$('#editor').hidden=true;$('#pickp').hidden=true;pickMode=false;paused=false;$('#pickbox').hidden=true;
+ toast(n?(asNew?'Variation added':'Saved. It shows everywhere this tile appears.'):'Nothing changed');}
+$('#edSave').onclick=()=>edSave(false);$('#edVar').onclick=()=>edSave(true);
+$('#edRevert').onclick=()=>{if(!confirm('Remove your edits and variations for this, and go back to the original?'))return;
+ for(const t of ED.tiles.flat()){if(!game.profile.tiles[t.key])continue;for(const p of PT.patched.values())if(p.key===t.key)writeTile(p.wa,t.orig);delete game.profile.tiles[t.key];}
+ saveProfile();patchIndex();renderTiles();$('#editor').hidden=true;toast('Original restored');};
+function renderTiles(){const box=$('#tileList');box.innerHTML='';if(!game)return;const ent=Object.entries(game.profile.tiles);
+ if(!ent.length){box.innerHTML='<p class="note">No edits yet.</p>';return;}
+ for(const[k,e]of ent){const d=document.createElement('div');d.className='item';const pal=(e.pal||[]).slice();while(pal.length<(1<<e.bpp))pal.push(0);
+  const cur=unb64(e.variants[0]?.data||e.orig);d.appendChild(tileCanvas([[{cur}]],e.bpp,pal,4));
+  const t=document.createElement('div');t.className='grow';
+  t.innerHTML=`<strong>${e.variants.length} version${e.variants.length>1?'s':''}</strong>${e.variants.length>1?`<select><option value="cycle">Animate</option><option value="random">Random each session</option><option value="first">First only</option><option value="memory">From memory value</option></select>`:''}`;
+  d.appendChild(t);const sel=t.querySelector('select');if(sel){sel.value=e.rule?.type||'first';sel.onchange=()=>{
+   if(sel.value==='memory'){const addr=prompt('Memory address that picks the version, like 7E:1234');if(!addr){sel.value=e.rule.type;return;}
+    toast('Set which value shows which version under Setup, Edit as text',4000);e.rule={type:'memory',addr,map:{}};}
+   else e.rule={type:sel.value,frames:30};saveProfile();patchIndex();};}
+  const ed=document.createElement('button');ed.className='btn';ed.textContent='Edit';
+  ed.onclick=()=>{closeSheet();const orig=unb64(e.orig);openEditor({title:'Saved tile',bpp:e.bpp,pal,tiles:[[{key:k,orig,cur:unb64(e.variants[0].data),vi:0}]]});};
+  const x=document.createElement('button');x.className='btn warn';x.textContent='✕';x.setAttribute('aria-label','Remove edit');
+  x.onclick=()=>{for(const p of PT.patched.values())if(p.key===k)writeTile(p.wa,unb64(e.orig));delete game.profile.tiles[k];saveProfile();patchIndex();renderTiles();};
+  d.append(ed,x);box.appendChild(d);}}
+
+/* ---------- game setup page ---------- */
+$('#actBtns').innerHTML=Object.keys(BTN).map(n=>`<label class="ck"><input type="checkbox" value="${n}"> ${n}</label>`).join('');
+$('#actAdd').onclick=()=>{if(!game){toast('Start a game first');return;}const press=$$('#actBtns input:checked').map(i=>i.value),label=$('#actLabel').value.trim();
+ if(!label||!press.length){toast('Give it a label and pick at least one button');return;}
+ game.profile.actions.push({label,icon:$('#actIcon').value.trim(),press,mode:$('#actMode').value});saveProfile();renderActions();renderActList();
+ $('#actLabel').value=$('#actIcon').value='';$$('#actBtns input').forEach(i=>i.checked=false);};
+function renderActList(){const box=$('#actList');box.innerHTML='';if(!game)return;game.profile.actions.forEach((a,i)=>{const d=document.createElement('div');d.className='item';
+ d.innerHTML=`<div class="grow"><strong>${esc((a.icon||'')+' '+a.label)}</strong><small>${(a.press||[]).join(' + ')||'Macro'}, ${a.mode||'hold'}</small></div><button class="btn warn" aria-label="Remove">✕</button>`;
+ d.querySelector('button').onclick=()=>{game.profile.actions.splice(i,1);saveProfile();renderActions();renderActList();};box.appendChild(d);});}
+$('#walkLayer').onchange=e=>{game&&(game.profile.walk.layer=+e.target.value,saveProfile());};
+$('#walkDiag').onchange=e=>{game&&(game.profile.walk.diagonal=e.target.checked,saveProfile());};
+$('#profOut').onclick=()=>game&&download(game.name+'.harvest-touch.json',JSON.stringify(game.profile,null,1));
+$('#profIn').onclick=async()=>{if(!game)return;const j=await pickJSON();if(!j)return;game.profile=normProfile(j,game.name);saveProfile();reloadProfile();toast('Game data imported');};
+$('#profEdit').onclick=()=>{if(!game)return;$('#profBox').hidden=!$('#profBox').hidden;$('#profText').value=JSON.stringify(game.profile,null,1);};
+$('#profSave').onclick=()=>{try{game.profile=normProfile(JSON.parse($('#profText').value),game.name);saveProfile();reloadProfile();toast('Saved');}catch(e){toast('That text isn’t valid JSON: '+e.message,5000);}};
+function reloadProfile(){applyCheats();renderActions();patchesOff();patchIndex();renderAllTools();}
+function renderAllTools(){renderTiles();renderWatches();renderCheats();renderActList();renderRS();
+ if(game){$('#walkLayer').value=game.profile.walk.layer;$('#walkDiag').checked=game.profile.walk.diagonal;}}
+
+/* ---------- sheet + settings ---------- */
+function openSheet(p){$('#sheet').hidden=false;paused=!!game&&p!=='tools';if(p)showPage(p);renderSlots();}
+function closeSheet(){$('#sheet').hidden=true;paused=false;}
+function showPage(p){for(const t of $$('.tab'))t.classList.toggle('on',t.dataset.p===p);for(const s of $$('.page'))s.hidden=s.dataset.p!==p;paused=!!game&&p!=='tools';if(p==='tools')layerTick(true);}
+for(const t of $$('.tab'))t.onclick=()=>showPage(t.dataset.p);
+$('#menuBtn').onclick=()=>openSheet(game?'saves':'games');$('#sheetClose').onclick=closeSheet;
+$('#sheet').addEventListener('pointerdown',e=>{if(e.target.id==='sheet')closeSheet();});
+function applySettings(){$('#crt').hidden=!S.crt;cv.classList.toggle('smooth',S.smooth);document.documentElement.style.setProperty('--op',S.op/100);applyAspect();
+ anode?.port.postMessage({v:S.vol/100});saveSettings();}
+const bind=(id,key,get=e=>e.target.value)=>{const el=$(id);if(el.type==='checkbox')el.checked=S[key];else el.value=S[key];
+ el.addEventListener(el.type==='range'?'input':'change',e=>{S[key]=el.type==='checkbox'?el.checked:typeof SETDEF[key]==='number'?+get(e):get(e);applySettings();if(key==='rw'||key==='rwSec'){if(game)rewindSetup();}});};
+bind('#setAspect','aspect');bind('#setCrt','crt');bind('#setSmooth','smooth');bind('#setWatch','watch');bind('#setOp','op');bind('#setVol','vol');bind('#setFF','ff');bind('#setRw','rw');bind('#setRwSec','rwSec');
+applySettings();
+
+document.addEventListener('visibilitychange',()=>{if(document.hidden){saveAuto();ptrs.clear();refreshTouch();inp.key=0;}});
+addEventListener('pagehide',()=>saveAuto());
+loadLib();
+if('serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
