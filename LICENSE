@@ -1,0 +1,25 @@
+Copyright (c) 2026 Jacor. All rights reserved.
+
+Necrotroph, including its source code, artwork, unit and race designs,
+names, lore, text, maps and other assets, is the property of the
+copyright holder.
+
+You may play the game at its official address for personal,
+non-commercial use.
+
+You may not, without prior written permission from the copyright holder:
+  - copy, reproduce or redistribute the game or any part of it;
+  - modify it or create derivative works from it;
+  - host, publish or sell it, or any part of it, elsewhere;
+  - reuse its code, artwork, designs, names or text in other projects.
+
+Viewing the source in a web browser, or viewing or forking the
+repository on GitHub as permitted by GitHub's Terms of Service, does not
+grant any of the rights above.
+
+Third-party components keep their own licenses:
+  - PeerJS (MIT License), loaded from a CDN
+  - Oxanium font (SIL Open Font License 1.1), loaded from Google Fonts
+
+For permission requests, contact the copyright holder through the
+GitHub repository.
