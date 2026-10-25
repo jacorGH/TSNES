@@ -32,6 +32,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 #wrap{position:relative;aspect-ratio:var(--ar);width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset-right),calc(64dvh * var(--arn)))}
 #screen{width:100%;height:100%;display:block;image-rendering:pixelated;background:#000}
 #screen.smooth{image-rendering:auto}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
 #crt{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(#0000 0 2px,#0004 2px 3px)}
 #empty{position:absolute;inset:0;display:grid;place-content:center;gap:10px;text-align:center;color:#e9e6f2;padding:16px}
 #empty p{margin:0;font-size:14px;color:#bcb7cb;max-width:28ch}
@@ -100,7 +101,8 @@ textarea{width:100%;min-height:220px;font-family:ui-monospace,Menlo,monospace;fo
 label.ck{display:flex;gap:6px;align-items:center;font-size:14px}
 #toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 10px);transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 14px;border-radius:12px;z-index:40;font-size:14px;max-width:90vw;text-align:center}
 #pickp{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--sheet);border-radius:18px 18px 0 0;padding:10px 14px calc(12px + env(safe-area-inset-bottom));max-height:46dvh;overflow:auto;box-shadow:0 -6px 20px #0003}
-#edgrid{touch-action:none;image-rendering:pixelated;border-radius:6px;background:#fff;display:block;margin:0 auto}
+#edwrap{overflow:auto;max-height:46dvh;border-radius:8px;background:#fff;-webkit-overflow-scrolling:touch}
+#edgrid{touch-action:none;display:block;margin:0 auto}
 #edpal{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
 #edpal button{width:30px;height:30px;border-radius:7px;border:2px solid #fff;box-shadow:0 0 0 1px #0003}
 #edpal button.on{box-shadow:0 0 0 3px var(--ink)}
@@ -114,13 +116,14 @@ label.ck{display:flex;gap:6px;align-items:center;font-size:14px}
  <div id="bar">
   <div id="barL"><button class="ib" id="menuBtn" aria-label="Menu">☰</button><h1 id="title">Harvest Touch</h1>
   <button class="ib" id="rwBtn" aria-label="Hold to rewind">⏪</button><button class="ib" id="ffBtn" aria-label="Fast forward">⏩</button></div>
-  <div id="barR">
+  <div id="barR"><button class="ib" id="d3Btn" aria-label="3D view">🧊</button>
   <button class="ib" id="walkBtn" aria-label="Tap to walk">👆</button>
   <button class="ib" id="qsBtn" aria-label="Quick save">💾</button>
   <button class="ib" id="qlBtn" aria-label="Quick load">↺</button></div>
  </div>
  <div id="stage"><div id="bezel"><div id="wrap">
   <canvas id="screen" width="256" height="224"></canvas>
+  <canvas id="gl" hidden></canvas>
   <div id="crt" hidden></div>
   <div id="hud"></div>
   <span id="ffbadge" class="chip" hidden>Fast</span>
@@ -162,7 +165,7 @@ label.ck{display:flex;gap:6px;align-items:center;font-size:14px}
   </section>
   <section class="page" data-p="tools" hidden>
    <details id="pickTool" open><summary>Edit tiles and sprites</summary>
-    <p class="note">Tap Pick, then tap anything on screen. Your edit replaces that tile everywhere it appears, using the game’s own colors.</p>
+    <p class="note">Tap Pick, then tap a character or tile, or drag across an area to grab a whole object. Edits show everywhere those tiles appear, in the game’s own colors.</p>
     <div class="row"><button class="btn main" id="pickBtn">Pick from screen</button><label class="ck"><input type="checkbox" id="patchOn" checked> Show my edits</label></div>
     <div class="list" id="tileList"></div>
    </details>
@@ -193,6 +196,8 @@ label.ck{display:flex;gap:6px;align-items:center;font-size:14px}
    <div class="row"><select id="actMode"><option value="hold">Hold while pressed</option><option value="turbo">Turbo while pressed</option><option value="toggle">Tap to hold, tap to release</option></select><button class="btn main" id="actAdd">Add button</button></div>
    <h2>Tap to walk</h2>
    <div class="row"><label>Camera follows <select id="walkLayer"><option value="0">BG1</option><option value="1">BG2</option><option value="2">BG3</option><option value="3">BG4</option></select></label><label class="ck"><input type="checkbox" id="walkDiag" checked> Diagonal walking</label></div>
+   <h2>3D view</h2>
+   <div class="row"><label class="ck"><input type="checkbox" id="flat3"> Keep BG3 flat (often the menus and text)</label></div>
    <h2>Game data</h2>
    <p class="note">Everything above, plus tile edits, watches and cheats, lives in this file. Share it or edit it by hand.</p>
    <div class="row"><button class="btn" id="profOut">Export</button><button class="btn" id="profIn">Import</button><button class="btn" id="profEdit">Edit as text</button></div>
@@ -202,6 +207,10 @@ label.ck{display:flex;gap:6px;align-items:center;font-size:14px}
    <h3>Screen</h3>
    <div class="row"><label>Shape <select id="setAspect"><option value="4:3">TV (4:3)</option><option value="pixel">Square pixels</option></select></label></div>
    <div class="row"><label class="ck"><input type="checkbox" id="setCrt"> Scanlines</label><label class="ck"><input type="checkbox" id="setSmooth"> Smooth pixels</label><label class="ck"><input type="checkbox" id="setWatch" checked> Show watches</label></div>
+   <h3>3D</h3>
+   <div class="row"><label class="ck"><input type="checkbox" id="setD3"> 3D depth view</label><label class="ck"><input type="checkbox" id="setShadow"> Shadows</label><label class="ck"><input type="checkbox" id="setMotion"> Move with phone</label></div>
+   <div class="row"><label>Tilt <input type="range" id="setTilt" min="0" max="60"></label><label>Depth <input type="range" id="setDepth" min="0" max="300"></label></div>
+   <p class="note">Lifts sprites and front layers off the background using the game’s own drawing order. Give any tile extra height from Tools, Pick. Taps still work in 3D.</p>
    <h3>Controls</h3>
    <div class="row"><label>Opacity <input type="range" id="setOp" min="30" max="100"></label></div>
    <h3>Sound</h3>
@@ -217,18 +226,20 @@ label.ck{display:flex;gap:6px;align-items:center;font-size:14px}
 </div></div>
 
 <div id="pickp" hidden>
- <div class="row" style="justify-content:space-between"><strong id="pickHead">Tap anything on screen</strong><button class="btn" id="pickDone">Done</button></div>
+ <div class="row" style="justify-content:space-between"><strong id="pickHead">Tap something, or drag across an area</strong><button class="btn" id="pickDone">Done</button></div>
  <div class="list" id="pickList"></div>
 </div>
 
 <div id="editor" hidden><div class="panel" style="max-height:96dvh">
- <div class="tabs"><strong id="edTitle" style="padding:0 6px">Edit</strong><button class="ib close" id="edClose" aria-label="Close">✕</button></div>
+ <div class="tabs"><strong id="edTitle" style="padding:0 6px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Edit</strong><button class="ib close" id="edClose" aria-label="Close">✕</button></div>
  <div class="pages">
-  <canvas id="edgrid" class="checker"></canvas>
+  <div id="edwrap"><canvas id="edgrid" class="checker"></canvas></div>
+  <div class="row"><button class="btn" id="edZoomOut" aria-label="Zoom out">−</button><button class="btn" id="edZoomIn" aria-label="Zoom in">+</button><label class="ck"><input type="checkbox" id="edGridOn" checked> Grid</label><label class="ck"><input type="checkbox" id="edMirror"> Mirror</label><button class="btn" id="edOrig">Hold to see original</button></div>
   <div id="edpal"></div>
-  <div class="row"><button class="btn tool on" data-t="pen">Draw</button><button class="btn tool" data-t="fill">Fill</button><button class="btn tool" data-t="pick">Pick color</button><button class="btn tool" data-t="erase">Erase</button><button class="btn" id="edUndo">Undo</button></div>
-  <div class="row"><canvas id="edprev" class="checker" style="border-radius:6px;image-rendering:pixelated"></canvas><p class="note" id="edNote" style="flex:1"></p></div>
+  <div class="row"><button class="btn tool on" data-t="pen">Draw</button><button class="btn tool" data-t="fill">Fill</button><button class="btn tool" data-t="pick">Pick color</button><button class="btn tool" data-t="erase">Erase</button><button class="btn tool" data-t="pan">Move</button><button class="btn" id="edUndo">Undo</button><button class="btn" id="edRedo">Redo</button></div>
+  <div class="row"><canvas id="edprev" class="checker" style="border-radius:6px;image-rendering:pixelated"></canvas><p class="note" id="edNote" style="flex:1;min-width:160px"></p></div>
   <div class="row"><button class="btn main" id="edSave">Save</button><button class="btn" id="edVar">Save as new variation</button><button class="btn warn" id="edRevert">Restore original</button></div>
+  <div class="row"><button class="btn" id="edPng">Export PNG</button><button class="btn" id="edPngIn">Import PNG</button></div>
  </div>
 </div></div>
 
@@ -236,6 +247,7 @@ label.ck{display:flex;gap:6px;align-items:center;font-size:14px}
 <input type="file" id="romFile" hidden>
 <input type="file" id="jsonFile" accept=".json,application/json" hidden>
 <input type="file" id="saveFile" hidden>
+<input type="file" id="pngFile" accept="image/*" hidden>
 
 <script>
 'use strict';
@@ -254,7 +266,7 @@ const DB=(()=>{let p,mem=null;const memStore=s=>(mem[s]||(mem[s]=new Map()));
   return new Promise((res,rej)=>{const t=d.transaction(st,mode);const r=fn(t.objectStore(st));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);});};
  return{get:(s,k)=>run(s,'readonly',o=>o.get(k),m=>m.get(k)),put:(s,k,v)=>run(s,'readwrite',o=>o.put(v,k),m=>{m.set(k,v);}),
   del:(s,k)=>run(s,'readwrite',o=>o.delete(k),m=>{m.delete(k);}),keys:s=>run(s,'readonly',o=>o.getAllKeys(),m=>[...m.keys()])};})();
-const SETDEF={aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10};
+const SETDEF={aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10,d3:false,tilt:28,depth:100,shadow:true,motion:false};
 let S=Object.assign({},SETDEF,JSON.parse(localStorage.getItem('ht.settings')||'{}'));
 const saveSettings=()=>localStorage.setItem('ht.settings',JSON.stringify(S));
 const fnv=(a,o=0,n=a.length)=>{let h=0x811c9dc5;for(let i=o;i<o+n;i++){h^=a[i];h=Math.imul(h,16777619);}return h>>>0;};
@@ -283,6 +295,7 @@ let logical={w:256,h:224};
 function draw(){
  const w=M._s9x_vw(),h=M._s9x_vh();
  if(!img||img.width!==w||img.height!==h){cv.width=w;cv.height=h;img=cx.createImageData(w,h);logical={w:256,h:h>240?h/2:h};applyAspect();}
+ if(G.on&&game){compose3D();glDraw();hudTick();return;}
  const src=new Uint16Array(H8().buffer,P.video,w*h),dst=new Uint32Array(img.data.buffer);
  for(let i=0;i<dst.length;i++)dst[i]=LUT[src[i]];
  cx.putImageData(img,0,0);hudTick();}
@@ -395,18 +408,18 @@ async function startGame(id){
  const meta=lib.find(g=>g.id===id);meta.played=Date.now();DB.put('data','lib',lib);
  game={id,name:meta.name,profile:normProfile(await DB.get('data','prof:'+id),meta.name)};
  $('#title').textContent=game.name;$('#empty').hidden=true;
- await restoreSram();applyCheats();renderActions();patchIndex();rewindSetup();renderAllTools();WK.player=null;WK.target=null;
+ TC.fresh=false;await restoreSram();applyCheats();renderActions();patchIndex();rewindSetup();renderAllTools();WK.player=null;WK.target=null;
  const auto=await DB.get('data',`state:${id}:auto`);if(auto){loadStateBytes(auto.bytes);toast('Picked up where you left off');}
  await audioOn();anode?.port.postMessage({k:M._s9x_rate()/actx.sampleRate});running=true;}
 
 /* ---------- game data (profile) ---------- */
 function normProfile(p,name){p=p||{};return{v:1,name:p.name||name,actions:p.actions||[],walk:Object.assign({layer:0,diagonal:true},p.walk),
- watches:p.watches||[],cheats:p.cheats||[],tiles:p.tiles||{},notes:p.notes||''};}
+ watches:p.watches||[],cheats:p.cheats||[],tiles:p.tiles||{},depth:Object.assign({tiles:{},flatBG3:false},p.depth),notes:p.notes||''};}
 const saveProfile=()=>game&&DB.put('data','prof:'+game.id,game.profile);
 
 /* ---------- saves ---------- */
 function stateBytes(){const n=M._s9x_state_size(),p=M._malloc(n);M._s9x_state_save(p,n);const b=H8().slice(p,p+n);M._free(p);return b;}
-function loadStateBytes(b){const p=M._malloc(b.length);H8().set(b,p);const ok=M._s9x_state_load(p,b.length);M._free(p);PT.full=true;PT.patched.clear();return ok;}
+function loadStateBytes(b){TC.fresh=false;const p=M._malloc(b.length);H8().set(b,p);const ok=M._s9x_state_load(p,b.length);M._free(p);PT.full=true;PT.patched.clear();return ok;}
 function thumb(){const c=document.createElement('canvas');c.width=128;c.height=Math.round(128/(cv.width/cv.height));c.getContext('2d').drawImage(cv,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.7);}
 async function saveSlot(slot){if(!game)return;await DB.put('data',`state:${game.id}:${slot}`,{bytes:stateBytes(),img:thumb(),t:Date.now()});}
 async function loadSlot(slot){if(!game)return false;const s=await DB.get('data',`state:${game.id}:${slot}`);if(!s)return false;loadStateBytes(s.bytes);rw.buf=[];return true;}
@@ -491,8 +504,8 @@ const objWA=(sp,cx,cy)=>(sp.base+(sp.n?sp.off:0)+((((sp.c>>4)+cy)&15)*16+(((sp.c
 function objPix(s,sp,px,py){if(sp.hf)px=sp.w-1-px;if(sp.vf)py=sp.h-1-py;return pix(s.V,objWA(sp,px>>3,py>>3),4,px&7,py&7);}
 const rgb=c=>[(c&31)<<3|(c&31)>>2,(c>>5&31)<<3|(c>>5&31)>>2,(c>>10&31)<<3|(c>>10&31)>>2];
 const rgba32=c=>{const[r,g,b]=rgb(c);return 0xff000000|b<<16|g<<8|r;};
-const toSnes=e=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*logical.w,y:(e.clientY-r.top)/r.height*logical.h};};
-const toCss=(x,y)=>{const r=cv.getBoundingClientRect(),w=$('#wrap').getBoundingClientRect();return{left:r.left-w.left+x/logical.w*r.width,top:r.top-w.top+y/logical.h*r.height,sx:r.width/logical.w,sy:r.height/logical.h};};
+const toSnes=e=>{if(G.on&&G.M)return glPick(e.clientX,e.clientY);const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*logical.w,y:(e.clientY-r.top)/r.height*logical.h};};
+const toCss=(x,y)=>{if(G.on&&G.M)return glProject(x,y);const r=cv.getBoundingClientRect(),w=$('#wrap').getBoundingClientRect();return{left:r.left-w.left+x/logical.w*r.width,top:r.top-w.top+y/logical.h*r.height,sx:r.width/logical.w,sy:r.height/logical.h};};
 
 /* ---------- tile replacement (native: written into VRAM, so priorities and effects stay correct) ---------- */
 const PT={vmap:new Map(),map:new Map(),bpps:[],patched:new Map(),shadow:new Uint8Array(65536),dirty:new Uint8Array(4096),full:true,on:true,ptr:0};
@@ -551,12 +564,17 @@ $('#walkBtn').onclick=()=>{WK.on=!WK.on;$('#walkBtn').classList.toggle('on',WK.o
  if(WK.on)toast(WK.player?'Tap to walk there, or hold to steer':'Tap your character to lock on, then tap where to go');};
 const wrapEl=$('#wrap');
 wrapEl.addEventListener('pointerdown',e=>{if(!game)return;
- if(pickMode){e.preventDefault();showPick(toSnes(e));return;}
+ if(pickMode){e.preventDefault();pdrag={id:e.pointerId,a:toSnes(e),cx:e.clientX,cy:e.clientY,moved:false};try{wrapEl.setPointerCapture(e.pointerId);}catch{}return;}
  if(!WK.on)return;e.preventDefault();const pt=toSnes(e);WK.ptr=e.pointerId;try{wrapEl.setPointerCapture(e.pointerId);}catch{}
  if(!WK.player&&lockOn(pt)){toast('Locked on. Tap anywhere to walk there.');WK.ptr=null;return;}
  setTarget(pt);WK.hold=false;clearTimeout(WK.timer);WK.timer=setTimeout(()=>WK.hold=true,220);});
-wrapEl.addEventListener('pointermove',e=>{if(WK.ptr===e.pointerId&&WK.hold)setTarget(toSnes(e));});
-for(const t of['pointerup','pointercancel'])wrapEl.addEventListener(t,e=>{if(WK.ptr!==e.pointerId)return;clearTimeout(WK.timer);WK.ptr=null;
+wrapEl.addEventListener('pointermove',e=>{
+ if(pdrag&&pdrag.id===e.pointerId){if(Math.hypot(e.clientX-pdrag.cx,e.clientY-pdrag.cy)>8)pdrag.moved=true;if(pdrag.moved){pdrag.b=toSnes(e);showBox(rectOf(pdrag.a,pdrag.b));}return;}
+ if(WK.ptr===e.pointerId&&WK.hold)setTarget(toSnes(e));});
+for(const t of['pointerup','pointercancel'])wrapEl.addEventListener(t,e=>{
+ if(pdrag&&pdrag.id===e.pointerId){const d=pdrag;pdrag=null;if(t==='pointercancel')return;
+  if(d.moved&&d.b)showCands(pickArea(rectOf(d.a,d.b)),'Nothing to edit in that area.');else showCands(pickAt(d.a),'Nothing there. Try another spot.');return;}
+ if(WK.ptr!==e.pointerId)return;clearTimeout(WK.timer);WK.ptr=null;
  if(WK.hold||!WK.player){WK.target=null;inp.walk=0;}WK.hold=false;});
 
 /* ---------- memory tools ---------- */
@@ -622,93 +640,165 @@ function drawBG(s,b,d,lut){const ts=b.big?16:8,mw=b.size&1?64:32,mh=b.size&2?64:
    let px=x%ts,py=y%ts;if(e>>14&1)px=ts-1-px;if(e>>15&1)py=ts-1-py;let t=e&0x3FF;if(ts===16){t=(t+(px>>3)+(py>>3)*16)&0x3FF;px&=7;py&=7;}
    const c=pix(V,(b.nb+t*b.bpp*4)&0x7FFF,b.bpp,px,py);if(c)d[sy*256+sx]=lut[cg+c];}}}
 
-/* ---------- picking ---------- */
-let pickMode=false;
-$('#pickBtn').onclick=()=>{if(!game){toast('Start a game first');return;}closeSheet();pickMode=true;paused=true;$('#pickp').hidden=false;$('#pickHead').textContent='Tap anything on screen';$('#pickList').innerHTML='';};
-$('#pickDone').onclick=()=>{pickMode=false;paused=false;$('#pickp').hidden=true;$('#pickbox').hidden=true;};
+/* ---------- picking: tap one thing, or drag across an area ---------- */
+let pickMode=false,pdrag=null;
+$('#pickBtn').onclick=()=>{if(!game){toast('Start a game first');return;}closeSheet();pickMode=true;paused=true;$('#pickp').hidden=false;
+ $('#pickHead').textContent='Tap something, or drag across an area';$('#pickList').innerHTML='';};
+function endPick(){pickMode=false;paused=false;pdrag=null;$('#pickp').hidden=true;$('#pickbox').hidden=true;}
+$('#pickDone').onclick=endPick;
+const rectOf=(a,b)=>({x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),w:Math.abs(a.x-b.x),h:Math.abs(a.y-b.y)});
 function readTile(V,wa,bpp){return V.slice(wa*2,wa*2+bpp*8);}
-function pickAt(pt){const s=snap(),x=Math.floor(pt.x),y=Math.floor(pt.y),out=[],mode=s.R[5]&7;
- for(const sp of sprites(s)){if(x<sp.x||y<sp.y||x>=sp.x+sp.w||y>=sp.y+sp.h)continue;if(!objPix(s,sp,x-sp.x,y-sp.y))continue;
-  const tiles=[];for(let ty=0;ty<sp.h/8;ty++){const r=[];for(let tx=0;tx<sp.w/8;tx++)r.push(objWA(sp,tx,ty));tiles.push(r);}
-  out.push({label:`Sprite ${sp.i}, ${sp.w}×${sp.h}`,bpp:4,cg:128+sp.pal*16,tiles,box:{x:sp.x,y:sp.y,w:sp.w,h:sp.h}});}
- if(mode!==7)for(let bg=0;bg<4;bg++){const b=bgInfo(s,bg);if(!b.bpp||!b.on)continue;const t=bgEntry(s,b,x,y);if(!pix(s.V,t.wa,b.bpp,t.px,t.py))continue;
-  const ts=b.big?16:8,tiles=b.big?[[tileWA(b,t.base),tileWA(b,t.base+1)],[tileWA(b,t.base+16),tileWA(b,t.base+17)]]:[[tileWA(b,t.base)]];
-  out.push({label:`BG${bg+1} tile, ${b.bpp}-bit`,bpp:b.bpp,cg:cgBase('bg',b,t.pal),tiles,box:{x:x-(t.x%ts),y:y-(t.y%ts),w:ts,h:ts}});}
- return out;}
 function paletteFor(s,cg,bpp){const n=1<<bpp,out=[];for(let i=0;i<n;i++)out.push(s.C[(cg+i)&255]);return out;}
-function showPick(pt){const s=snap(),cands=pickAt(pt),box=$('#pickList');box.innerHTML='';$('#pickHead').textContent=cands.length?'What do you want to edit?':'Nothing there. Try another spot.';
- cands.forEach((c,i)=>{const pal=paletteFor(s,c.cg,c.bpp),cur=c.tiles.map(r=>r.map(wa=>tileState(s,wa,c.bpp)));
-  const d=document.createElement('div');d.className='item';const th=tileCanvas(cur,c.bpp,pal,4);d.appendChild(th);
-  const t=document.createElement('div');t.className='grow';t.innerHTML=`<strong>${c.label}</strong><small>${cur.flat().some(x=>x.vi>=0)?'Has your edits':'Original'}</small>`;d.appendChild(t);
-  const b=document.createElement('button');b.className='btn main';b.textContent='Edit';b.onclick=()=>openEditor({title:c.label,bpp:c.bpp,pal,tiles:cur});d.appendChild(b);
-  if(i===0)showBox(c.box);d.onpointerdown=()=>showBox(c.box);box.appendChild(d);});}
-function showBox(b){const p=toCss(b.x,b.y),el=$('#pickbox');el.hidden=false;el.style.left=p.left+'px';el.style.top=p.top+'px';el.style.width=b.w*p.sx+'px';el.style.height=b.h*p.sy+'px';}
 // What a VRAM tile is right now, and which original it stands for if it's one of our edits.
 function tileState(s,wa,bpp){const now=readTile(s.V,wa,bpp),p=PT.patched.get(bpp*65536+wa*2);
  if(p&&PT.map.has(p.key)){const e=PT.map.get(p.key);return{key:p.key,orig:e.orig,cur:now,vi:Math.max(0,e.cur)};}
+ const v=PT.vmap.get(tileKey(bpp,now));if(v)return{key:v.key,orig:v.orig,cur:now,vi:Math.max(0,v.cur)};
  return{key:tileKey(bpp,now),orig:now,cur:now,vi:-1};}
+const mkCell=(s,c)=>Object.assign(c,tileState(s,c.wa,c.bpp),{pal:paletteFor(s,c.cg,c.bpp)});
+// An "object" is a set of 8×8 cells placed in one picture; cells keep their own palette and flips.
+function spriteObj(s,sps,label){const ox=Math.min(...sps.map(p=>p.x)),oy=Math.min(...sps.map(p=>p.y));
+ const W=Math.max(...sps.map(p=>p.x+p.w))-ox,H=Math.max(...sps.map(p=>p.y+p.h))-oy,cells=[];
+ for(const sp of sps){const nx=sp.w/8,ny=sp.h/8;for(let cy=0;cy<ny;cy++)for(let cx=0;cx<nx;cx++)
+  cells.push(mkCell(s,{x:sp.x-ox+cx*8,y:sp.y-oy+cy*8,wa:objWA(sp,sp.hf?nx-1-cx:cx,sp.vf?ny-1-cy:cy),bpp:4,cg:128+sp.pal*16,hf:sp.hf,vf:sp.vf,z:1000-sp.i}));}
+ cells.sort((a,b)=>a.z-b.z);return{label,W,H,cells,box:{x:ox,y:oy,w:W,h:H}};}
+function bgObj(s,b,rx,ry,rw,rh,label){const x0=rx-((rx+b.h)&7),y0=ry-((ry+b.v)&7),cells=[];
+ for(let y=y0;y<ry+rh;y+=8)for(let x=x0;x<rx+rw;x+=8){const t=bgEntry(s,b,x,y);
+  cells.push(mkCell(s,{x:x-x0,y:y-y0,wa:t.wa,bpp:b.bpp,cg:cgBase('bg',b,t.pal),hf:t.e>>14&1,vf:t.e>>15&1,z:0}));}
+ const W=Math.ceil((rx+rw-x0)/8)*8,H=Math.ceil((ry+rh-y0)/8)*8;return{label,W,H,cells,box:{x:x0,y:y0,w:W,h:H}};}
+// Sprites that touch or overlap each other form one object (a character is often 2–8 sprites).
+function cluster(all,first){const set=[first];let grew=true;
+ while(grew&&set.length<32){grew=false;for(const sp of all){if(set.includes(sp))continue;
+  if(set.some(q=>sp.x<=q.x+q.w&&q.x<=sp.x+sp.w&&sp.y<=q.y+q.h&&q.y<=sp.y+sp.h)){set.push(sp);grew=true;}}}return set;}
+function pickAt(pt){const s=snap(),x=Math.floor(pt.x),y=Math.floor(pt.y),out=[],mode=s.R[5]&7,all=sprites(s);
+ const hits=all.filter(sp=>x>=sp.x&&y>=sp.y&&x<sp.x+sp.w&&y<sp.y+sp.h&&objPix(s,sp,x-sp.x,y-sp.y));
+ if(hits.length){const cl=cluster(all,hits[0]);if(cl.length>1)out.push(spriteObj(s,cl,`Whole object, ${cl.length} sprites`));}
+ for(const sp of hits)out.push(spriteObj(s,[sp],`Sprite ${sp.i}, ${sp.w}×${sp.h}`));
+ if(mode!==7)for(let bg=0;bg<4;bg++){const b=bgInfo(s,bg);if(!b.bpp||!b.on)continue;const t=bgEntry(s,b,x,y);if(!pix(s.V,t.wa,b.bpp,t.px,t.py))continue;
+  const ts=b.big?16:8;out.push(bgObj(s,b,x-(t.x%ts),y-(t.y%ts),ts,ts,`BG${bg+1} tile, ${b.bpp}-bit`));}
+ return out;}
+function pickArea(r){const s=snap(),out=[],mode=s.R[5]&7;
+ const rx=Math.max(0,Math.floor(r.x)),ry=Math.max(0,Math.floor(r.y)),rw=Math.min(256,Math.ceil(r.x+r.w))-rx,rh=Math.min(logical.h,Math.ceil(r.y+r.h))-ry;
+ if(rw<1||rh<1)return out;
+ const sps=sprites(s).filter(sp=>sp.x<rx+rw&&sp.x+sp.w>rx&&sp.y<ry+rh&&sp.y+sp.h>ry);
+ if(sps.length)out.push(spriteObj(s,sps.slice(0,32),`${sps.length} sprite${sps.length>1?'s':''} in this area`));
+ if(mode!==7)for(let bg=0;bg<4;bg++){const b=bgInfo(s,bg);if(!b.bpp||!b.on)continue;const o=bgObj(s,b,rx,ry,rw,rh,`BG${bg+1} area`);
+  if(o.cells.length>400){toast('That area is too big to edit at once. Try a smaller one.');continue;}
+  if(o.cells.every(c=>c.orig.every(v=>!v)))continue;o.label+=`, ${o.W/8}×${o.H/8} tiles`;out.push(o);}
+ return out;}
+function showCands(cands,empty){const box=$('#pickList');box.innerHTML='';$('#pickHead').textContent=cands.length?'What do you want to edit?':empty;
+ cands.forEach((c,i)=>{const d=document.createElement('div');d.className='item';d.appendChild(compCanvas(c,64));
+  const keys=[...new Set(c.cells.filter(x=>!x.orig.every(v=>!v)).map(x=>x.key))],dt=game.profile.depth.tiles;let h=dt[keys[0]]||0;
+  const t=document.createElement('div');t.className='grow';
+  t.innerHTML=`<strong>${c.label}</strong><small>${c.cells.some(x=>x.vi>=0)?'Has your edits':'Original'}</small><div class="row" style="margin:4px 0 0"><span class="note" style="margin:0">3D height</span><button class="btn" style="padding:4px 11px">−</button><b>${h}</b><button class="btn" style="padding:4px 11px">+</button></div>`;
+  const[dn,up]=t.querySelectorAll('button'),hv=t.querySelector('b');
+  const setH=n=>{h=Math.max(0,Math.min(24,n));hv.textContent=h;for(const k of keys){if(h)dt[k]=h;else delete dt[k];}saveProfile();};
+  dn.onclick=()=>setH(h-1);up.onclick=()=>setH(h+1);d.appendChild(t);
+  const b=document.createElement('button');b.className='btn main';b.textContent='Edit';b.onclick=()=>openEditor(c);d.appendChild(b);
+  if(i===0)showBox(c.box);d.onpointerdown=()=>showBox(c.box);box.appendChild(d);});}
+function showBox(b){const a=toCss(b.x,b.y),z=toCss(b.x+b.w,b.y+b.h),el=$('#pickbox');el.hidden=false;
+ el.style.left=Math.min(a.left,z.left)+'px';el.style.top=Math.min(a.top,z.top)+'px';el.style.width=Math.abs(z.left-a.left)+'px';el.style.height=Math.abs(z.top-a.top)+'px';}
 function tileCanvas(grid,bpp,pal,scale){const H=grid.length*8,W=grid[0].length*8,c=document.createElement('canvas');c.width=W;c.height=H;
  c.style.width=W*scale+'px';c.style.height=H*scale+'px';const g=c.getContext('2d'),im=g.createImageData(W,H),d=new Uint32Array(im.data.buffer);
  grid.forEach((r,ty)=>r.forEach((t,tx)=>{for(let y=0;y<8;y++)for(let x=0;x<8;x++){const v=pix(t.cur,0,bpp,x,y);if(v)d[(ty*8+y)*W+tx*8+x]=rgba32(pal[v]);}}));
  g.putImageData(im,0,0);return c;}
 
-/* ---------- tile editor ---------- */
+/* ---------- object editor ---------- */
 const ED={};
-function decodeGrid(grid,bpp){const H=grid.length*8,W=grid[0].length*8,a=new Uint8Array(W*H);
- grid.forEach((r,ty)=>r.forEach((t,tx)=>{for(let y=0;y<8;y++)for(let x=0;x<8;x++)a[(ty*8+y)*W+tx*8+x]=pix(t.cur,0,bpp,x,y);}));return{W,H,a};}
+const idxOf=(bytes,bpp)=>{const a=new Uint8Array(64);for(let y=0;y<8;y++)for(let x=0;x<8;x++)a[y*8+x]=pix(bytes,0,bpp,x,y);return a;};
 function encodeTile(a,W,ox,oy,bpp){const out=new Uint8Array(bpp*8);for(let y=0;y<8;y++)for(let x=0;x<8;x++){const c=a[(oy+y)*W+ox+x];
  for(let p=0;p<bpp;p+=2){const base=p*8+y*2;if(c>>p&1)out[base]|=0x80>>x;if(c>>(p+1)&1)out[base+1]|=0x80>>x;}}return out;}
-function openEditor(o){Object.assign(ED,o,decodeGrid(o.tiles,o.bpp),{undo:[],tool:'pen',color:1});
- $('#edTitle').textContent=o.title;$('#editor').hidden=false;
- const z=Math.max(4,Math.min(40,Math.floor(Math.min(innerWidth-40,420)/ED.W),Math.floor(innerHeight*0.42/ED.H)));ED.z=z;
- const g=$('#edgrid');g.width=ED.W*z;g.height=ED.H*z;
- const pal=$('#edpal');pal.innerHTML='';ED.pal.forEach((c,i)=>{const b=document.createElement('button');b.setAttribute('aria-label','Color '+i);
-  if(i===0){b.className='checker';b.title='Transparent';}else b.style.background=`rgb(${rgb(c).join()})`;b.onclick=()=>{ED.color=i;if(ED.tool==='erase'||ED.tool==='pick')setTool('pen');paintPal();};pal.appendChild(b);});
- const blank=o.tiles.flat().filter(t=>t.orig.every(v=>!v)).length;
- $('#edNote').textContent=(blank?'Empty parts can’t be drawn on, because empty tiles are shared by the whole screen. ':'')+
-  (o.bpp===2?'This tile has 3 colors plus transparent.':o.bpp===4?'Sprites and most backgrounds have 15 colors plus transparent.':'This tile can use 255 colors.');
- $('#edVar').hidden=$('#edRevert').hidden=!o.tiles.flat().some(t=>game.profile.tiles[t.key]);
- setTool('pen');paintPal();edDraw();}
-function setTool(t){ED.tool=t;for(const b of $$('.tool'))b.classList.toggle('on',b.dataset.t===t);}
+const rgbInt=c=>{const[r,g,b]=rgb(c);return r<<16|g<<8|b;};
+const u32rgb=v=>(v&255)<<16|(v>>8&255)<<8|(v>>16&255);
+function compose(o,tiles,orig){const W=o.W,H=o.H,d=new Uint32Array(W*H);
+ for(const c of o.cells){const t=tiles&&tiles.get(c.key),a=orig?(t?t.origIdx:idxOf(c.orig,c.bpp)):(t?t.data:idxOf(c.cur,c.bpp));
+  for(let ly=0;ly<8;ly++){const Y=c.y+ly;if(Y<0||Y>=H)continue;for(let lx=0;lx<8;lx++){const X=c.x+lx;if(X<0||X>=W)continue;
+   const v=a[(c.vf?7-ly:ly)*8+(c.hf?7-lx:lx)];if(v)d[Y*W+X]=rgba32(c.pal[v]);}}}return d;}
+function compCanvas(o,max){const c=document.createElement('canvas');c.width=o.W;c.height=o.H;const k=Math.min(4,max/Math.max(o.W,o.H));
+ c.style.width=o.W*k+'px';c.style.height=o.H*k+'px';c.style.imageRendering='pixelated';const g=c.getContext('2d'),im=g.createImageData(o.W,o.H);
+ new Uint32Array(im.data.buffer).set(compose(o));g.putImageData(im,0,0);return c;}
+function openEditor(o){const tiles=new Map();
+ for(const c of o.cells)if(!tiles.has(c.key)){const data=idxOf(c.cur,c.bpp);tiles.set(c.key,{key:c.key,bpp:c.bpp,orig:c.orig,origIdx:idxOf(c.orig,c.bpp),data,loaded:data.slice(),vi:c.vi,pal:c.pal,locked:c.orig.every(v=>!v)});}
+ const cnt=new Map();for(const c of o.cells)cnt.set(c.pal,(cnt.get(c.pal)||0)+1);
+ Object.assign(ED,{o,W:o.W,H:o.H,cells:o.cells,tiles,undo:[],redo:[],erase:false,pal:[...cnt].sort((a,b)=>b[1]-a[1])[0][0],showOrig:false});
+ ED.rgb=rgbInt(ED.pal[1]??0);$('#edTitle').textContent=o.label;$('#editor').hidden=false;
+ ED.z=Math.max(2,Math.min(48,Math.floor((Math.min(innerWidth,680)-44)/ED.W),Math.floor(innerHeight*0.44/ED.H)));
+ const locked=[...tiles.values()].filter(t=>t.locked).length,pals=new Set(o.cells.map(c=>c.cg)).size,shared=o.cells.length-tiles.size;
+ $('#edNote').textContent=[`${tiles.size} tile${tiles.size>1?'s':''}`+(shared>0?`, ${shared} repeated (they change together)`:'')+'.',
+  pals>1?`Uses ${pals} palettes; each part keeps its own colors, so your color is matched to the closest one there.`:'',
+  locked?'Shaded parts are empty tiles shared by the whole screen and can’t be drawn on.':''].filter(Boolean).join(' ');
+ const has=[...tiles.keys()].some(k=>game.profile.tiles[k]);$('#edVar').hidden=$('#edRevert').hidden=!has;
+ buildPal();setTool('pen');edDraw();}
+function buildPal(){const box=$('#edpal');box.innerHTML='';ED.pal.forEach((c,i)=>{const b=document.createElement('button');b.setAttribute('aria-label',i?'Color '+i:'Transparent');
+ if(!i)b.className='checker';else b.style.background=`rgb(${rgb(c).join()})`;
+ b.onclick=()=>{if(!i){setTool('erase');}else{ED.rgb=rgbInt(c);if(ED.tool!=='fill')setTool('pen');else ED.erase=false;}markPal();};box.appendChild(b);});markPal();}
+function markPal(){[...$('#edpal').children].forEach((b,i)=>b.classList.toggle('on',ED.erase?i===0:i>0&&rgbInt(ED.pal[i])===ED.rgb));}
+function setTool(t){ED.tool=t;ED.erase=t==='erase';for(const b of $$('.tool'))b.classList.toggle('on',b.dataset.t===t);
+ $('#edgrid').style.touchAction=t==='pan'?'pan-x pan-y':'none';if($('#edpal').children.length)markPal();}
 for(const b of $$('.tool'))b.onclick=()=>setTool(b.dataset.t);
-function paintPal(){[...$('#edpal').children].forEach((b,i)=>b.classList.toggle('on',i===ED.color));}
-function edDraw(){const g=$('#edgrid').getContext('2d'),z=ED.z;g.clearRect(0,0,ED.W*z,ED.H*z);
- for(let y=0;y<ED.H;y++)for(let x=0;x<ED.W;x++){const c=ED.a[y*ED.W+x];if(!c)continue;g.fillStyle=`rgb(${rgb(ED.pal[c]).join()})`;g.fillRect(x*z,y*z,z,z);}
- g.strokeStyle='#0002';g.lineWidth=1;g.beginPath();for(let x=0;x<=ED.W;x++){g.moveTo(x*z+.5,0);g.lineTo(x*z+.5,ED.H*z);}for(let y=0;y<=ED.H;y++){g.moveTo(0,y*z+.5);g.lineTo(ED.W*z,y*z+.5);}g.stroke();
- g.strokeStyle='#0006';g.beginPath();for(let x=0;x<=ED.W;x+=8){g.moveTo(x*z+.5,0);g.lineTo(x*z+.5,ED.H*z);}for(let y=0;y<=ED.H;y+=8){g.moveTo(0,y*z+.5);g.lineTo(ED.W*z,y*z+.5);}g.stroke();
- const pv=$('#edprev'),rep=ED.title.startsWith('BG')?3:1;pv.width=ED.W*rep;pv.height=ED.H*rep;pv.style.width=ED.W*rep*2+'px';pv.style.height=ED.H*rep*2+'px';
- const pg=pv.getContext('2d'),im=pg.createImageData(ED.W,ED.H),d=new Uint32Array(im.data.buffer);for(let i=0;i<ED.a.length;i++)if(ED.a[i])d[i]=rgba32(ED.pal[ED.a[i]]);
- pg.clearRect(0,0,pv.width,pv.height);for(let ry=0;ry<rep;ry++)for(let rx=0;rx<rep;rx++)pg.putImageData(im,rx*ED.W,ry*ED.H);}
-function lockedAt(x,y){const t=ED.tiles[y>>3]?.[x>>3];return!t||t.orig.every(v=>!v);}
-function edPaint(e){const r=$('#edgrid').getBoundingClientRect(),x=Math.floor((e.clientX-r.left)/r.width*ED.W),y=Math.floor((e.clientY-r.top)/r.height*ED.H);
- if(x<0||y<0||x>=ED.W||y>=ED.H)return;const i=y*ED.W+x;
- if(ED.tool==='pick'){ED.color=ED.a[i];paintPal();setTool('pen');return;}
- if(lockedAt(x,y))return;
- if(ED.tool==='fill'){const from=ED.a[i],to=ED.color;if(from===to)return;const st=[[x,y]];while(st.length){const[px,py]=st.pop();if(px<0||py<0||px>=ED.W||py>=ED.H)continue;
-  const k=py*ED.W+px;if(ED.a[k]!==from||lockedAt(px,py))continue;ED.a[k]=to;st.push([px+1,py],[px-1,py],[px,py+1],[px,py-1]);}}
- else ED.a[i]=ED.tool==='erase'?0:ED.color;edDraw();}
+function edDraw(){const z=ED.z,W=ED.W,H=ED.H,g=$('#edgrid');g.width=W*z;g.height=H*z;const x=g.getContext('2d');
+ const off=document.createElement('canvas');off.width=W;off.height=H;const oc=off.getContext('2d'),im=oc.createImageData(W,H);
+ new Uint32Array(im.data.buffer).set(compose(ED,ED.tiles,ED.showOrig));oc.putImageData(im,0,0);
+ x.imageSmoothingEnabled=false;x.clearRect(0,0,g.width,g.height);x.drawImage(off,0,0,W*z,H*z);
+ x.fillStyle='#6b5aa655';for(const c of ED.cells)if(ED.tiles.get(c.key).locked)x.fillRect(c.x*z,c.y*z,8*z,8*z);
+ if($('#edGridOn').checked){x.lineWidth=1;if(z>=6){x.strokeStyle='#0001';x.beginPath();for(let i=0;i<=W;i++){x.moveTo(i*z+.5,0);x.lineTo(i*z+.5,H*z);}for(let i=0;i<=H;i++){x.moveTo(0,i*z+.5);x.lineTo(W*z,i*z+.5);}x.stroke();}
+  x.strokeStyle='#0005';for(const c of ED.cells)x.strokeRect(c.x*z+.5,c.y*z+.5,8*z-1,8*z-1);}
+ const pv=$('#edprev'),rep=ED.cells.length<=4&&ED.o.label.startsWith('BG')?3:1;pv.width=W*rep;pv.height=H*rep;
+ const k=Math.max(1,Math.min(3,Math.floor(120/(W*rep))));pv.style.width=W*rep*k+'px';pv.style.height=H*rep*k+'px';
+ const pg=pv.getContext('2d');pg.clearRect(0,0,pv.width,pv.height);for(let ry=0;ry<rep;ry++)for(let rx=0;rx<rep;rx++)pg.drawImage(off,rx*W,ry*H);}
+// Which cell owns a picture pixel: the frontmost visible one, else the frontmost drawable one.
+function cellAt(X,Y){let fb=null;for(let k=ED.cells.length-1;k>=0;k--){const c=ED.cells[k];if(X<c.x||Y<c.y||X>=c.x+8||Y>=c.y+8)continue;
+  const t=ED.tiles.get(c.key);if(t.locked)continue;const i=(c.vf?7-(Y-c.y):Y-c.y)*8+(c.hf?7-(X-c.x):X-c.x);if(t.data[i])return{c,t,i};if(!fb)fb={c,t,i};}return fb;}
+function nearest(pal,v){let best=1,bd=1e9;const r=v>>16&255,g=v>>8&255,b=v&255;
+ for(let i=1;i<pal.length;i++){const[q,w,e]=rgb(pal[i]),d=(q-r)**2+(w-g)**2+(e-b)**2;if(d<bd){bd=d;best=i;if(!d)break;}}return best;}
+function setPx(X,Y,erase,v){const h=cellAt(X,Y);if(!h)return null;h.t.data[h.i]=erase?0:nearest(h.c.pal,v);return h;}
+function paint(X,Y){const h=setPx(X,Y,ED.erase,ED.rgb);if($('#edMirror').checked)setPx(ED.W-1-X,Y,ED.erase,ED.rgb);return h;}
+const snapTiles=()=>new Map([...ED.tiles].map(([k,t])=>[k,t.data.slice()]));
+function pushUndo(){ED.undo.push(snapTiles());if(ED.undo.length>60)ED.undo.shift();ED.redo=[];}
+function restore(m){for(const[k,d]of m)ED.tiles.get(k).data.set(d);edDraw();}
+function edEvent(e){const r=$('#edgrid').getBoundingClientRect();return[Math.floor((e.clientX-r.left)/r.width*ED.W),Math.floor((e.clientY-r.top)/r.height*ED.H)];}
 const edg=$('#edgrid');let edDown=false;
-edg.addEventListener('pointerdown',e=>{e.preventDefault();edDown=true;edg.setPointerCapture(e.pointerId);ED.undo.push(ED.a.slice());if(ED.undo.length>40)ED.undo.shift();edPaint(e);});
-edg.addEventListener('pointermove',e=>{if(edDown&&ED.tool!=='fill'&&ED.tool!=='pick')edPaint(e);});
-edg.addEventListener('pointerup',()=>edDown=false);
-$('#edUndo').onclick=()=>{const u=ED.undo.pop();if(u){ED.a=u;edDraw();}};
+edg.addEventListener('pointerdown',e=>{if(ED.tool==='pan')return;e.preventDefault();const[X,Y]=edEvent(e);if(X<0||Y<0||X>=ED.W||Y>=ED.H)return;
+ const comp=compose(ED,ED.tiles);
+ if(ED.tool==='pick'){const v=comp[Y*ED.W+X];if(!v)setTool('erase');else{ED.rgb=u32rgb(v);const h=cellAt(X,Y);if(h&&h.c.pal!==ED.pal){ED.pal=h.c.pal;buildPal();}setTool('pen');}return;}
+ pushUndo();const h=cellAt(X,Y);if(h&&h.c.pal!==ED.pal){ED.pal=h.c.pal;buildPal();}
+ if(ED.tool==='fill'){const from=comp[Y*ED.W+X],seen=new Uint8Array(ED.W*ED.H),st=[Y*ED.W+X];
+  while(st.length){const i=st.pop();if(seen[i]||comp[i]!==from)continue;seen[i]=1;const x=i%ED.W,y=i/ED.W|0;setPx(x,y,ED.erase,ED.rgb);
+   if(x>0)st.push(i-1);if(x<ED.W-1)st.push(i+1);if(y>0)st.push(i-ED.W);if(y<ED.H-1)st.push(i+ED.W);}edDraw();return;}
+ edDown=true;try{edg.setPointerCapture(e.pointerId);}catch{}paint(X,Y);edDraw();});
+edg.addEventListener('pointermove',e=>{if(!edDown)return;const[X,Y]=edEvent(e);if(X<0||Y<0||X>=ED.W||Y>=ED.H)return;paint(X,Y);edDraw();});
+for(const t of['pointerup','pointercancel'])edg.addEventListener(t,()=>edDown=false);
+$('#edUndo').onclick=()=>{const u=ED.undo.pop();if(u){ED.redo.push(snapTiles());restore(u);}};
+$('#edRedo').onclick=()=>{const r=ED.redo.pop();if(r){ED.undo.push(snapTiles());restore(r);}};
+$('#edZoomIn').onclick=()=>{ED.z=Math.min(64,Math.ceil(ED.z*1.5));edDraw();};
+$('#edZoomOut').onclick=()=>{ED.z=Math.max(2,Math.floor(ED.z/1.5));edDraw();};
+$('#edGridOn').onchange=()=>edDraw();
+const eo=$('#edOrig');eo.addEventListener('pointerdown',e=>{e.preventDefault();ED.showOrig=true;edDraw();});
+for(const t of['pointerup','pointercancel','pointerleave'])eo.addEventListener(t,()=>{if(ED.showOrig){ED.showOrig=false;edDraw();}});
 $('#edClose').onclick=()=>{$('#editor').hidden=true;};
-function edSave(asNew){const tiles=game.profile.tiles;let n=0;
- ED.tiles.forEach((r,ty)=>r.forEach((t,tx)=>{if(t.orig.every(v=>!v))return;const bytes=encodeTile(ED.a,ED.W,tx*8,ty*8,ED.bpp);
-  let e=tiles[t.key];const same=bytes.every((v,i)=>v===t.orig[i]);
-  if(!e){if(same)return;e=tiles[t.key]={bpp:ED.bpp,orig:b64(t.orig),pal:ED.pal.slice(),rule:{type:'first'},variants:[]};}
+$('#edPng').onclick=()=>{const c=document.createElement('canvas');c.width=ED.W;c.height=ED.H;const g=c.getContext('2d'),im=g.createImageData(ED.W,ED.H);
+ new Uint32Array(im.data.buffer).set(compose(ED,ED.tiles));g.putImageData(im,0,0);c.toBlob(b=>download((game?.name||'tile')+' object.png',b,'image/png'));};
+$('#edPngIn').onclick=()=>{const f=$('#pngFile');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return;
+ try{const bm=await createImageBitmap(file),c=document.createElement('canvas');c.width=ED.W;c.height=ED.H;const g=c.getContext('2d');g.imageSmoothingEnabled=false;
+  if(bm.width%ED.W||bm.height%ED.H||bm.width/ED.W!==bm.height/ED.H)toast(`Best results come from a ${ED.W}×${ED.H} image (or an exact multiple). It was resized to fit.`,4500);
+  g.drawImage(bm,0,0,ED.W,ED.H);const d=g.getImageData(0,0,ED.W,ED.H).data;pushUndo();
+  for(let y=0;y<ED.H;y++)for(let x=0;x<ED.W;x++){const i=(y*ED.W+x)*4;setPx(x,y,d[i+3]<128,d[i]<<16|d[i+1]<<8|d[i+2]);}
+  edDraw();toast('Image brought in. Colors were matched to the game’s palettes.');}catch{toast('That image couldn’t be opened.');}};f.click();};
+function edSave(asNew){const all=game.profile.tiles;let n=0;
+ for(const t of ED.tiles.values()){if(t.locked||t.data.every((v,i)=>v===t.loaded[i]))continue;
+  const bytes=encodeTile(t.data,8,0,0,t.bpp);let e=all[t.key];
+  if(!e){if(bytes.every((v,i)=>v===t.orig[i]))continue;e=all[t.key]={bpp:t.bpp,orig:b64(t.orig),pal:t.pal.slice(),rule:{type:'first'},variants:[]};}
   const v={data:b64(bytes)};if(asNew||!e.variants.length)e.variants.push(v);else e.variants[Math.max(0,t.vi)]=v;
-  if(asNew&&e.variants.length===2&&(e.rule.type==='first'))e.rule={type:'cycle',frames:30};n++;}));
- saveProfile();patchIndex();renderTiles();$('#editor').hidden=true;$('#pickp').hidden=true;pickMode=false;paused=false;$('#pickbox').hidden=true;
- toast(n?(asNew?'Variation added':'Saved. It shows everywhere this tile appears.'):'Nothing changed');}
+  if(asNew&&e.variants.length===2&&e.rule.type==='first')e.rule={type:'cycle',frames:30};n++;}
+ saveProfile();patchIndex();renderTiles();$('#editor').hidden=true;endPick();
+ toast(n?(asNew?`Variation added to ${n} tile${n>1?'s':''}`:`Saved ${n} tile${n>1?'s':''}. Each shows everywhere it appears.`):'Nothing changed');}
 $('#edSave').onclick=()=>edSave(false);$('#edVar').onclick=()=>edSave(true);
 $('#edRevert').onclick=()=>{if(!confirm('Remove your edits and variations for this, and go back to the original?'))return;
- for(const t of ED.tiles.flat()){if(!game.profile.tiles[t.key])continue;for(const p of PT.patched.values())if(p.key===t.key)writeTile(p.wa,t.orig);delete game.profile.tiles[t.key];}
- saveProfile();patchIndex();renderTiles();$('#editor').hidden=true;toast('Original restored');};
+ for(const t of ED.tiles.values()){if(!game.profile.tiles[t.key])continue;for(const p of PT.patched.values())if(p.key===t.key)writeTile(p.wa,t.orig);delete game.profile.tiles[t.key];}
+ saveProfile();patchIndex();renderTiles();$('#editor').hidden=true;endPick();toast('Original restored');};
 function renderTiles(){const box=$('#tileList');box.innerHTML='';if(!game)return;const ent=Object.entries(game.profile.tiles);
  if(!ent.length){box.innerHTML='<p class="note">No edits yet.</p>';return;}
  for(const[k,e]of ent){const d=document.createElement('div');d.className='item';const pal=(e.pal||[]).slice();while(pal.length<(1<<e.bpp))pal.push(0);
-  const cur=unb64(e.variants[0]?.data||e.orig);d.appendChild(tileCanvas([[{cur}]],e.bpp,pal,4));
+  const orig=unb64(e.orig),cur=unb64(e.variants[0]?.data||e.orig);d.appendChild(tileCanvas([[{cur}]],e.bpp,pal,4));
   const t=document.createElement('div');t.className='grow';
   t.innerHTML=`<strong>${e.variants.length} version${e.variants.length>1?'s':''}</strong>${e.variants.length>1?`<select><option value="cycle">Animate</option><option value="random">Random each session</option><option value="first">First only</option><option value="memory">From memory value</option></select>`:''}`;
   d.appendChild(t);const sel=t.querySelector('select');if(sel){sel.value=e.rule?.type||'first';sel.onchange=()=>{
@@ -716,10 +806,130 @@ function renderTiles(){const box=$('#tileList');box.innerHTML='';if(!game)return
     toast('Set which value shows which version under Setup, Edit as text',4000);e.rule={type:'memory',addr,map:{}};}
    else e.rule={type:sel.value,frames:30};saveProfile();patchIndex();};}
   const ed=document.createElement('button');ed.className='btn';ed.textContent='Edit';
-  ed.onclick=()=>{closeSheet();const orig=unb64(e.orig);openEditor({title:'Saved tile',bpp:e.bpp,pal,tiles:[[{key:k,orig,cur:unb64(e.variants[0].data),vi:0}]]});};
+  ed.onclick=()=>{closeSheet();openEditor({label:'Saved tile',W:8,H:8,cells:[{x:0,y:0,wa:-1,bpp:e.bpp,cg:0,hf:0,vf:0,z:0,key:k,orig,cur,vi:0,pal}]});};
   const x=document.createElement('button');x.className='btn warn';x.textContent='✕';x.setAttribute('aria-label','Remove edit');
-  x.onclick=()=>{for(const p of PT.patched.values())if(p.key===k)writeTile(p.wa,unb64(e.orig));delete game.profile.tiles[k];saveProfile();patchIndex();renderTiles();};
+  x.onclick=()=>{for(const p of PT.patched.values())if(p.key===k)writeTile(p.wa,orig);delete game.profile.tiles[k];saveProfile();patchIndex();renderTiles();};
   d.append(ed,x);box.appendChild(d);}}
+
+/* ---------- 3D depth view: layers and sprites lifted by drawing order, colors from the real frame ---------- */
+const G={on:false,gl:null,u:{},H:224,ax:1,oy:0,ot:0,base:null,M:null,inv:null,memo:new Map(),rgba:new Uint8Array(256*240*4),h:new Float32Array(256*240),
+ bg:[0,1,2,3].map(()=>new Uint8Array(256*240)),bgB:[0,1,2,3].map(()=>new Uint8Array(256*240)),bgOn:[0,0,0,0],ob:new Uint8Array(256*240),obB:new Uint8Array(256*240)};
+const VS=`#version 300 es
+precision highp float;precision highp int;
+layout(location=0) in vec3 aP;layout(location=1) in float aF;
+uniform highp sampler2D uT;uniform mat4 uM;uniform int uW;uniform int uH;uniform float uS;uniform float uSh;uniform float uAx;
+flat out vec3 vC;
+float hAt(ivec2 c){if(c.x<0||c.y<0||c.x>=uW||c.y>=uH)return 0.0;return texelFetch(uT,c,0).a*63.75*uS;}
+void main(){ivec2 c=ivec2(gl_InstanceID%uW,gl_InstanceID/uW);vec4 t=texelFetch(uT,c,0);float h=t.a*63.75*uS,z=h,s=1.0;int f=int(aF+0.5);
+ if(f>0){ivec2 d=f==1?ivec2(1,0):f==2?ivec2(-1,0):f==3?ivec2(0,1):ivec2(0,-1);float hn=hAt(c+d);
+  if(hn>=h-0.01){gl_Position=vec4(0.0,0.0,-2.0,1.0);vC=vec3(0.0);return;}
+  z=mix(hn,h,aP.z);s=f==3?0.74:f==4?0.5:0.62;}
+ else{float o=max(max(hAt(c+ivec2(-1,-1)),hAt(c+ivec2(0,-1))),hAt(c+ivec2(-1,0)))-h;s=1.0-uSh*0.42*clamp(o/5.0,0.0,1.0);}
+ vec3 p=vec3((float(c.x)+aP.x-float(uW)*0.5)*uAx,-(float(c.y)+aP.y-float(uH)*0.5),z);
+ gl_Position=uM*vec4(p,1.0);vC=t.rgb*s;}`;
+const FS=`#version 300 es
+precision mediump float;flat in vec3 vC;out vec4 o;void main(){o=vec4(vC,1.0);}`;
+const m4={
+ persp(f,a,n,fa){const t=1/Math.tan(f/2);return[t/a,0,0,0,0,t,0,0,0,0,(fa+n)/(n-fa),-1,0,0,2*fa*n/(n-fa),0];},
+ look(e,c,u){const sub=(a,b)=>a.map((v,i)=>v-b[i]),cr=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],nm=a=>{const l=Math.hypot(...a);return a.map(v=>v/l);},dt=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  const z=nm(sub(e,c)),x=nm(cr(u,z)),y=cr(z,x);return[x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-dt(x,e),-dt(y,e),-dt(z,e),1];},
+ mul(a,b){const o=new Array(16);for(let i=0;i<4;i++)for(let j=0;j<4;j++){let s=0;for(let k=0;k<4;k++)s+=a[k*4+j]*b[i*4+k];o[i*4+j]=s;}return o;},
+ xf(m,v){return[0,1,2,3].map(i=>m[i]*v[0]+m[4+i]*v[1]+m[8+i]*v[2]+m[12+i]*v[3]);},
+ inv(m){const[a00,a01,a02,a03,a10,a11,a12,a13,a20,a21,a22,a23,a30,a31,a32,a33]=m;
+  const b00=a00*a11-a01*a10,b01=a00*a12-a02*a10,b02=a00*a13-a03*a10,b03=a01*a12-a02*a11,b04=a01*a13-a03*a11,b05=a02*a13-a03*a12,
+   b06=a20*a31-a21*a30,b07=a20*a32-a22*a30,b08=a20*a33-a23*a30,b09=a21*a32-a22*a31,b10=a21*a33-a23*a31,b11=a22*a33-a23*a32;
+  const d=1/(b00*b11-b01*b10+b02*b09+b03*b08-b04*b07+b05*b06);
+  return[(a11*b11-a12*b10+a13*b09)*d,(a02*b10-a01*b11-a03*b09)*d,(a31*b05-a32*b04+a33*b03)*d,(a22*b04-a21*b05-a23*b03)*d,
+   (a12*b08-a10*b11-a13*b07)*d,(a00*b11-a02*b08+a03*b07)*d,(a32*b02-a30*b05-a33*b01)*d,(a20*b05-a22*b02+a23*b01)*d,
+   (a10*b10-a11*b08+a13*b06)*d,(a01*b08-a00*b10-a03*b06)*d,(a30*b04-a31*b02+a33*b00)*d,(a21*b02-a20*b04-a23*b00)*d,
+   (a11*b07-a10*b09-a12*b06)*d,(a00*b09-a01*b07+a02*b06)*d,(a31*b01-a30*b03-a32*b00)*d,(a20*b03-a21*b01+a22*b00)*d];}};
+function glInit(){if(G.gl)return true;const gl=$('#gl').getContext('webgl2',{antialias:true,alpha:false});if(!gl)return false;
+ const sh=(t,src)=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;};
+ const p=gl.createProgram();gl.attachShader(p,sh(gl.VERTEX_SHADER,VS));gl.attachShader(p,sh(gl.FRAGMENT_SHADER,FS));gl.linkProgram(p);
+ if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p));
+ const v=[],q=(a,b,c,d,f)=>{for(const P of[a,b,c,a,c,d])v.push(...P,f);};
+ q([0,0,1],[1,0,1],[1,1,1],[0,1,1],0);q([1,0,0],[1,1,0],[1,1,1],[1,0,1],1);q([0,1,0],[0,0,0],[0,0,1],[0,1,1],2);
+ q([1,1,0],[0,1,0],[0,1,1],[1,1,1],3);q([0,0,0],[1,0,0],[1,0,1],[0,0,1],4);
+ const vao=gl.createVertexArray();gl.bindVertexArray(vao);gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(v),gl.STATIC_DRAW);
+ gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,16,0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,1,gl.FLOAT,false,16,12);
+ const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,256,240,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+ for(const[k,val]of[[gl.TEXTURE_MIN_FILTER,gl.NEAREST],[gl.TEXTURE_MAG_FILTER,gl.NEAREST],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])gl.texParameteri(gl.TEXTURE_2D,k,val);
+ for(const n of['uT','uM','uW','uH','uS','uSh','uAx'])G.u[n]=gl.getUniformLocation(p,n);
+ Object.assign(G,{gl,prog:p,vao,tex,nv:v.length/4});gl.enable(gl.DEPTH_TEST);return true;}
+// Front-to-back drawing order per graphics mode. 0-7 = BG(n)·priority, 8-11 = sprites·priority.
+const B=(bg,p)=>bg*2+p,O=p=>8+p;
+const ORDER={0:[O(3),B(0,1),B(1,1),O(2),B(0,0),B(1,0),O(1),B(2,1),B(3,1),O(0),B(2,0),B(3,0)],
+ '1hi':[B(2,1),O(3),B(0,1),B(1,1),O(2),B(0,0),B(1,0),O(1),O(0),B(2,0)],
+ 1:[O(3),B(0,1),B(1,1),O(2),B(0,0),B(1,0),O(1),B(2,1),O(0),B(2,0)],
+ 2:[O(3),B(0,1),O(2),B(1,1),O(1),B(0,0),O(0),B(1,0)]};
+const orderFor=s=>{const m=s.R[5]&7;return m===0?ORDER[0]:m===1?ORDER[s.R[5]&8?'1hi':1]:m<7?ORDER[2]:null;};
+function boostFn(s){const dt=game.profile.depth.tiles;if(!Object.keys(dt).length)return null;G.memo.clear();
+ return(wa,bpp)=>{const k=wa*8+bpp;let v=G.memo.get(k);if(v===undefined){const h=bpp+':'+hex(fnv(s.V,wa*2,bpp*8)),e=PT.vmap.get(h);v=dt[e?e.key:h]||0;G.memo.set(k,v);}return v;};}
+// Decoded-tile cache for the 3D view: each 8×8 tile is decoded once and redone only when its video memory changes.
+const TC={2:{d:new Uint8Array(4096*64),ok:new Uint8Array(4096)},4:{d:new Uint8Array(2048*64),ok:new Uint8Array(2048)},8:{d:new Uint8Array(1024*64),ok:new Uint8Array(1024)},sh:new Uint8Array(65536),fresh:false};
+function tcSync(V){const sh=TC.sh;if(!TC.fresh){for(const k of[2,4,8])TC[k].ok.fill(0);TC.fresh=true;sh.set(V);return;}
+ for(let b=0;b<4096;b++){const o=b*16;for(let j=0;j<16;j++)if(V[o+j]!==sh[o+j]){TC[2].ok[b]=0;TC[4].ok[b>>1]=0;TC[8].ok[b>>2]=0;sh.set(V.subarray(o,o+16),o);break;}}}
+function tcGet(V,wa,bpp){const c=TC[bpp],ti=(wa*2)/(bpp*8)|0,o=ti*64;if(!c.ok[ti]){const base=ti*bpp*8;
+  for(let y=0;y<8;y++)for(let x=0;x<8;x++){let v=0;const sh=7-x,r=base+y*2;for(let p=0;p<bpp;p+=2){v|=(V[r+p*8]>>sh&1)<<p;v|=(V[r+p*8+1]>>sh&1)<<(p+1);}c.d[o+y*8+x]=v;}c.ok[ti]=1;}return o;}
+function opBG(s,b,op,bst,H,boost){const ts=b.big?16:8,mw=b.size&1?64:32,mh=b.size&2?64:32,V=s.V,D=TC[b.bpp].d;op.fill(0);if(boost)bst.fill(0);
+ for(let sy=0;sy<H;sy++){const y=(sy+b.v)&(mh*ts-1),ty=y/ts|0;let lt=-1,pr=0,o0=0,o1=0,hf=0,b0=0,b1=0;
+  for(let sx=0;sx<256;sx++){const x=(sx+b.h)&(mw*ts-1),tx=x/ts|0;
+   if(tx!==lt){lt=tx;const si=(tx>=32?1:0)+(ty>=32?(b.size===3?2:1):0),a=(b.sc+si*0x400+(ty&31)*32+(tx&31))&0x7FFF,e=V[a*2]|V[a*2+1]<<8;
+    hf=e>>14&1;let py=y%ts;if(e>>15&1)py=ts-1-py;pr=(e>>13&1)+1;const base=e&0x3FF,ra=py>>3?16:0,r8=(py&7)*8;
+    const w0=(b.nb+((base+(ts===16&&hf?1:0)+ra)&0x3FF)*b.bpp*4)&0x7FFF;o0=tcGet(V,w0,b.bpp)+r8;
+    if(ts===16){const w1=(b.nb+((base+(hf?0:1)+ra)&0x3FF)*b.bpp*4)&0x7FFF;o1=tcGet(V,w1,b.bpp)+r8;if(boost){b0=boost(w0,b.bpp);b1=boost(w1,b.bpp);}}
+    else if(boost)b0=b1=boost(w0,b.bpp);}
+   const k=x%ts,h=k>>3,kk=k&7,c=D[(h?o1:o0)+(hf?7-kk:kk)];if(c){const i=sy*256+sx;op[i]=pr;if(boost)bst[i]=h?b1:b0;}}}}
+function opOBJ(s,H,boost){const ob=G.ob,bb=G.obB,V=s.V,D=TC[4].d;ob.fill(0);bb.fill(0);const sps=sprites(s);
+ for(let k=sps.length-1;k>=0;k--){const sp=sps[k];for(let y=0;y<sp.h;y++){const Y=sp.y+y;if(Y<0||Y>=H)continue;const py=sp.vf?sp.h-1-y:y;
+  for(let x=0;x<sp.w;x++){const X=sp.x+x;if(X<0||X>=256)continue;const px=sp.hf?sp.w-1-x:x,wa=objWA(sp,px>>3,py>>3);
+   if(D[tcGet(V,wa,4)+(py&7)*8+(px&7)]){const i=Y*256+X;ob[i]=sp.prio+1;bb[i]=2+(boost?boost(wa,4):0);}}}}}
+function compose3D(){const s=snap(),H=G.H=logical.h,vw=M._s9x_vw(),vh=M._s9x_vh(),xs=vw>256?2:1,ys=vh>240?2:1;
+ const src=new Uint16Array(H8().buffer,P.video,vw*vh),px=new Uint32Array(G.rgba.buffer),ord=orderFor(s),bst=boostFn(s),flat3=game.profile.depth.flatBG3,k=S.depth/100;tcSync(s.V);
+ if(ord){for(let bg=0;bg<4;bg++){const b=bgInfo(s,bg);G.bgOn[bg]=b.bpp&&(s.R[0x2C]>>bg&1);if(G.bgOn[bg])opBG(s,b,G.bg[bg],G.bgB[bg],H,bst);}
+  if(s.R[0x2C]&16)opOBJ(s,H,bst);else G.ob.fill(0);}
+ // Map each pixel's mix of layers (BG1-4 priority + sprite priority) to the frontmost one, once per frame.
+ const n=ord?ord.length:0,RL=G.rl||(G.rl=new Uint8Array(2048)),WL=G.wl||(G.wl=new Int8Array(2048));
+ for(let c=0;c<2048;c++){let r=0,w=-1;
+  for(let j=0;j<n;j++){const id=ord[j];if(id<8){const bg=id>>1;if(G.bgOn[bg]&&(c>>(bg*2)&3)===(id&1)+1){r=n-j;w=bg;break;}}else if((c>>8)===id-7){r=n-j;w=4;break;}}
+  if(w===2&&flat3){r=0;w=-1;}RL[c]=r;WL[c]=w;}
+ const b0=G.bg[0],b1=G.bg[1],b2=G.bg[2],b3=G.bg[3],ob=G.ob,on=G.bgOn,z=new Uint8Array(0);
+ const q0=on[0]?b0:null,q1=on[1]?b1:null,q2=on[2]?b2:null,q3=on[3]?b3:null,obj=s.R[0x2C]&16;
+ for(let y=0;y<H;y++){const row=y*ys*vw;for(let x=0;x<256;x++){const i=y*256+x;let h4=0;
+  if(n){const c=(q0?q0[i]:0)|(q1?q1[i]<<2:0)|(q2?q2[i]<<4:0)|(q3?q3[i]<<6:0)|(obj?ob[i]<<8:0),w=WL[c];
+   if(w>=0)h4=RL[c]*6+(w===4?G.obB[i]*4:bst?G.bgB[w][i]*4:0);}
+  if(h4>255)h4=255;G.h[i]=h4*k/4;px[i]=((LUT[src[row+x*xs]]&0x00ffffff)|h4<<24)>>>0;}}}
+function glDraw(){const gl=G.gl,c=$('#gl'),r=c.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1),w=Math.max(1,Math.round(r.width*dpr)),h=Math.max(1,Math.round(r.height*dpr));
+ if(c.width!==w||c.height!==h){c.width=w;c.height=h;}gl.viewport(0,0,w,h);
+ G.ax=S.aspect==='pixel'?1:(4/3)/(256/G.H);
+ const tilt=Math.max(0,Math.min(70,S.tilt+G.ot))*Math.PI/180,yaw=G.oy*Math.PI/180,fov=26*Math.PI/180,aspect=w/h;
+ let rad=Math.max(G.H/2,128*G.ax/aspect)/Math.tan(fov/2);rad*=1-0.2*Math.sin(tilt);
+ const eye=[Math.sin(yaw)*Math.sin(tilt)*rad,-Math.cos(yaw)*Math.sin(tilt)*rad,Math.cos(tilt)*rad];
+ G.M=m4.mul(m4.persp(fov,aspect,rad*0.1,rad*4),m4.look(eye,[0,0,0],[-Math.sin(yaw),Math.cos(yaw),0]));G.inv=m4.inv(G.M);
+ gl.clearColor(0,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(G.prog);gl.bindVertexArray(G.vao);
+ gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,G.tex);gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
+ gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,256,G.H,gl.RGBA,gl.UNSIGNED_BYTE,G.rgba.subarray(0,256*G.H*4));
+ gl.uniform1i(G.u.uT,0);gl.uniformMatrix4fv(G.u.uM,false,G.M);gl.uniform1i(G.u.uW,256);gl.uniform1i(G.u.uH,G.H);
+ gl.uniform1f(G.u.uS,S.depth/100);gl.uniform1f(G.u.uSh,S.shadow?1:0);gl.uniform1f(G.u.uAx,G.ax);
+ gl.drawArraysInstanced(gl.TRIANGLES,0,G.nv,256*G.H);}
+// Taps: follow the finger's ray into the scene until it hits a raised pixel or the ground.
+function glPick(cx,cy){const r=$('#gl').getBoundingClientRect(),nx=(cx-r.left)/r.width*2-1,ny=1-(cy-r.top)/r.height*2;
+ const a=m4.xf(G.inv,[nx,ny,-1,1]),b=m4.xf(G.inv,[nx,ny,1,1]),p0=a.slice(0,3).map(v=>v/a[3]),p1=b.slice(0,3).map(v=>v/b[3]),dz=p1[2]-p0[2]||1e-6;
+ const at=t=>[p0[0]+(p1[0]-p0[0])*t,p0[1]+(p1[1]-p0[1])*t,p0[2]+(p1[2]-p0[2])*t],t0=(80-p0[2])/dz,t1=(0-p0[2])/dz;
+ for(let k=0;k<=300;k++){const[X,Y,Z]=at(t0+(t1-t0)*k/300),x=X/G.ax+128,y=G.H/2-Y,ix=Math.floor(x),iy=Math.floor(y);
+  if(ix>=0&&iy>=0&&ix<256&&iy<G.H&&G.h[iy*256+ix]>=Z)return{x,y};}
+ const[X,Y]=at(t1);return{x:X/G.ax+128,y:G.H/2-Y};}
+function glProject(x,y){const ix=Math.max(0,Math.min(255,Math.floor(x))),iy=Math.max(0,Math.min(G.H-1,Math.floor(y))),v=m4.xf(G.M,[(x-128)*G.ax,G.H/2-y,G.h[iy*256+ix]||0,1]);
+ const r=$('#gl').getBoundingClientRect(),w=$('#wrap').getBoundingClientRect();
+ return{left:r.left-w.left+(v[0]/v[3]*.5+.5)*r.width,top:r.top-w.top+(.5-v[1]/v[3]*.5)*r.height};}
+function set3D(on){if(on){try{if(!glInit()){toast('3D view needs WebGL 2, which this browser doesn’t have.');on=false;}}catch(e){toast('3D view couldn’t start: '+e.message,5000);on=false;}}
+ G.on=on;S.d3=on;saveSettings();$('#gl').hidden=!on;cv.style.visibility=on?'hidden':'';$('#crt').hidden=on||!S.crt;
+ $('#d3Btn').classList.toggle('on',on);$('#setD3').checked=on;if(game&&running)draw();}
+$('#d3Btn').onclick=()=>set3D(!G.on);$('#setD3').onchange=e=>set3D(e.target.checked);
+function motionPermission(){if(S.motion&&typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission)
+ DeviceOrientationEvent.requestPermission().then(r=>{if(r!=='granted'){S.motion=false;$('#setMotion').checked=false;saveSettings();toast('Motion access wasn’t allowed');}}).catch(()=>{});G.base=null;G.oy=G.ot=0;}
+addEventListener('deviceorientation',e=>{if(!S.motion||!G.on||e.beta==null)return;if(!G.base)G.base={b:e.beta,g:e.gamma};
+ G.oy=Math.max(-12,Math.min(12,(e.gamma-G.base.g)*.4));G.ot=Math.max(-12,Math.min(12,(e.beta-G.base.b)*.4));});
 
 /* ---------- game setup page ---------- */
 $('#actBtns').innerHTML=Object.keys(BTN).map(n=>`<label class="ck"><input type="checkbox" value="${n}"> ${n}</label>`).join('');
@@ -738,7 +948,8 @@ $('#profEdit').onclick=()=>{if(!game)return;$('#profBox').hidden=!$('#profBox').
 $('#profSave').onclick=()=>{try{game.profile=normProfile(JSON.parse($('#profText').value),game.name);saveProfile();reloadProfile();toast('Saved');}catch(e){toast('That text isn’t valid JSON: '+e.message,5000);}};
 function reloadProfile(){applyCheats();renderActions();patchesOff();patchIndex();renderAllTools();}
 function renderAllTools(){renderTiles();renderWatches();renderCheats();renderActList();renderRS();
- if(game){$('#walkLayer').value=game.profile.walk.layer;$('#walkDiag').checked=game.profile.walk.diagonal;}}
+ if(game){$('#walkLayer').value=game.profile.walk.layer;$('#walkDiag').checked=game.profile.walk.diagonal;$('#flat3').checked=game.profile.depth.flatBG3;}}
+$('#flat3').onchange=e=>{if(game){game.profile.depth.flatBG3=e.target.checked;saveProfile();}};
 
 /* ---------- sheet + settings ---------- */
 function openSheet(p){$('#sheet').hidden=false;paused=!!game&&p!=='tools';if(p)showPage(p);renderSlots();}
@@ -747,12 +958,13 @@ function showPage(p){for(const t of $$('.tab'))t.classList.toggle('on',t.dataset
 for(const t of $$('.tab'))t.onclick=()=>showPage(t.dataset.p);
 $('#menuBtn').onclick=()=>openSheet(game?'saves':'games');$('#sheetClose').onclick=closeSheet;
 $('#sheet').addEventListener('pointerdown',e=>{if(e.target.id==='sheet')closeSheet();});
-function applySettings(){$('#crt').hidden=!S.crt;cv.classList.toggle('smooth',S.smooth);document.documentElement.style.setProperty('--op',S.op/100);applyAspect();
+function applySettings(){$('#crt').hidden=!S.crt||G.on;cv.classList.toggle('smooth',S.smooth);document.documentElement.style.setProperty('--op',S.op/100);applyAspect();
  anode?.port.postMessage({v:S.vol/100});saveSettings();}
 const bind=(id,key,get=e=>e.target.value)=>{const el=$(id);if(el.type==='checkbox')el.checked=S[key];else el.value=S[key];
  el.addEventListener(el.type==='range'?'input':'change',e=>{S[key]=el.type==='checkbox'?el.checked:typeof SETDEF[key]==='number'?+get(e):get(e);applySettings();if(key==='rw'||key==='rwSec'){if(game)rewindSetup();}});};
-bind('#setAspect','aspect');bind('#setCrt','crt');bind('#setSmooth','smooth');bind('#setWatch','watch');bind('#setOp','op');bind('#setVol','vol');bind('#setFF','ff');bind('#setRw','rw');bind('#setRwSec','rwSec');
-applySettings();
+bind('#setAspect','aspect');bind('#setCrt','crt');bind('#setSmooth','smooth');bind('#setWatch','watch');bind('#setOp','op');bind('#setVol','vol');bind('#setFF','ff');bind('#setRw','rw');bind('#setRwSec','rwSec');bind('#setTilt','tilt');bind('#setDepth','depth');bind('#setShadow','shadow');bind('#setMotion','motion');
+$('#setMotion').addEventListener('change',motionPermission);$('#setD3').checked=S.d3;
+applySettings();if(S.d3)set3D(true);
 
 document.addEventListener('visibilitychange',()=>{if(document.hidden){saveAuto();ptrs.clear();refreshTouch();inp.key=0;}});
 addEventListener('pagehide',()=>saveAuto());
