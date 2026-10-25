@@ -1,4 +1,4 @@
-// Harvest Touch bridge: wraps the Snes9x libretro core in a small C API for JavaScript.
+// Touch-SNES (TSNES) bridge: wraps the Snes9x libretro core in a small C API for JavaScript.
 // Built by .github/workflows/build.yml into snes.js + snes.wasm. Never edited by the app at runtime.
 #include <emscripten.h>
 #include <stdio.h>

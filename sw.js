@@ -1,5 +1,5 @@
 // Network first, so every push to GitHub Pages shows up right away. The cache is only an offline fallback.
-const CACHE = 'harvest-touch-v1';
+const CACHE = 'tsnes-v1';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', e => {

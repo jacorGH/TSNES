@@ -1,6 +1,6 @@
 {
- "name": "Harvest Touch",
- "short_name": "Harvest Touch",
+ "name": "Touch-SNES",
+ "short_name": "TSNES",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",
