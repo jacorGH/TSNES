@@ -14,7 +14,7 @@ static uint16_t vbuf[512 * 480];
 static int vw = 256, vh = 224;
 static int16_t abuf[8192 * 2];
 static int aframes = 0;
-static uint32_t pad = 0;
+static uint32_t pad = 0, pad2 = 0;
 static uint8_t regs[0x40];      // copy of $2100-$213F after each frame
 static uint16_t scroll[8];      // BG1-4 horizontal/vertical scroll
 static bool loaded = false;
@@ -59,9 +59,10 @@ static size_t audio_batch_cb(const int16_t *d, size_t frames) {
 static void audio_cb(int16_t l, int16_t r) { int16_t s[2] = {l, r}; audio_batch_cb(s, 1); }
 static void poll_cb(void) {}
 static int16_t input_cb(unsigned port, unsigned device, unsigned, unsigned id) {
-  if (port != 0 || device != RETRO_DEVICE_JOYPAD) return 0;
-  if (id == RETRO_DEVICE_ID_JOYPAD_MASK) return (int16_t)pad;
-  return (pad >> id) & 1;
+  if (port > 1 || device != RETRO_DEVICE_JOYPAD) return 0;
+  uint32_t m = port ? pad2 : pad;
+  if (id == RETRO_DEVICE_ID_JOYPAD_MASK) return (int16_t)m;
+  return (m >> id) & 1;
 }
 
 extern "C" {
@@ -81,6 +82,7 @@ EMSCRIPTEN_KEEPALIVE int s9x_load(const uint8_t *rom, int size) {
   struct retro_game_info info = {"game.sfc", rom, (size_t)size, NULL};
   if (!retro_load_game(&info)) return 0;
   retro_set_controller_port_device(0, RETRO_DEVICE_JOYPAD);
+  retro_set_controller_port_device(1, RETRO_DEVICE_JOYPAD);
   struct retro_system_av_info av;
   retro_get_system_av_info(&av);
   rate = av.timing.sample_rate; fps = av.timing.fps;
@@ -97,6 +99,7 @@ EMSCRIPTEN_KEEPALIVE void s9x_frame() {
 
 EMSCRIPTEN_KEEPALIVE void s9x_reset() { retro_reset(); }
 EMSCRIPTEN_KEEPALIVE void s9x_set_input(uint32_t mask) { pad = mask; }
+EMSCRIPTEN_KEEPALIVE void s9x_set_input2(uint32_t mask) { pad2 = mask; }
 EMSCRIPTEN_KEEPALIVE uint16_t *s9x_video() { return vbuf; }
 EMSCRIPTEN_KEEPALIVE int s9x_vw() { return vw; }
 EMSCRIPTEN_KEEPALIVE int s9x_vh() { return vh; }

@@ -32,7 +32,9 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 #wrap{position:relative;aspect-ratio:var(--ar);width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset-right),calc(64dvh * var(--arn)))}
 #screen{width:100%;height:100%;display:block;image-rendering:pixelated;background:#000}
 #screen.smooth{image-rendering:auto}
-#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
+#gl,#rv{position:absolute;inset:0;width:100%;height:100%;display:block}
+#rv{object-fit:fill;background:#000}
+#rvTap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
 #tint{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply}
 #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;image-rendering:pixelated}
 #crt{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(#0000 0 2px,#0004 2px 3px)}
@@ -137,6 +139,8 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
  <div id="stage"><div id="bezel"><div id="wrap">
   <canvas id="screen" width="256" height="224"></canvas>
   <canvas id="gl" hidden></canvas>
+  <video id="rv" playsinline autoplay hidden></video>
+  <button class="btn main" id="rvTap" hidden>Tap to start sound and picture</button>
   <div id="crt" hidden></div>
   <div id="tint" hidden></div>
   <canvas id="fx" hidden></canvas>
@@ -158,7 +162,7 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
 
 <div id="sheet" hidden><div class="panel">
  <div class="tabs">
-  <div class="tabrow"><button class="tab on" data-p="games">Games</button><button class="tab" data-p="saves">Saves</button><button class="tab" data-p="tools">Tools</button><button class="tab" data-p="setup">Setup</button><button class="tab" data-p="settings">Settings</button></div>
+  <div class="tabrow"><button class="tab on" data-p="games">Games</button><button class="tab" data-p="saves">Saves</button><button class="tab" data-p="tools">Tools</button><button class="tab" data-p="together">Together</button><button class="tab" data-p="setup">Setup</button><button class="tab" data-p="settings">Settings</button></div>
   <button class="ib close" id="sheetClose" aria-label="Close">✕</button>
  </div>
  <div class="pages">
@@ -203,6 +207,21 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
     <div class="row"><input type="text" id="cheatCode" placeholder="Code" style="flex:1"><input type="text" id="cheatName" placeholder="Name" style="flex:1"><button class="btn main" id="cheatAdd">Add</button></div>
     <div class="list" id="cheatList"></div>
    </details>
+  </section>
+  <section class="page" data-p="together" hidden>
+   <h2>Play together</h2>
+   <p class="note">Host the game you’re playing and a friend joins from their phone as Player 2. They see and hear your game live and use their own controls, so they don’t need the game. More friends can join to watch.</p>
+   <div class="row"><label>Your name <input type="text" id="netName" style="width:150px"></label></div>
+   <div class="row"><button class="btn main" id="netHost">Host this game</button><button class="btn main" id="netInvite" hidden>Send invite</button><button class="btn warn" id="netEnd" hidden>End session</button><span class="note" id="netPing" style="margin:0"></span></div>
+   <div id="netJoinRow"><h3>Join a friend</h3><div class="row"><input type="text" id="netCode" placeholder="Room code" autocapitalize="characters" style="width:140px"><button class="btn main" id="netJoin">Join</button></div></div>
+   <p class="note" id="netStatus"></p>
+   <div class="list" id="netList"></div>
+   <h3>Chat</h3>
+   <div class="row"><input type="text" id="netMsg" placeholder="Say something" style="flex:1"><button class="btn" id="netSend">Send</button></div>
+   <div class="row"><button class="btn" data-react="👋">👋</button><button class="btn" data-react="😂">😂</button><button class="btn" data-react="👍">👍</button><button class="btn" data-react="❤️">❤️</button><button class="btn" data-react="🎉">🎉</button><button class="btn" data-react="😱">😱</button></div>
+   <h3>Same room</h3>
+   <div class="row"><label class="ck"><input type="checkbox" id="setPad2"> A second Bluetooth controller is Player 2</label></div>
+   <p class="note">Play together uses a free public service to connect phones, then sends the game directly between them. Wi-Fi works best; some cellular and work networks block direct connections. The delay is a little higher than playing on one device, so co-op and turn-based games feel best. Games that need a Multitap for 3–4 players aren’t supported yet.</p>
   </section>
   <section class="page" data-p="setup" hidden>
    <h2>Action buttons</h2>
@@ -325,7 +344,7 @@ const DB=(()=>{let p,mem=null;const memStore=s=>(mem[s]||(mem[s]=new Map()));
   return new Promise((res,rej)=>{const t=d.transaction(st,mode);const r=fn(t.objectStore(st));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);});};
  return{get:(s,k)=>run(s,'readonly',o=>o.get(k),m=>m.get(k)),put:(s,k,v)=>run(s,'readwrite',o=>o.put(v,k),m=>{m.set(k,v);}),
   del:(s,k)=>run(s,'readwrite',o=>o.delete(k),m=>{m.delete(k);}),keys:s=>run(s,'readonly',o=>o.getAllKeys(),m=>[...m.keys()])};})();
-const SETDEF={gestures:true,talkFlat:true,resume:true,sunShadow:true,glowFx:true,bloom:true,waterFx:true,fastText:2,moments:5,stand:true,dof:true,look:'original',fxAmt:40,padHide:true,aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10,d3:false,tilt:28,depth:100,shadow:true,motion:false};
+const SETDEF={pad2:true,gestures:true,talkFlat:true,resume:true,sunShadow:true,glowFx:true,bloom:true,waterFx:true,fastText:2,moments:5,stand:true,dof:true,look:'original',fxAmt:40,padHide:true,aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10,d3:false,tilt:28,depth:100,shadow:true,motion:false};
 let S=Object.assign({},SETDEF,JSON.parse(localStorage.getItem('ht.settings')||'{}'));
 const saveSettings=()=>localStorage.setItem('ht.settings',JSON.stringify(S));
 const fnv=(a,o=0,n=a.length)=>{let h=0x811c9dc5;for(let i=o;i<o+n;i++){h^=a[i];h=Math.imul(h,16777619);}return h>>>0;};
@@ -354,8 +373,8 @@ let logical={w:256,h:224};
 function draw(){
  const w=M._s9x_vw(),h=M._s9x_vh();
  if(!img||img.width!==w||img.height!==h){cv.width=w;cv.height=h;img=cx.createImageData(w,h);logical={w:256,h:h>240?h/2:h};applyAspect();}
- if(G.on&&game){compose3D();glDraw();fxTick();hudTick();return;}
- blit();fxTick();hudTick();}
+ if(G.on&&game){compose3D();glDraw();fxTick();if(NP.cx)streamFrame();hudTick();return;}
+ blit();fxTick();if(NP.cx)streamFrame();hudTick();}
 function blit(){if(!img)return;const src=new Uint16Array(H8().buffer,P.video,img.width*img.height),dst=new Uint32Array(img.data.buffer);
  for(let i=0;i<dst.length;i++)dst[i]=LUT[src[i]];cx.putImageData(img,0,0);}
 function applyAspect(){const n=S.aspect==='pixel'?logical.w/logical.h:4/3;document.documentElement.style.setProperty('--ar',String(n));document.documentElement.style.setProperty('--arn',String(n));}
@@ -380,7 +399,7 @@ function pushAudio(){const n=M._s9x_audio_frames();if(!n||!anode)return;const sr
 document.addEventListener('pointerdown',()=>{if(game)audioOn();},{capture:true});
 
 /* ---------- input ---------- */
-const inp={touch:0,key:0,pad:0,walk:0,act:0,turbo:0,toggle:0};let frameNo=0,macro=null;
+const inp={pad2:0,touch:0,key:0,pad:0,walk:0,act:0,turbo:0,toggle:0};let frameNo=0,macro=null;
 const ptrs=new Map();
 function dpadMask(e){const r=$('#dpad').getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
  if(Math.hypot(dx,dy)<r.width*0.14)return 0;const s=((Math.round(Math.atan2(dy,dx)/(Math.PI/4))%8)+8)%8;
@@ -397,10 +416,10 @@ for(const t of['pointerup','pointercancel'])window.addEventListener(t,e=>{if(ptr
 const KEYS={ArrowUp:'Up',ArrowDown:'Down',ArrowLeft:'Left',ArrowRight:'Right',KeyX:'A',KeyZ:'B',KeyS:'X',KeyA:'Y',KeyQ:'L',KeyW:'R',Enter:'Start',ShiftLeft:'Select',ShiftRight:'Select'};
 addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select'))return;const k=KEYS[e.code];if(k){inp.key|=BIT(k);e.preventDefault();}});
 addEventListener('keyup',e=>{const k=KEYS[e.code];if(k)inp.key&=~BIT(k);});
-function pollPads(){inp.pad=0;const gp=navigator.getGamepads?.()||[];for(const g of gp){if(!g)continue;const b=i=>g.buttons[i]?.pressed;
+function pollPads(){inp.pad=0;inp.pad2=0;const gp=[...(navigator.getGamepads?.()||[])].filter(Boolean);gp.forEach((g,gi)=>{const two=S.pad2&&gi>0,b=i=>g.buttons[i]?.pressed;let m=0;
  const map=[[0,'B'],[1,'A'],[2,'Y'],[3,'X'],[4,'L'],[5,'R'],[8,'Select'],[9,'Start'],[12,'Up'],[13,'Down'],[14,'Left'],[15,'Right']];
- for(const[i,n]of map)if(b(i))inp.pad|=BIT(n);const ax=g.axes[0]||0,ay=g.axes[1]||0;
- if(ax<-.5)inp.pad|=BIT('Left');if(ax>.5)inp.pad|=BIT('Right');if(ay<-.5)inp.pad|=BIT('Up');if(ay>.5)inp.pad|=BIT('Down');}}
+ for(const[i,n]of map)if(b(i))m|=BIT(n);const ax=g.axes[0]||0,ay=g.axes[1]||0;
+ if(ax<-.5)m|=BIT('Left');if(ax>.5)m|=BIT('Right');if(ay<-.5)m|=BIT('Up');if(ay>.5)m|=BIT('Down');if(two)inp.pad2|=m;else inp.pad|=m;});}
 function inputMask(){let m=inp.touch|inp.key|inp.pad|inp.walk|inp.act|inp.toggle;if(inp.turbo&&(frameNo>>2&1))m|=inp.turbo;
  if(macro){const st=macro.steps[macro.i];if(st){m|=st.mask;if(--macro.left<=0){macro.i++;macro.left=macro.steps[macro.i]?.frames||0;}}else macro=null;}return m;}
 
@@ -423,7 +442,7 @@ function loop(now){requestAnimationFrame(loop);if(!running||paused){last=now;ret
  pollPads();
  if(rewinding){rewindStep();draw();return;}
  const fast=ff?S.ff:TX.on&&S.fastText>1?S.fastText:1,k=n*fast;for(let i=0;i<k;i++)step(!ff&&(fast===1||i%fast===0));draw();}
-function step(audio){frameNo++;M._s9x_set_input(inputMask());applyFreezes();M._s9x_frame();if(audio)pushAudio();
+function step(audio){frameNo++;M._s9x_set_input(inputMask());if(M._s9x_set_input2)M._s9x_set_input2(NP.p2mask|inp.pad2);applyFreezes();M._s9x_frame();if(audio)pushAudio();
  walkTick();patchTick();rewindCapture();if(frameNo%120===0)sramCheck();if(frameNo%8===0)textTick();momentTick();if(frameNo%3600===0){const m=lib.find(g=>g.id===game.id);if(m)m.playMin=(m.playMin||0)+1;}if(frameNo%30===0)lightTick();if(frameNo%15===0)layerTick();}
 requestAnimationFrame(loop);
 
@@ -1425,18 +1444,88 @@ function renderAllTools(){renderGest();renderTiles();renderWatches();renderCheat
  if(game){$('#walkLayer').value=game.profile.walk.layer;$('#walkDiag').checked=game.profile.walk.diagonal;renderOverlay();renderLookFx();renderPacks();$('#notes').value=game.profile.notes||'';}}
 
 
+/* ---------- play together: the host streams the game, friends join with their own controls (PeerJS) ---------- */
+const NP={peer:null,role:null,conns:[],code:'',stream:null,cv:null,cx:null,p2mask:0,lastSent:-1,tick:0,ping:0,seat:0,timer:0};
+const myName=()=>($('#netName').value.trim()||localStorage.getItem('tsnes.author')||'Player').slice(0,24);
+const setNet=t=>{$('#netStatus').textContent=t;};
+async function loadPeer(){if(window.Peer)return;await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
+ s.onload=res;s.onerror=()=>rej(new Error('Couldn’t load the connection library. Check your internet connection.'));document.head.appendChild(s);});}
+const code6=()=>Array.from({length:6},()=>'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[Math.random()*31|0]).join('');
+const peerErr=e=>e.type==='peer-unavailable'?'No room with that code. Check it and try again.':e.type==='unavailable-id'?'That room code is taken. Try hosting again.':
+ e.type==='network'||e.type==='server-error'?'Can’t reach the connection service. Check your internet connection.':'Connection problem ('+(e.type||e.message)+').';
+async function hostStart(){if(!game){toast('Start the game you want to play together first');return;}
+ if(!M._s9x_set_input2){toast('This core is older than Play together. Push bridge.cpp so GitHub rebuilds it, then reload.',6000);return;}
+ try{await loadPeer();await audioOn();}catch(e){setNet(e.message);return;}
+ netEnd(true);NP.role='host';NP.code=code6();NP.peer=new Peer('tsnes-'+NP.code);setNet('Opening a room…');
+ paused=false;
+ NP.peer.on('open',()=>{setNet(`Room ${NP.code} is open. Send the invite to a friend.`);renderNet();});
+ NP.peer.on('error',e=>setNet(peerErr(e)));
+ NP.peer.on('connection',c=>{c.on('open',()=>{c.seat=NP.conns.some(x=>x.seat===2)?0:2;NP.conns.push(c);
+   c.send({t:'hello',game:game.name,host:myName(),seat:c.seat});NP.peer.call(c.peer,hostStream());
+   toast(`${c.metadata?.name||'A friend'} joined${c.seat===2?' as Player 2':' to watch'}`);renderNet();});
+  c.on('data',d=>{if(d.t==='in'&&c.seat===2)NP.p2mask=d.m|0;else if(d.t==='ping')c.send({t:'pong',at:d.at});
+   else if(d.t==='chat'){showChat(d);for(const o of NP.conns)if(o!==c&&o.open)o.send(d);}});
+  c.on('close',()=>{NP.conns=NP.conns.filter(x=>x!==c);if(c.seat===2)NP.p2mask=0;toast(`${c.metadata?.name||'Your friend'} left`);renderNet();});});
+ renderNet();}
+// What friends see: the screen (flat or 3D, with weather) at 3× size, plus the game's sound.
+function hostStream(){if(NP.stream)return NP.stream;const c=NP.cv=document.createElement('canvas');c.width=768;c.height=672;NP.cx=c.getContext('2d');
+ const st=c.captureStream(60);if(actx&&anode){const ad=actx.createMediaStreamDestination();anode.connect(ad);for(const t of ad.stream.getAudioTracks())st.addTrack(t);}
+ NP.stream=st;streamFrame();return st;}
+function streamFrame(){const x=NP.cx,c=NP.cv;x.imageSmoothingEnabled=false;x.drawImage(G.on?$('#gl'):cv,0,0,c.width,c.height);const fx=$('#fx');if(!fx.hidden)x.drawImage(fx,0,0,c.width,c.height);}
+async function joinRoom(){const code=$('#netCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length<4){toast('Type the room code from your friend');return;}
+ try{await loadPeer();}catch(e){setNet(e.message);return;}
+ netEnd(true);localStorage.setItem('tsnes.author',myName());NP.role='guest';NP.peer=new Peer();setNet('Connecting…');
+ NP.peer.on('open',()=>{const c=NP.peer.connect('tsnes-'+code,{metadata:{name:myName()}});
+  c.on('open',()=>{NP.conns=[c];if(!NP.hello)setNet('Connected. Waiting for the picture…');});
+  c.on('data',d=>{if(d.t==='hello'||d.t==='seat'){NP.seat=d.seat;NP.hello=true;setNet(`Playing ${d.game||''} with ${d.host||'your friend'}${d.seat===2?' as Player 2':', watching'}.`);renderNet();}
+   else if(d.t==='chat')showChat(d);else if(d.t==='pong')NP.ping=Math.round(performance.now()-d.at);else if(d.t==='bye')netEnd(false,'The host ended the session');});
+  c.on('close',()=>{if(NP.role==='guest')netEnd(false,'The session ended');});});
+ NP.peer.on('call',call=>{call.answer();call.on('stream',st=>showRemote(st));});
+ NP.peer.on('error',e=>setNet(peerErr(e)));
+ clearInterval(NP.timer);NP.timer=setInterval(guestTick,16);renderNet();}
+function showRemote(st){const v=$('#rv');v.srcObject=st;v.hidden=false;$('#empty').hidden=true;cv.style.visibility='hidden';$('#gl').hidden=true;
+ $('#title').textContent='Playing together';closeSheet();v.play().then(()=>$('#rvTap').hidden=true).catch(()=>{$('#rvTap').hidden=false;});}
+$('#rvTap').onclick=()=>{$('#rv').play().catch(()=>{});$('#rvTap').hidden=true;};
+// The guest's controls: sent when they change, and every half second so nothing gets stuck.
+function guestTick(){const c=NP.conns[0];if(NP.role!=='guest'||!c||!c.open)return;pollPads();const m=inp.touch|inp.key|inp.pad|inp.act|inp.toggle|(inp.turbo&&(++NP.tick>>2&1)?inp.turbo:0);
+ if(m!==NP.lastSent||NP.tick%30===0){c.send({t:'in',m});NP.lastSent=m;}if(NP.tick%120===0)c.send({t:'ping',at:performance.now()});
+ if(NP.tick%60===0&&NP.ping)$('#netPing').textContent=`Delay ${NP.ping} ms`;}
+function netEnd(quiet,msg){for(const c of NP.conns){try{if(NP.role==='host')c.send({t:'bye'});c.close();}catch{}}
+ try{NP.peer&&NP.peer.destroy();}catch{}clearInterval(NP.timer);const wasGuest=NP.role==='guest';
+ Object.assign(NP,{peer:null,role:null,conns:[],code:'',p2mask:0,lastSent:-1,seat:0,ping:0,hello:false});NP.stream=null;NP.cx=null;
+ if(wasGuest){const v=$('#rv');v.srcObject=null;v.hidden=true;$('#rvTap').hidden=true;cv.style.visibility=G.on?'hidden':'';$('#gl').hidden=!G.on;
+  $('#title').textContent=game?game.name:'Touch-SNES';$('#empty').hidden=!!game;$('#netPing').textContent='';}
+ if(!quiet){setNet(msg||'Session ended.');if(msg)toast(msg);}renderNet();}
+function renderNet(){const host=NP.role==='host',guest=NP.role==='guest';$('#netHost').hidden=host||guest;$('#netInvite').hidden=!host||!NP.code;$('#netEnd').hidden=!host&&!guest;
+ $('#netJoinRow').hidden=host||guest;const box=$('#netList');box.innerHTML='';
+ if(host)for(const c of NP.conns){const d=document.createElement('div');d.className='item';
+  d.innerHTML=`<div class="grow"><strong>${esc(c.metadata?.name||'Friend')}</strong><small>${c.seat===2?'Player 2':'Watching'}</small></div>${c.seat===2?'':'<button class="btn">Make Player 2</button>'}`;
+  const b=d.querySelector('button');if(b)b.onclick=()=>{for(const o of NP.conns){o.seat=o===c?2:0;if(o.open)o.send({t:'seat',seat:o.seat,game:game.name,host:myName()});}NP.p2mask=0;renderNet();};box.appendChild(d);}}
+function showChat(d){toast(`${d.name}: ${d.text}`,4000);}
+function sendChat(text){text=String(text).trim().slice(0,140);if(!text)return;if(!NP.role){toast('Host or join a game first');return;}
+ const d={t:'chat',name:myName(),text};for(const c of NP.conns)if(c.open)c.send(d);toast(`You: ${text}`,2000);}
+$('#netHost').onclick=hostStart;$('#netJoin').onclick=joinRoom;$('#netEnd').onclick=()=>netEnd(false,NP.role==='host'?'You ended the session':'You left the session');
+$('#netInvite').onclick=()=>{const url=location.origin+location.pathname+'#join='+NP.code,text=`Play ${game.name} with me on Touch-SNES! Room code ${NP.code}`;
+ if(navigator.share)navigator.share({title:'Play together',text,url}).catch(()=>{});else{navigator.clipboard?.writeText(url);toast('Invite link copied');}};
+$('#netSend').onclick=()=>{sendChat($('#netMsg').value);$('#netMsg').value='';};
+for(const b of $$('[data-react]'))b.onclick=()=>sendChat(b.dataset.react);
+$('#netName').value=localStorage.getItem('tsnes.author')||'';$('#netName').onchange=()=>localStorage.setItem('tsnes.author',myName());
+{const m=location.hash.match(/join=([A-Za-z0-9]+)/);if(m){$('#netCode').value=m[1].toUpperCase();history.replaceState(null,'',location.pathname);
+ setTimeout(()=>{openSheet('together');toast('Tap Join to play with your friend',4000);},600);}}
+
 /* ---------- sheet + settings ---------- */
-function openSheet(p){$('#sheet').hidden=false;paused=!!game&&p!=='tools';if(p)showPage(p);renderSlots();}
+const pauseFor=p=>!!game&&p!=='tools'&&NP.role!=='host';
+function openSheet(p){$('#sheet').hidden=false;paused=pauseFor(p);if(p)showPage(p);renderSlots();}
 function closeSheet(){$('#sheet').hidden=true;paused=false;}
-function showPage(p){for(const t of $$('.tab'))t.classList.toggle('on',t.dataset.p===p);for(const s of $$('.page'))s.hidden=s.dataset.p!==p;paused=!!game&&p!=='tools';if(p==='tools')layerTick(true);}
+function showPage(p){for(const t of $$('.tab'))t.classList.toggle('on',t.dataset.p===p);for(const s of $$('.page'))s.hidden=s.dataset.p!==p;paused=pauseFor(p);if(p==='tools')layerTick(true);}
 for(const t of $$('.tab'))t.onclick=()=>showPage(t.dataset.p);
-$('#menuBtn').onclick=()=>openSheet(game?'saves':'games');$('#sheetClose').onclick=closeSheet;
+$('#menuBtn').onclick=()=>openSheet(NP.role?'together':game?'saves':'games');$('#sheetClose').onclick=closeSheet;
 $('#sheet').addEventListener('pointerdown',e=>{if(e.target.id==='sheet')closeSheet();});
 function applySettings(){$('#crt').hidden=!S.crt||G.on;cv.style.filter=$('#gl').style.filter=LOOKS[S.look]||'';padState();cv.classList.toggle('smooth',S.smooth);document.documentElement.style.setProperty('--op',S.op/100);applyAspect();
  anode?.port.postMessage({v:S.vol/100});saveSettings();}
 const bind=(id,key,get=e=>e.target.value)=>{const el=$(id);if(el.type==='checkbox')el.checked=S[key];else el.value=S[key];
  el.addEventListener(el.type==='range'?'input':'change',e=>{S[key]=el.type==='checkbox'?el.checked:typeof SETDEF[key]==='number'?+get(e):get(e);applySettings();if(key==='rw'||key==='rwSec'){if(game)rewindSetup();}});};
-bind('#setAspect','aspect');bind('#setCrt','crt');bind('#setSmooth','smooth');bind('#setWatch','watch');bind('#setOp','op');bind('#setVol','vol');bind('#setFF','ff');bind('#setRw','rw');bind('#setRwSec','rwSec');bind('#setLook','look');bind('#setFxAmt','fxAmt');bind('#setPadHide','padHide');bind('#setStand','stand');bind('#setResume','resume');bind('#setGest','gestures');bind('#setTalkFlat','talkFlat');bind('#setSun','sunShadow');bind('#setGlow','glowFx');bind('#setBloom','bloom');bind('#setWater','waterFx');bind('#setFastText','fastText');bind('#setMoments','moments');bind('#setDof','dof');bind('#setTilt','tilt');bind('#setDepth','depth');bind('#setShadow','shadow');bind('#setMotion','motion');
+bind('#setAspect','aspect');bind('#setCrt','crt');bind('#setSmooth','smooth');bind('#setWatch','watch');bind('#setOp','op');bind('#setVol','vol');bind('#setFF','ff');bind('#setRw','rw');bind('#setRwSec','rwSec');bind('#setLook','look');bind('#setFxAmt','fxAmt');bind('#setPadHide','padHide');bind('#setStand','stand');bind('#setResume','resume');bind('#setPad2','pad2');bind('#setGest','gestures');bind('#setTalkFlat','talkFlat');bind('#setSun','sunShadow');bind('#setGlow','glowFx');bind('#setBloom','bloom');bind('#setWater','waterFx');bind('#setFastText','fastText');bind('#setMoments','moments');bind('#setDof','dof');bind('#setTilt','tilt');bind('#setDepth','depth');bind('#setShadow','shadow');bind('#setMotion','motion');
 $('#setMotion').addEventListener('change',motionPermission);$('#setD3').checked=S.d3;
 applySettings();if(S.d3)set3D(true);
 
