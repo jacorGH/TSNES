@@ -97,15 +97,52 @@ jobs:
           set -e
           source ./emsdk/emsdk_env.sh
           cd core
-          # The core's own makefile knows how to build itself for the web as a static library.
+          echo "== Files in the core =="; ls
+          mkdir -p "$GITHUB_WORKSPACE/obj"
           MK=Makefile; [ -f Makefile.libretro ] && MK=Makefile.libretro
-          emmake make -f $MK platform=emscripten -j4 || emmake make -f $MK platform=unix STATIC_LINKING=1 -j4
-          LIB=$(find . -maxdepth 3 \( -name '*_libretro*.bc' -o -name '*_libretro*.a' \) | head -n1)
-          echo "Built: $LIB"
-          [ -n "$LIB" ] || { echo "No library was produced"; exit 1; }
-          cp "$LIB" "$GITHUB_WORKSPACE/libcore.a"
+          # Way 1: the core's own web build, as a static library.
+          LIB=""
+          if emmake make -f $MK platform=emscripten -j4 > make.log 2>&1; then
+            LIB=$(find . -maxdepth 3 \( -name '*_libretro*.bc' -o -name '*_libretro*.a' \) | head -n1)
+          else
+            echo "== The core's own web build failed. Last lines: =="; tail -n 40 make.log
+          fi
+          if [ -n "$LIB" ]; then
+            echo "Built with the core's makefile: $LIB"
+            if [ "$(head -c 7 "$LIB")" = '!<arch>' ]; then cp "$LIB" "$GITHUB_WORKSPACE/obj/libcore.a"; else cp "$LIB" "$GITHUB_WORKSPACE/obj/core.o"; fi
+          else
+            # Way 2: ask the core's Makefile.common for its sources and compile them ourselves, like the SNES core.
+            COMMON=$(ls Makefile.common libretro/Makefile.common 2>/dev/null | head -n1)
+            [ -n "$COMMON" ] || { echo "No Makefile.common to fall back on"; exit 1; }
+            DIR=$(dirname "$COMMON"); CD=.; [ "$DIR" = "." ] || CD=..
+            cd "$DIR"
+            cat > print.mk <<EOF
+          .RECIPEPREFIX := >
+          CORE_DIR := $CD
+          LIBRETRO_DIR := .
+          LIBRETRO_COMM_DIR := $CD/libretro-common
+          include Makefile.common
+          srcs:
+          >@echo \$(SOURCES_CXX) \$(SOURCES_C)
+          incs:
+          >@echo \$(INCFLAGS)
+          EOF
+            SRCS=$(make -s -f print.mk srcs)
+            INCS="-I. -I$CD -I$CD/libretro-common/include $(make -s -f print.mk incs)"
+            echo "Sources: $SRCS"
+            DEFS="-D__LIBRETRO__ -DHAVE_STDINT_H -DHAVE_INTTYPES_H -DINLINE=inline -DLSB_FIRST -DFRONTEND_SUPPORTS_RGB565 -DVIDEO_RGB565"
+            for f in $SRCS; do
+              o="$GITHUB_WORKSPACE/obj/$(echo "$f" | tr '/.' '__').o"
+              case "$f" in
+                *.c) echo "emcc -O3 -w $DEFS $INCS -c $f -o $o" ;;
+                *)   echo "em++ -O3 -w -std=gnu++11 $DEFS $INCS -c $f -o $o" ;;
+              esac
+            done > jobs.txt
+            xargs -P 4 -I{} sh -c '{}' < jobs.txt
+          fi
           cd "$GITHUB_WORKSPACE"
-          em++ -O3 -w -std=gnu++17 -D${{ matrix.define }} -I. bridge.cpp libcore.a \
+          echo "== Linking =="; ls obj | head
+          em++ -O3 -w -std=gnu++17 -D${{ matrix.define }} -I. bridge.cpp obj/* \
             -o ${{ matrix.sys }}.js \
             -sMODULARIZE=1 -sEXPORT_NAME=${{ matrix.export }} -sENVIRONMENT=web -sSINGLE_FILE=1 \
             -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=33554432 \
