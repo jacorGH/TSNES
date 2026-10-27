@@ -118,6 +118,10 @@ label.ck{display:flex;gap:6px;align-items:center;font-size:14px}
 .qi{position:absolute;transform:translate(-50%,-50%);width:76px;height:76px;border-radius:50%;border:0;background:var(--sheet);box-shadow:0 4px 14px #0004;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .qi span{font-size:24px}.qi small{font-size:11px;font-weight:650;color:var(--ink);max-width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .qi.on{background:var(--sel)}.qi.on small{color:#fff}
+body[data-sys=gb] #face [data-b=X],body[data-sys=gb] #face [data-b=Y],body[data-sys=gba] #face [data-b=X],body[data-sys=gba] #face [data-b=Y],body[data-sys=gb] .sh{visibility:hidden}
+body[data-sys=gb] #face [data-b=B],body[data-sys=gba] #face [data-b=B]{left:4px;top:74px;bottom:auto}
+body[data-sys=gb] #face [data-b=A],body[data-sys=gba] #face [data-b=A]{right:4px;top:28px}
+body[data-sys=gb] #d3Btn,body[data-sys=gba] #d3Btn,body[data-sys=gb] #walkBtn,body[data-sys=gba] #walkBtn{opacity:.35}
 .checker{background:conic-gradient(#ddd 25%,#fff 0 50%,#ddd 0 75%,#fff 0) 0 0/10px 10px}
 body.pad #ctl{display:none}
 body.pad #app{grid-template-rows:auto 1fr}
@@ -148,7 +152,7 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
   <span id="ffbadge" class="chip" hidden>Fast</span>
   <div id="marker" hidden></div>
   <div id="pickbox" hidden></div>
-  <div id="empty"><strong>Add a game to start</strong><p>Pick a .sfc or .smc file you own. It stays on this device.</p><button class="btn main" id="emptyAdd">Add a game</button></div>
+  <div id="empty"><strong>Add a game to start</strong><p>Pick a game you own: SNES, Game Boy, Game Boy Color or Game Boy Advance. It stays on this device.</p><button class="btn main" id="emptyAdd">Add a game</button></div>
  </div></div></div>
  <div id="ctl">
   <button class="sh" data-b="L" id="lsh">L</button>
@@ -168,7 +172,7 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
  <div class="pages">
   <section class="page" data-p="games">
    <div class="row"><button class="btn main" id="addGame">Add a game or file</button></div>
-   <p class="note">Opens your games (.sfc, .smc or .zip), game backups, Mod packs and IPS or BPS patches.</p>
+   <p class="note">Opens your games (SNES .sfc and .smc, Game Boy .gb and .gbc, GBA .gba, or a .zip), game backups, Mod packs and IPS or BPS patches.</p>
    <div class="list" id="gameList"></div>
    <p class="note">Games are stored compressed, only on this device. Use Backup to move a game with its saves and setup to your own iPad or a new phone. Use Touch-SNES from your Home Screen so Safari keeps everything. <span id="storeNote"></span></p>
   </section>
@@ -288,7 +292,7 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
    <div class="row"><label class="ck"><input type="checkbox" id="setRw"> Rewind</label><label>Seconds <select id="setRwSec"><option>5</option><option>10</option><option>20</option></select></label></div>
    <p class="note">Rewind keeps recent moments in memory. Longer rewind uses more memory, which older iPhones may not have.</p>
    <h3>About</h3>
-   <p class="note">Emulation by Snes9x, used under its non-commercial license (see snes9x-LICENSE.txt). Super NES is a trademark of Nintendo.</p>
+   <p class="note">Emulation by Snes9x (non-commercial license), Gambatte for Game Boy and Game Boy Color (GPLv2), and VBA-Next for Game Boy Advance (GPLv2). Their licenses are next to each core in the repo. Super NES is a trademark of Nintendo.</p>
   </section>
  </div>
 </div></div>
@@ -358,11 +362,19 @@ function pickJSON(){return new Promise(res=>{const f=$('#jsonFile');f.value='';f
 
 /* ---------- core ---------- */
 let M=null,P={},game=null,romPtr=0;
-async function loadCore(){
- if(M)return M;
- await new Promise((res,rej)=>{const s=document.createElement('script');s.src='snes.js';s.onload=res;
-  s.onerror=()=>rej(new Error('snes.js is missing. Run “Build SNES core” in your repo’s Actions tab, then reload.'));document.head.appendChild(s);});
- M=await createSnes({locateFile:f=>f});M._s9x_init();return M;}
+// One file per machine. Only the core for the game being played stays in memory.
+const CORES={snes:{js:'snes.js',fn:'createSnes',name:'SNES'},gb:{js:'gb.js',fn:'createGB',name:'Game Boy'},gba:{js:'gba.js',fn:'createGBA',name:'Game Boy Advance'}};
+let Msys=null;const MODS={};
+async function loadCore(sys='snes'){if(M&&Msys===sys)return M;const c=CORES[sys];
+ if(!MODS[sys]){if(!window[c.fn])await new Promise((res,rej)=>{const el=document.createElement('script');el.src=c.js;el.onload=res;
+   el.onerror=()=>rej(new Error(`${c.js} is missing. Run “Build emulator cores” in your repo’s Actions tab, then reload.`));document.head.appendChild(el);});
+  MODS[sys]=await window[c.fn]({locateFile:f=>f});MODS[sys]._s9x_init();}
+ for(const k in MODS)if(k!==sys)delete MODS[k];
+ if(Msys!==sys){romPtr=0;rw.ptr=0;rw.buf=[];PT.ptr=0;img=null;}M=MODS[sys];Msys=sys;return M;}
+const snesOn=()=>!!game&&game.sys==='snes';
+// Which machine a file is for: by its name, or by the logo every Game Boy and GBA cartridge carries.
+function sysOf(name,b){const e=(name.split('.').pop()||'').toLowerCase();if(e==='gb'||e==='gbc')return'gb';if(e==='gba')return'gba';if(['sfc','smc','fig','swc'].includes(e))return'snes';
+ if(b&&b.length>0x110&&b[0x104]===0xCE&&b[0x105]===0xED&&b[0x106]===0x66)return'gb';if(b&&b.length>8&&b[4]===0x24&&b[5]===0xFF&&b[6]===0xAE&&b[7]===0x51)return'gba';return'snes';}
 const H8=()=>M.HEAPU8;
 function snap(){const h=H8(),b=h.buffer;return{V:h.subarray(P.vram,P.vram+65536),C:new Uint16Array(b,P.cgram,256),O:h.subarray(P.oam,P.oam+544),R:h.subarray(P.regs,P.regs+64),S:new Uint16Array(b,P.scroll,8),W:h.subarray(P.wram,P.wram+0x20000)};}
 
@@ -372,12 +384,12 @@ const LUT=new Uint32Array(65536);for(let i=0;i<65536;i++){const r=i>>11&31,g=i>>
 let logical={w:256,h:224};
 function draw(){
  const w=M._s9x_vw(),h=M._s9x_vh();
- if(!img||img.width!==w||img.height!==h){cv.width=w;cv.height=h;img=cx.createImageData(w,h);logical={w:256,h:h>240?h/2:h};applyAspect();}
+ if(!img||img.width!==w||img.height!==h){cv.width=w;cv.height=h;img=cx.createImageData(w,h);logical=snesOn()?{w:256,h:h>240?h/2:h}:{w,h};applyAspect();}
  if(G.on&&game){compose3D();glDraw();fxTick();if(NP.cx)streamFrame();hudTick();return;}
  blit();fxTick();if(NP.cx)streamFrame();hudTick();}
 function blit(){if(!img)return;const src=new Uint16Array(H8().buffer,P.video,img.width*img.height),dst=new Uint32Array(img.data.buffer);
  for(let i=0;i<dst.length;i++)dst[i]=LUT[src[i]];cx.putImageData(img,0,0);}
-function applyAspect(){const n=S.aspect==='pixel'?logical.w/logical.h:4/3;document.documentElement.style.setProperty('--ar',String(n));document.documentElement.style.setProperty('--arn',String(n));}
+function applyAspect(){const n=S.aspect==='pixel'||game&&!snesOn()?logical.w/logical.h:4/3;document.documentElement.style.setProperty('--ar',String(n));document.documentElement.style.setProperty('--arn',String(n));}
 
 /* ---------- audio ---------- */
 let actx=null,anode=null;
@@ -449,7 +461,7 @@ requestAnimationFrame(loop);
 /* ---------- fast text: speed up while a text box is open ---------- */
 // A text box is a band of rows on the text layer. Rows that stay covered for minutes are a status bar, not a text box.
 const TX={on:false,age:new Uint16Array(240),base:null};
-function textTick(){if(!(S.fastText>1||G.on&&S.talkFlat)||!game){if(TX.on){TX.on=false;badge();}return;}const s=snap(),ovm=overlayMask(s),H=logical.h;
+function textTick(){if(!(S.fastText>1||G.on&&S.talkFlat)||!snesOn()){if(TX.on){TX.on=false;badge();}return;}const s=snap(),ovm=overlayMask(s),H=logical.h;
  if(!ovm){if(TX.on){TX.on=false;badge();}return;}tcSync(s.V);
  for(let bg=0;bg<4;bg++){const b=bgInfo(s,bg);G.bgOn[bg]=b.bpp&&(s.R[0x2C]>>bg&1);if(G.bgOn[bg]&&ovm>>bg&1)opBG(s,b,H,{});}
  findOverlayRows(H,ovm);let n=0;for(let y=0;y<H;y++){if(G.rowOv[y]){if(TX.age[y]<65535)TX.age[y]++;if(TX.age[y]<900)n++;}else TX.age[y]=0;}
@@ -478,11 +490,11 @@ async function unzip(buf){const dv=new DataView(buf.buffer,buf.byteOffset,buf.by
  if(e<0)throw new Error('This zip file is damaged.');let p=dv.getUint32(e+16,true);const n=dv.getUint16(e+10,true);
  for(let k=0;k<n;k++){const method=dv.getUint16(p+10,true),size=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),lo=dv.getUint32(p+42,true);
   const name=new TextDecoder().decode(buf.subarray(p+46,p+46+nl));p+=46+nl+dv.getUint16(p+30,true)+dv.getUint16(p+32,true);
-  if(!/\.(sfc|smc|fig|swc)$/i.test(name))continue;
+  if(!/\.(sfc|smc|fig|swc|gb|gbc|gba)$/i.test(name))continue;
   const at=lo+30+dv.getUint16(lo+26,true)+dv.getUint16(lo+28,true),data=buf.subarray(at,at+size);
   if(method===0)return{name,data:data.slice()};
   if(method===8)return{name,data:new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())};}
- throw new Error('This zip has no SNES game inside.');}
+ throw new Error('This zip has no game inside.');}
 /* ---------- files: games stored compressed, game backups, Mod packs and patches ---------- */
 const canZip=typeof CompressionStream!=='undefined';
 async function gz(u8){return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());}
@@ -499,10 +511,10 @@ async function unwrap(magic,b){const z=b.subarray(magic.length+1);return b[magic
 const fmtSize=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
 const fmtPlay=m=>!m?'':m<60?`${m} min played`:`${(m/60).toFixed(m<600?1:0)} hr played`;
 function persistAsk(){navigator.storage?.persist?.().catch(()=>{});}
-async function addRomBytes(buf,fname,start=true){if(buf.length%1024===512)buf=buf.slice(512);
- if(buf.length<0x8000){toast('That file is too small to be an SNES game.');return null;}
+async function addRomBytes(buf,fname,start=true){const sys=sysOf(fname,buf);if(sys==='snes'&&buf.length%1024===512)buf=buf.slice(512);
+ if(buf.length<(sys==='snes'?0x8000:0x4000)){toast(`That file is too small to be a ${CORES[sys].name} game.`);return null;}
  const id=hex(fnv(buf))+buf.length.toString(16),name=fname.replace(/\.[^.]+$/,'');
- if(!lib.find(g=>g.id===id))lib.push({id,name,added:Date.now()});await putRom(id,buf);await DB.put('data','lib',lib);persistAsk();renderGames();
+ if(!lib.find(g=>g.id===id))lib.push({id,name,sys,added:Date.now()});await putRom(id,buf);await DB.put('data','lib',lib);persistAsk();renderGames();
  if(start){closeSheet();startGame(id);}return id;}
 // One button opens anything: a game, a zip, a game backup, a Mod pack, or an IPS/BPS patch.
 function openFile(){const f=$('#romFile');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return;let b=new Uint8Array(await file.arrayBuffer());
@@ -514,7 +526,7 @@ $('#addGame').onclick=openFile;$('#emptyAdd').onclick=openFile;$('#packIn').oncl
 function renderGames(){const box=$('#gameList');box.innerHTML='';
  if(!lib.length){box.innerHTML='<p class="note">No games yet.</p>';return;}
  [...lib].sort((a,b)=>(b.played||0)-(a.played||0)).forEach(g=>{const d=document.createElement('div');d.className='item';
-  const info=[g.played?'Last played '+new Date(g.played).toLocaleDateString():'Not played yet',fmtPlay(g.playMin),g.zsize?fmtSize(g.zsize)+' stored':''].filter(Boolean).join(', ');
+  const info=[CORES[g.sys||'snes'].name,g.played?'Last played '+new Date(g.played).toLocaleDateString():'Not played yet',fmtPlay(g.playMin),g.zsize?fmtSize(g.zsize)+' stored':''].filter(Boolean).join(', ');
   d.classList.add('game');d.innerHTML=`${g.cover?`<img src="${g.cover}" width="72" alt="">`:'<canvas width="72" height="63"></canvas>'}<div class="grow"><strong>${esc(g.name)}</strong><small>${info}</small></div><div class="acts"><button class="btn warn" aria-label="Remove">✕</button><button class="btn">Backup</button><button class="btn main">Play</button></div>`;
   const[del,bk,play]=d.querySelectorAll('button');play.onclick=()=>{closeSheet();play.disabled=true;startGame(g.id).finally(()=>play.disabled=false);};
   bk.onclick=()=>backupGame(g.id).catch(e=>toast(e.message,4000));
@@ -526,12 +538,12 @@ async function backupGame(id){const meta=lib.find(g=>g.id===id),rom=await getRom
  if(game&&game.id===id)await saveAuto();const slots={};
  for(const k of['quick','auto',1,2,3,4]){const v=await DB.get('data',`state:${id}:${k}`);if(v)slots[k]={b:b64(v.bytes),img:v.img,t:v.t};}
  const sram=await DB.get('data','sram:'+id),prof=await DB.get('data','prof:'+id);
- const head=enc(JSON.stringify({v:1,id,name:meta.name,added:meta.added,cover:meta.cover,playMin:meta.playMin||0,profile:prof||null,sram:sram?b64(sram):null,slots}));
+ const head=enc(JSON.stringify({v:1,id,sys:meta.sys||'snes',name:meta.name,added:meta.added,cover:meta.cover,playMin:meta.playMin||0,profile:prof||null,sram:sram?b64(sram):null,slots}));
  const body=new Uint8Array(4+head.length+rom.length);new DataView(body.buffer).setUint32(0,head.length,true);body.set(head,4);body.set(rom,4+head.length);
  download(meta.name+'.tsnesgame',await wrap(MAGIC.game,body),'application/octet-stream');}
 async function restoreGame(b){const body=await unwrap(MAGIC.game,b),n=new DataView(body.buffer,body.byteOffset).getUint32(0,true),h=JSON.parse(dec(body.subarray(4,4+n))),rom=body.slice(4+n);
  const has=lib.find(g=>g.id===h.id);if(has&&!confirm(`${h.name} is already here. Replace its saves and setup with the backup’s?`))return;
- if(!has)lib.push({id:h.id,name:h.name,added:h.added||Date.now(),cover:h.cover,playMin:h.playMin||0});
+ if(!has)lib.push({id:h.id,sys:h.sys||'snes',name:h.name,added:h.added||Date.now(),cover:h.cover,playMin:h.playMin||0});
  await putRom(h.id,rom);if(h.profile)await DB.put('data','prof:'+h.id,h.profile);if(h.sram)await DB.put('data','sram:'+h.id,unb64(h.sram));
  for(const[k,v]of Object.entries(h.slots||{}))await DB.put('data',`state:${h.id}:${k}`,{bytes:unb64(v.b),img:v.img,t:v.t});
  await DB.put('data','lib',lib);persistAsk();renderGames();toast(`${h.name} restored with its saves and setup`);if(game&&game.id===h.id)startGame(h.id);}
@@ -598,17 +610,20 @@ function chooseGame(title,ips,cb){const box=$('#chList');box.innerHTML='';$('#ch
 $('#chClose').onclick=()=>$('#choose').hidden=true;
 
 
-async function startGame(id){
- try{await saveAuto();await loadCore();}catch(e){toast(e.message,6000);return;}
+async function startGame(id){const meta=lib.find(g=>g.id===id);if(!meta)return;const sys=meta.sys||'snes';
+ try{await saveAuto();running=false;await loadCore(sys);}catch(e){toast(e.message,6000);return;}
  const rom=await getRom(id);if(!rom){toast('That game isn’t on this device anymore.');return;}
- running=false;if(romPtr)M._free(romPtr);romPtr=M._malloc(rom.length);H8().set(rom,romPtr);
- if(!M._s9x_load(romPtr,rom.length)){toast('This file didn’t load. Check that it’s an SNES game.');return;}
+ if(romPtr)M._free(romPtr);romPtr=M._malloc(rom.length);H8().set(rom,romPtr);
+ if(!M._s9x_load(romPtr,rom.length)){toast(`This file didn’t load. Check that it’s a ${CORES[sys].name} game.`);return;}
  for(const k of['video','audio','vram','cgram','oam','wram','regs','scroll'])P[k]=M['_s9x_'+k]();
+ P.wsize=M._s9x_wram_size?M._s9x_wram_size():0x20000;if(!P.wram)P.wsize=0;
  P.sram=M._s9x_sram();fps=M._s9x_fps();
- const meta=lib.find(g=>g.id===id);meta.played=Date.now();DB.put('data','lib',lib);
- game={id,name:meta.name,profile:normProfile(await DB.get('data','prof:'+id),meta.name)};
- $('#title').textContent=game.name;$('#empty').hidden=true;
- TC.fresh=false;MO.f=0;TX.on=false;TX.age.fill(0);TX.base=null;await restoreSram();applyCheats();renderActions();patchIndex();rewindSetup();renderAllTools();WK.player=null;WK.target=null;
+ meta.played=Date.now();DB.put('data','lib',lib);
+ game={id,sys,name:meta.name,profile:normProfile(await DB.get('data','prof:'+id),meta.name)};
+ document.body.dataset.sys=sys;$('#title').textContent=game.name;$('#empty').hidden=true;
+ // SNES-only tools (3D, tile editing, tap to walk) step aside for handheld games, and come back for SNES ones.
+ if(sys!=='snes'){if(G.on)set3D(false,true);WK.on=false;WK.target=null;$('#walkBtn').classList.remove('on');}else if(S.d3&&!G.on)set3D(true,true);
+ TC.fresh=false;MO.f=0;TX.on=false;TX.age.fill(0);TX.base=null;badge();await restoreSram();applyCheats();renderActions();patchIndex();rewindSetup();renderAllTools();WK.player=null;WK.target=null;
  const auto=await DB.get('data',`state:${id}:auto`);if(auto){loadStateBytes(auto.bytes);toast('Picked up where you left off');}
  await audioOn();anode?.port.postMessage({k:M._s9x_rate()/actx.sampleRate});lightTick();running=true;}
 
@@ -723,7 +738,7 @@ function variantOf(e){const n=e.dec.length,r=e.rule;if(n<2)return 0;
  return Math.min(n-1,r.index|0);}
 function writeTile(wa,bytes){if(!PT.ptr)PT.ptr=M._malloc(128);H8().set(bytes,PT.ptr);M._s9x_vram_write(wa,PT.ptr,bytes.length>>1);}
 function patchTick(){
- if(!PT.on||!PT.map.size)return;
+ if(!PT.on||!PT.map.size||!snesOn())return;
  for(const e of PT.map.values()){const v=variantOf(e);if(v!==e.cur){const had=e.cur!==-1;e.cur=v;
   if(had)for(const p of PT.patched.values())if(p.key===e.key)writeTile(p.wa,e.dec[v]);}}
  const V=H8().subarray(P.vram,P.vram+65536),sh=PT.shadow,dt=PT.dirty;let any=PT.full;
@@ -749,7 +764,7 @@ function track(s){const p=WK.player;if(!p)return null;let x=0,y=0,n=0;
  for(const sp of sprites(s)){if(sp.pal!==p.pal)continue;const cx=sp.x+sp.w/2,cy=sp.y+sp.h/2;if(Math.hypot(cx-p.x,cy-p.y)<34){x+=cx;y+=cy;n++;}}
  if(!n){if(++WK.lost>45){WK.player=null;WK.target=null;toast('Lost your character. Tap them to lock on again.');}return null;}
  WK.lost=0;p.x=x/n;p.y=y/n;return p;}
-function walkTick(){inp.walk=0;if(!WK.on||!game)return;const s=snap(),p=track(s);if(!WK.target)return;
+function walkTick(){inp.walk=0;if(!WK.on||!snesOn())return;const s=snap(),p=track(s);if(!WK.target)return;
  const me=p||(WK.player?null:{x:128,y:112});if(!me)return;const c=camera(s);
  const dx=wrap10(WK.target.wx-c.h-me.x),dy=wrap10(WK.target.wy-c.v-me.y);
  if(Math.abs(dx)<4&&Math.abs(dy)<4){if(WK.talk){talkNow();return;}if(!WK.hold)WK.target=null;return;}
@@ -762,7 +777,7 @@ function walkTick(){inp.walk=0;if(!WK.on||!game)return;const s=snap(),p=track(s)
  else if(!game.profile.walk.diagonal&&h&&v){if(Math.abs(dx)>Math.abs(dy))v=null;else h=null;}
  inp.walk=(h?BIT(h):0)|(v?BIT(v):0);}
 function setTarget(pt){const c=camera(snap());WK.target={wx:pt.x+c.h,wy:pt.y+c.v};WK.still=0;WK.lastW=null;}
-$('#walkBtn').onclick=()=>{WK.on=!WK.on;$('#walkBtn').classList.toggle('on',WK.on);WK.target=null;WK.talk=null;inp.walk=0;
+$('#walkBtn').onclick=()=>{if(game&&!snesOn()){toast('Tap to walk is for SNES games for now');return;}WK.on=!WK.on;$('#walkBtn').classList.toggle('on',WK.on);WK.target=null;WK.talk=null;inp.walk=0;
  if(WK.on)toast(WK.player?'Tap to walk, tap someone to talk, drag to steer':'Tap your character to lock on',3000);};
 /* ---------- screen gestures: tap to walk or talk, drag to steer, hold for a quick menu, two-finger tap for Back ---------- */
 const GS={p:null,timer:0,count:0,two:null};
@@ -821,16 +836,16 @@ for(const t of['pointerup','pointercancel'])wrapEl.addEventListener(t,e=>{
 document.addEventListener('visibilitychange',()=>{GS.count=0;GS.p=null;GS.two=null;});
 
 /* ---------- memory tools ---------- */
-function parseAddr(a){const s=String(a).replace(/[^0-9a-f]/gi,'');const n=parseInt(s,16)||0;return s.length>=6?((n>>16)&1)<<16|(n&0xFFFF):n&0x1FFFF;}
-const fmtAddr=a=>(a>=0x10000?'7F':'7E')+':'+(a&0xFFFF).toString(16).toUpperCase().padStart(4,'0');
-function readRam(a,size,W){W=W||H8().subarray(P.wram,P.wram+0x20000);return size===2?W[a]|W[(a+1)&0x1FFFF]<<8:W[a];}
+function parseAddr(a){const t=String(a).replace(/^RAM:?/i,''),s=t.replace(/[^0-9a-f]/gi,''),n=parseInt(s,16)||0;if(game&&!snesOn())return n%(P.wsize||1);return s.length>=6?((n>>16)&1)<<16|(n&0xFFFF):n&0x1FFFF;}
+const fmtAddr=a=>game&&!snesOn()?'RAM:'+a.toString(16).toUpperCase().padStart(4,'0'):(a>=0x10000?'7F':'7E')+':'+(a&0xFFFF).toString(16).toUpperCase().padStart(4,'0');
+function readRam(a,size,W){if(!P.wsize)return 0;W=W||H8().subarray(P.wram,P.wram+P.wsize);return size===2?W[a]|W[(a+1)%P.wsize]<<8:W[a];}
 function applyFreezes(){for(const w of game.profile.watches){if(w.freeze==null)continue;const a=parseAddr(w.addr),h=H8();
- h[P.wram+a]=w.freeze&255;if(w.size===2)h[P.wram+((a+1)&0x1FFFF)]=w.freeze>>8&255;}}
+ if(!P.wsize)return;h[P.wram+a]=w.freeze&255;if(w.size===2)h[P.wram+((a+1)%P.wsize)]=w.freeze>>8&255;}}
 const RS={size:1,prev:null,cands:null};
-$('#rsStart').onclick=()=>{if(!game)return;RS.size=+$('#rsSize').value;RS.prev=H8().slice(P.wram,P.wram+0x20000);
- RS.cands=new Int32Array(0x20000/RS.size).map((_,i)=>i*RS.size);renderRS();};
+$('#rsStart').onclick=()=>{if(!game)return;if(!P.wsize){toast('Memory search isn’t available for this game');return;}RS.size=+$('#rsSize').value;RS.prev=H8().slice(P.wram,P.wram+P.wsize);
+ RS.cands=new Int32Array(Math.floor(P.wsize/RS.size)).map((_,i)=>i*RS.size);renderRS();};
 for(const b of $$('[data-rs]'))b.onclick=()=>{if(!RS.cands){toast('Start a new search first');return;}
- const cur=H8().slice(P.wram,P.wram+0x20000),op=b.dataset.rs,val=+$('#rsVal').value,keep=[];
+ const cur=H8().slice(P.wram,P.wram+P.wsize),op=b.dataset.rs,val=+$('#rsVal').value,keep=[];
  for(const a of RS.cands){const n=readRam(a,RS.size,cur),o=readRam(a,RS.size,RS.prev);
   if(op==='changed'?n!==o:op==='same'?n===o:op==='up'?n>o:op==='down'?n<o:n===val)keep.push(a);}
  RS.cands=Int32Array.from(keep);RS.prev=cur;renderRS();};
@@ -869,7 +884,7 @@ function renderCheats(){const box=$('#cheatList');box.innerHTML='';if(!game)retu
 const LAYERS=['BG1','BG2','BG3','BG4','Sprites'];let layerMask=31;
 $('#layerToggles').innerHTML=LAYERS.map((n,i)=>`<label class="ck"><input type="checkbox" data-l="${i}" checked> ${n}</label>`).join('');
 for(const c of $$('[data-l]'))c.onchange=()=>{layerMask=$$('[data-l]').reduce((m,c)=>m|(c.checked?1<<c.dataset.l:0),0);layerTick(true);};
-function layerTick(force){if(!game||(!force&&(!$('#layerTool').open||$('#sheet').hidden)))return;
+function layerTick(force){if(!snesOn()||(!force&&(!$('#layerTool').open||$('#sheet').hidden)))return;
  const s=snap(),lc=$('#layerCv'),g=lc.getContext('2d'),im=g.createImageData(256,224),d=new Uint32Array(im.data.buffer),lut=new Uint32Array(256);
  for(let i=0;i<256;i++)lut[i]=rgba32(s.C[i]);d.fill(0xff1e1c24);const mode=s.R[5]&7,info=[`Mode ${mode}`];
  if(mode!==7)for(let bg=3;bg>=0;bg--){const b=bgInfo(s,bg);if(!b.bpp)continue;info.push(`BG${bg+1} ${b.bpp}-bit${b.on?'':' (hidden)'}`);if(!(layerMask>>bg&1))continue;
@@ -888,7 +903,7 @@ function drawBG(s,b,d,lut){const ts=b.big?16:8,mw=b.size&1?64:32,mh=b.size&2?64:
 
 /* ---------- picking: tap one thing, or drag across an area ---------- */
 let pickMode=false,pdrag=null;
-$('#pickBtn').onclick=()=>{if(!game){toast('Start a game first');return;}closeSheet();pickMode=true;paused=true;$('#pickp').hidden=false;
+$('#pickBtn').onclick=()=>{if(!game){toast('Start a game first');return;}if(!snesOn()){toast('Tile editing is for SNES games for now');return;}closeSheet();pickMode=true;paused=true;$('#pickp').hidden=false;
  $('#pickHead').textContent='Tap something, or drag across an area';$('#pickList').innerHTML='';};
 function endPick(){pickMode=false;paused=false;pdrag=null;$('#pickp').hidden=true;$('#pickbox').hidden=true;}
 $('#pickDone').onclick=endPick;
@@ -1344,10 +1359,10 @@ function glPick(cx,cy){const r=$('#gl').getBoundingClientRect(),nx=(cx-r.left)/r
 function glProject(x,y){const ix=Math.max(0,Math.min(255,Math.floor(x))),iy=Math.max(0,Math.min(G.H-1,Math.floor(y))),v=m4.xf(G.M,[(x-128)*G.ax,G.H/2-y,G.h[iy*256+ix]||0,1]);
  const r=$('#gl').getBoundingClientRect(),w=$('#wrap').getBoundingClientRect();
  return{left:r.left-w.left+(v[0]/v[3]*.5+.5)*r.width,top:r.top-w.top+(.5-v[1]/v[3]*.5)*r.height};}
-function set3D(on){if(on){try{if(!glInit()){toast('3D view needs WebGL 2, which this browser doesn’t have.');on=false;}}catch(e){toast('3D view couldn’t start: '+e.message,5000);on=false;}}
- G.on=on;S.d3=on;saveSettings();$('#gl').hidden=!on;cv.style.visibility=on?'hidden':'';$('#crt').hidden=on||!S.crt;
+function set3D(on,keep){if(on&&game&&!snesOn()){on=false;keep=true;}if(on){try{if(!glInit()){toast('3D view needs WebGL 2, which this browser doesn’t have.');on=false;}}catch(e){toast('3D view couldn’t start: '+e.message,5000);on=false;}}
+ G.on=on;if(!keep){S.d3=on;saveSettings();}$('#gl').hidden=!on;cv.style.visibility=on?'hidden':'';$('#crt').hidden=on||!S.crt;
  $('#d3Btn').classList.toggle('on',on);$('#setD3').checked=on;lightTick();if(game&&running)draw();}
-$('#d3Btn').onclick=()=>set3D(!G.on);$('#setD3').onchange=e=>set3D(e.target.checked);
+$('#d3Btn').onclick=()=>{if(game&&!snesOn()){toast('3D view is for SNES games');return;}set3D(!G.on);};$('#setD3').onchange=e=>set3D(e.target.checked);
 function motionPermission(){if(S.motion&&typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission)
  DeviceOrientationEvent.requestPermission().then(r=>{if(r!=='granted'){S.motion=false;$('#setMotion').checked=false;saveSettings();toast('Motion access wasn’t allowed');}}).catch(()=>{});G.base=null;G.oy=G.ot=0;}
 // Phone tilt: axes follow the screen's rotation, and the resting angle slowly re-centers so the picture never stays skewed.

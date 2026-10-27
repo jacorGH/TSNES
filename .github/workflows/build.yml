@@ -1,6 +1,8 @@
-name: Build SNES core
+name: Build emulator cores
 
-# Rebuilds snes.js (with the WebAssembly packed inside) only when the bridge or this file changes.
+# Builds three cores from bridge.cpp, each with its WebAssembly packed inside one .js file:
+#   snes.js (Snes9x), gb.js (Gambatte: Game Boy and Game Boy Color), gba.js (VBA-Next: Game Boy Advance).
+# They build side by side; whichever succeed are committed together, so one failing core never blocks the others.
 # Run it by hand from the Actions tab with "Run workflow".
 on:
   push:
@@ -11,11 +13,10 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  snes:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Get Emscripten and Snes9x
         run: |
           git clone --depth 1 https://github.com/emscripten-core/emsdk.git
@@ -23,7 +24,6 @@ jobs:
           ./emsdk/emsdk activate 3.1.74
           git clone --depth 1 https://github.com/snes9xgit/snes9x.git s9x
           echo "Snes9x commit: $(git -C s9x rev-parse HEAD)"
-
       - name: Compile
         run: |
           set -e
@@ -44,8 +44,6 @@ jobs:
           SRCS=$(make -s -f print.mk srcs)
           INCS="-I. -I.. $(make -s -f print.mk incs)"
           case "$SRCS" in *libretro.cpp*) ;; *) SRCS="$SRCS ./libretro.cpp";; esac
-          echo "Sources: $SRCS"
-          echo "Includes: $INCS"
           DEFS="-D__LIBRETRO__ -DLSB_FIRST -DHAVE_STDINT_H -DHAVE_INTTYPES_H -DHAVE_STRINGS_H -DRIGHTSHIFT_IS_SAR -DALLOW_CPU_OVERCLOCK"
           mkdir -p obj
           for f in $SRCS; do
@@ -56,21 +54,90 @@ jobs:
             esac
           done > jobs.txt
           xargs -P 4 -I{} sh -c '{}' < jobs.txt
-          em++ -O3 -w -std=gnu++17 $DEFS $INCS "$GITHUB_WORKSPACE/bridge.cpp" obj/*.o \
+          em++ -O3 -w -std=gnu++17 -DTS_SNES $DEFS $INCS "$GITHUB_WORKSPACE/bridge.cpp" obj/*.o \
             -o "$GITHUB_WORKSPACE/snes.js" \
             -sMODULARIZE=1 -sEXPORT_NAME=createSnes -sENVIRONMENT=web -sSINGLE_FILE=1 \
             -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=67108864 \
             -sEXPORTED_FUNCTIONS=_malloc,_free \
             -sEXPORTED_RUNTIME_METHODS=HEAPU8,HEAPU16,HEAP16
           cp ../LICENSE "$GITHUB_WORKSPACE/snes9x-LICENSE.txt"
-          ls -la "$GITHUB_WORKSPACE"/snes.*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-snes
+          path: |
+            snes.js
+            snes9x-LICENSE.txt
 
-      - name: Commit the built core
+  handheld:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sys: gb
+            repo: https://github.com/libretro/gambatte-libretro.git
+            export: createGB
+            define: TS_GB
+          - sys: gba
+            repo: https://github.com/libretro/vba-next.git
+            export: createGBA
+            define: TS_GBA
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get Emscripten and the core
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git
+          ./emsdk/emsdk install 3.1.74
+          ./emsdk/emsdk activate 3.1.74
+          git clone --depth 1 ${{ matrix.repo }} core
+          echo "Core commit: $(git -C core rev-parse HEAD)"
+          curl -fsSL -o libretro.h https://raw.githubusercontent.com/libretro/libretro-common/master/include/libretro.h
+      - name: Compile
+        run: |
+          set -e
+          source ./emsdk/emsdk_env.sh
+          cd core
+          # The core's own makefile knows how to build itself for the web as a static library.
+          MK=Makefile; [ -f Makefile.libretro ] && MK=Makefile.libretro
+          emmake make -f $MK platform=emscripten -j4 || emmake make -f $MK platform=unix STATIC_LINKING=1 -j4
+          LIB=$(find . -maxdepth 3 \( -name '*_libretro*.bc' -o -name '*_libretro*.a' \) | head -n1)
+          echo "Built: $LIB"
+          [ -n "$LIB" ] || { echo "No library was produced"; exit 1; }
+          cp "$LIB" "$GITHUB_WORKSPACE/libcore.a"
+          cd "$GITHUB_WORKSPACE"
+          em++ -O3 -w -std=gnu++17 -D${{ matrix.define }} -I. bridge.cpp libcore.a \
+            -o ${{ matrix.sys }}.js \
+            -sMODULARIZE=1 -sEXPORT_NAME=${{ matrix.export }} -sENVIRONMENT=web -sSINGLE_FILE=1 \
+            -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=33554432 \
+            -sEXPORTED_FUNCTIONS=_malloc,_free \
+            -sEXPORTED_RUNTIME_METHODS=HEAPU8,HEAPU16,HEAP16
+          for f in core/COPYING core/LICENSE core/license core/license.txt core/docs/license.txt core/docs/COPYING; do
+            if [ -f "$f" ]; then cp "$f" ${{ matrix.sys }}-core-LICENSE.txt; break; fi
+          done
+          ls -la ${{ matrix.sys }}.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-${{ matrix.sys }}
+          path: |
+            ${{ matrix.sys }}.js
+            ${{ matrix.sys }}-core-LICENSE.txt
+
+  commit:
+    needs: [snes, handheld]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: .
+          merge-multiple: true
+      - name: Commit the built cores
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
           git rm -q --cached --ignore-unmatch snes.wasm
           rm -f snes.wasm
-          git add snes.js snes9x-LICENSE.txt
-          git commit -m "Build SNES core" || echo "Core unchanged"
+          for f in snes.js snes9x-LICENSE.txt gb.js gb-core-LICENSE.txt gba.js gba-core-LICENSE.txt; do if [ -f "$f" ]; then git add "$f"; fi; done
+          git commit -m "Build emulator cores" || echo "Cores unchanged"
           git push

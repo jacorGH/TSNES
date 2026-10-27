@@ -1,18 +1,23 @@
-// Touch-SNES (TSNES) bridge: wraps the Snes9x libretro core in a small C API for JavaScript.
-// Built by .github/workflows/build.yml into snes.js + snes.wasm. Never edited by the app at runtime.
+// Touch-SNES (TSNES) bridge: wraps a libretro core in a small C API for JavaScript.
+// The same file is built three times by .github/workflows/build.yml:
+//   snes.js (Snes9x, with -DTS_SNES for the SNES video-hardware tools), gb.js (Gambatte), gba.js (VBA-Next).
 #include <emscripten.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdint.h>
 #include "libretro.h"
+#ifdef TS_SNES
 #include "snes9x.h"
 #include "memmap.h"
 #include "ppu.h"
+#endif
 
 static uint16_t vbuf[512 * 480];
 static int vw = 256, vh = 224;
-static int16_t abuf[8192 * 2];
+#define AMAX 16384
+static int16_t abuf[AMAX * 2];
+static int pixfmt = RETRO_PIXEL_FORMAT_0RGB1555;
 static int aframes = 0;
 static uint32_t pad = 0, pad2 = 0;
 static uint8_t regs[0x40];      // copy of $2100-$213F after each frame
@@ -27,7 +32,7 @@ static void log_cb(enum retro_log_level, const char *fmt, ...) {
 static bool env_cb(unsigned cmd, void *data) {
   switch (cmd) {
     case RETRO_ENVIRONMENT_SET_PIXEL_FORMAT:
-      return *(enum retro_pixel_format *)data == RETRO_PIXEL_FORMAT_RGB565;
+      pixfmt = *(enum retro_pixel_format *)data; return pixfmt <= RETRO_PIXEL_FORMAT_RGB565;
     case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:
     case RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY:
       *(const char **)data = "/"; return true;
@@ -46,12 +51,23 @@ static void video_cb(const void *data, unsigned w, unsigned h, size_t pitch) {
   if (w > 512) w = 512;
   if (h > 480) h = 480;
   vw = w; vh = h;
-  for (unsigned y = 0; y < h; y++)
-    memcpy(vbuf + y * w, (const uint8_t *)data + y * pitch, w * 2);
+  // Everything is handed to JavaScript as RGB565, whatever the core draws in.
+  for (unsigned y = 0; y < h; y++) {
+    const uint8_t *row = (const uint8_t *)data + y * pitch;
+    uint16_t *out = vbuf + y * w;
+    if (pixfmt == RETRO_PIXEL_FORMAT_RGB565) memcpy(out, row, w * 2);
+    else if (pixfmt == RETRO_PIXEL_FORMAT_XRGB8888) {
+      const uint32_t *p = (const uint32_t *)row;
+      for (unsigned x = 0; x < w; x++) { uint32_t c = p[x]; out[x] = ((c >> 8) & 0xF800) | ((c >> 5) & 0x07E0) | ((c >> 3) & 0x1F); }
+    } else {
+      const uint16_t *p = (const uint16_t *)row;
+      for (unsigned x = 0; x < w; x++) { uint16_t c = p[x]; out[x] = ((c & 0x7C00) << 1) | ((c & 0x03E0) << 1) | ((c >> 4) & 0x20) | (c & 0x1F); }
+    }
+  }
 }
 
 static size_t audio_batch_cb(const int16_t *d, size_t frames) {
-  size_t room = 8192 - aframes, n = frames < room ? frames : room;
+  size_t room = AMAX - aframes, n = frames < room ? frames : room;
   memcpy(abuf + aframes * 2, d, n * 4);
   aframes += n;
   return frames;
@@ -93,8 +109,10 @@ EMSCRIPTEN_KEEPALIVE int s9x_load(const uint8_t *rom, int size) {
 EMSCRIPTEN_KEEPALIVE void s9x_frame() {
   aframes = 0;
   retro_run();
+#ifdef TS_SNES
   memcpy(regs, Memory.FillRAM + 0x2100, 0x40);
   for (int i = 0; i < 4; i++) { scroll[i * 2] = PPU.BG[i].HOffset; scroll[i * 2 + 1] = PPU.BG[i].VOffset; }
+#endif
 }
 
 EMSCRIPTEN_KEEPALIVE void s9x_reset() { retro_reset(); }
@@ -114,11 +132,38 @@ EMSCRIPTEN_KEEPALIVE int s9x_state_load(const void *src, int size) { return retr
 EMSCRIPTEN_KEEPALIVE void *s9x_sram() { return retro_get_memory_data(RETRO_MEMORY_SAVE_RAM); }
 EMSCRIPTEN_KEEPALIVE int s9x_sram_size() { return (int)retro_get_memory_size(RETRO_MEMORY_SAVE_RAM); }
 
-// Raw hardware state for the layer tools. All read-only from JS except via s9x_vram_write.
+// Which machine this build is: 1 = SNES, 2 = Game Boy / Color, 3 = Game Boy Advance.
+EMSCRIPTEN_KEEPALIVE int s9x_system() {
+#if defined(TS_SNES)
+  return 1;
+#elif defined(TS_GBA)
+  return 3;
+#else
+  return 2;
+#endif
+}
+
+// Work RAM for memory search, watches and lighting/season addresses (every system).
+EMSCRIPTEN_KEEPALIVE uint8_t *s9x_wram() {
+#ifdef TS_SNES
+  return Memory.RAM;
+#else
+  return (uint8_t *)retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM);
+#endif
+}
+EMSCRIPTEN_KEEPALIVE int s9x_wram_size() {
+#ifdef TS_SNES
+  return 0x20000;
+#else
+  return (int)retro_get_memory_size(RETRO_MEMORY_SYSTEM_RAM);
+#endif
+}
+
+#ifdef TS_SNES
+// Raw SNES hardware state for the layer tools. All read-only from JS except via s9x_vram_write.
 EMSCRIPTEN_KEEPALIVE uint8_t *s9x_vram() { return Memory.VRAM; }
 EMSCRIPTEN_KEEPALIVE uint16_t *s9x_cgram() { return PPU.CGDATA; }
 EMSCRIPTEN_KEEPALIVE uint8_t *s9x_oam() { return PPU.OAMData; }
-EMSCRIPTEN_KEEPALIVE uint8_t *s9x_wram() { return Memory.RAM; }
 EMSCRIPTEN_KEEPALIVE uint8_t *s9x_regs() { return regs; }
 EMSCRIPTEN_KEEPALIVE uint16_t *s9x_scroll() { return scroll; }
 
@@ -140,6 +185,15 @@ EMSCRIPTEN_KEEPALIVE void s9x_vram_write(uint32_t waddr, const uint16_t *src, in
   Memory.FillRAM[0x2115] = r15; Memory.FillRAM[0x2116] = r16; Memory.FillRAM[0x2117] = r17;
   Settings.BlockInvalidVRAMAccess = block;
 }
+#else
+// Other systems have no SNES layer tools; these keep the JavaScript side simple.
+EMSCRIPTEN_KEEPALIVE uint8_t *s9x_vram() { return 0; }
+EMSCRIPTEN_KEEPALIVE uint16_t *s9x_cgram() { return 0; }
+EMSCRIPTEN_KEEPALIVE uint8_t *s9x_oam() { return 0; }
+EMSCRIPTEN_KEEPALIVE uint8_t *s9x_regs() { return regs; }
+EMSCRIPTEN_KEEPALIVE uint16_t *s9x_scroll() { return scroll; }
+EMSCRIPTEN_KEEPALIVE void s9x_vram_write(uint32_t, const uint16_t *, int) {}
+#endif
 
 EMSCRIPTEN_KEEPALIVE void s9x_cheat_reset() { retro_cheat_reset(); }
 EMSCRIPTEN_KEEPALIVE void s9x_cheat_set(int index, int on, const char *code) { retro_cheat_set(index, on != 0, code); }
