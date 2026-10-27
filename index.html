@@ -8,7 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="TSNES">
 <meta name="theme-color" content="#cfccd9">
-<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAEsUlEQVR42u3cTWoUQRgGYFMMeAFX3sD7eAQXYggeQTyCSIILj+BRBJeSC2TlBYQgLgLDMDMdku76/ep5t5lJZ1JPv9U/03Xx6+ftC5FzSf4FAofAIXAIHAKHwCFwCBwCh8AhAofAIXAIHAKHwCFjZNfVX3P54cqQXN987eQvuWj+NUEguoXSDAcT/SupjYOJgZQkMsZKzf9hpebAYsQKSWSokDbNgcXQFZLIUCG1cZARwEcig496OMgI4yORwUcNHGQE8+GWvZTHoTbilUcigw/TirTAoTailkcigw/TisAh+bLpln2MOSW9+bj0o3+/vwT4gKvv6e+m3S0eMXH6mhhK4MjD4uxbZiOyfloZcU5ZwSLGXLNuZpnogDSLjIy/x9lKNBlT+Uhk8JEZx0AHHOVGcSAf68YreHOUHr/Y/ZHI4MPZisDRYoeOWh6aQybDUX9XDlkemkPgEDgaNny8mUVzCBwCh8AhcAgcAofAIXB0m1bfDo/34ILmEDgEjlYNH/JhOM0hixnmWdndu1dLP7r//ufsrlztNulSbXzb/V16y/v7l3AUNHH6mrNK6ucRE6ev6VnJbmgWZ9+yJ1KnPA5r4ykszirpk8guBoslIqV97GWsYNE/kRRMxunvKXcekUvGluKZCEcuGRV8ZJfRoY8UVUZRH4Vk9OYjBZZRyEdRGV35SLFlnPrYQuTw7aXHrwcfKbyM062sIHL0ljoj19zHvEtN7gc7/Dqko+KoUxv7bS1daO92h/62+9vw4ocbb9Iljpq1kWuL9Y8DGh55aA6BQwbCUX9O2b7dVg3faruaQ+AQOAQOgUPgEDgEDoFjY1o9Y7Jlu61ukLbaruYQOGQsHPVnlu1brN/wvuwjPabx1wTvv/+pdnt2qTZ+fLpbesvbz6/P7srVbpO2fUBy3i8YP2Li9DVnlTjmCHLkcbiVH5/uniLjSMnhW+rs0M2fq+7imKO0j/3vX8FiiUjpkevhifteDkjL+TiUkXc+Kjd+nazF0NHZSgkf2WVU8NHPKh19ncrm9VFIRlEfXa3f0t11jlw+isoo5KO3lX16PJV9GNfV1z+OTkxKnw8/nOU+jOvq6x/WBCtO5Kh1Sss48rGOiNUEM8wOz12HtGH2420d0k6PRerUxml5DCdgpANSgaP4rhx+i3AIHAJH7IaPN7NoDoFD4BA4BA6BQ+AQOASObtPqGZN4z7ZoDoFD4GjV8CGfl9QcMh+Omrty1MesNYdMiaPODh14dYbgzVF65GKv27ESx/XNVz4GkrFuvKY45igxijOs9TPLAWnesZxkFaiJzlZyjeg864Nd/Pp5u/rNlx+uRvzMq78mPiiL1QeIM64m+DDGzyIy52qC8y41uR/v565DOk82TSvjzizzZMtFB5fPBQ6pj2OgS6XmlAbNwUdIGaYVKY9DecSrjZzNwUcwGaYVqYVDeUSqjfzNwUcYGUWmFT5iyCh1zMFHABkFD0j5GF1G2bMVPoaW8WL7LfunxG39QXe/FOAzkDFwc6iQQXe2FPJTkTFec2iRsfarZjgo6b9r2+MApdvJty8c0lXcshc4BA6BQ+AQOAQOgUPgEDgEDhE4BA6BQ+AQOKSv/AfC9BIKaWDyfwAAAABJRU5ErkJggg==">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Touch-SNES</title>
 <style>
@@ -125,6 +126,8 @@ body[data-sys=gb] #face [data-b=A],body[data-sys=gba] #face [data-b=A]{right:4px
 body[data-sys=gba] #d3Btn,body[data-sys=gba] #walkBtn{opacity:.35}
 #recbar{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 8px);transform:translateX(-50%);z-index:30;background:var(--ink);color:#fff;border-radius:22px;padding:6px 8px 6px 14px;display:flex;gap:8px;align-items:center;font-size:14px}
 #recbar .dot{width:10px;height:10px;border-radius:50%;background:#e5484d;animation:blink 1s infinite}@keyframes blink{50%{opacity:.3}}
+#micFab{position:absolute;left:8px;bottom:8px;z-index:5;width:40px;height:40px;border-radius:50%;border:0;background:#000a;color:#fff;font-size:18px}
+#micFab.on{background:var(--sel)}
 .checker{background:conic-gradient(#ddd 25%,#fff 0 50%,#ddd 0 75%,#fff 0) 0 0/10px 10px}
 body.pad #ctl{display:none}
 body.pad #app{grid-template-rows:auto 1fr}
@@ -155,6 +158,7 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
   <div id="hud"></div>
   <span id="ffbadge" class="chip" hidden>Fast</span>
   <div id="marker" hidden></div>
+  <button id="micFab" hidden aria-label="Voice chat microphone">🔇</button>
   <div id="pickbox" hidden></div>
   <div id="empty"><strong>Add a game to start</strong><p>Pick a game you own: SNES, Game Boy, Game Boy Color or Game Boy Advance. It stays on this device.</p><button class="btn main" id="emptyAdd">Add a game</button></div>
  </div></div></div>
@@ -232,11 +236,13 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
   <section class="page" data-p="together" hidden>
    <h2>Play together</h2>
    <p class="note">Host the game you’re playing and a friend joins from their phone as Player 2. They see and hear your game live and use their own controls, so they don’t need the game. More friends can join to watch.</p>
-   <div class="row"><label>Your name <input type="text" id="netName" style="width:150px"></label></div>
+   <div class="row"><label>Your name <input type="text" id="netName" placeholder="Player" style="width:150px"></label><span class="note" style="margin:0">You can change it any time, even mid-game.</span></div>
    <div class="row"><button class="btn main" id="netHost">Host this game</button><button class="btn main" id="netInvite" hidden>Send invite</button><button class="btn warn" id="netEnd" hidden>End session</button><span class="note" id="netPing" style="margin:0"></span></div>
    <div id="netJoinRow"><h3>Join a friend</h3><div class="row"><input type="text" id="netCode" placeholder="Room code" autocapitalize="characters" style="width:140px"><button class="btn main" id="netJoin">Join</button></div></div>
    <p class="note" id="netStatus"></p>
    <div class="list" id="netList"></div>
+   <h3>Voice chat</h3>
+   <div class="row"><button class="btn main" id="vcBtn" hidden>Turn on my mic</button><span class="note" id="vcNote" style="margin:0"></span></div>
    <h3>Chat</h3>
    <div class="row"><input type="text" id="netMsg" placeholder="Say something" style="flex:1"><button class="btn" id="netSend">Send</button></div>
    <div class="row"><button class="btn" data-react="👋">👋</button><button class="btn" data-react="😂">😂</button><button class="btn" data-react="👍">👍</button><button class="btn" data-react="❤️">❤️</button><button class="btn" data-react="🎉">🎉</button><button class="btn" data-react="😱">😱</button></div>
@@ -1700,43 +1706,79 @@ function renderAllTools(){renderGest();renderTiles();renderSheets();if(game)$('#
  if(game){$('#walkLayer').value=game.profile.walk.layer;$('#walkDiag').checked=game.profile.walk.diagonal;renderOverlay();renderLookFx();renderPacks();$('#notes').value=game.profile.notes||'';}}
 
 
+/* ---------- voice chat: everyone's voice goes through the host, who mixes it for each person (they never hear themselves) ---------- */
+const VC={on:false,mic:null,micSrc:null,muted:false,peers:new Map(),els:[]};
+const nm=c=>c.name||c.metadata?.name||'Friend';
+function voiceUI(){const b=$('#vcBtn'),f=$('#micFab'),inS=!!NP.role;b.hidden=!inS;f.hidden=!inS;
+ b.textContent=!VC.on?'Turn on my mic':VC.muted?'Unmute':'Mute';f.textContent=!VC.on||VC.muted?'🔇':'🎙️';f.classList.toggle('on',VC.on&&!VC.muted);
+ $('#vcNote').textContent=inS?(VC.on?(VC.muted?'Your mic is muted.':'Your mic is on. Headphones stop echo.'):'You can hear everyone. Turn on your mic to talk.'):'';}
+function playVoice(st){const a=new Audio();a.autoplay=true;a.playsInline=true;a.srcObject=st;VC.els.push(a);a.play().catch(()=>{toast('Tap the screen once to hear voice chat',3000);
+ document.addEventListener('pointerdown',()=>a.play().catch(()=>{}),{once:true});});}
+// Host: a private mix for each friend (host mic + everyone else), sent as its own call.
+function hostVoiceOut(c){if(!actx)return;const dest=actx.createMediaStreamDestination(),v={dest,src:null};
+ if(VC.micSrc)VC.micSrc.connect(dest);for(const o of VC.peers.values())if(o.src)o.src.connect(dest);VC.peers.set(c.peer,v);
+ NP.peer.call(c.peer,dest.stream,{metadata:{kind:'voice'}});}
+function hostVoiceIn(call){call.answer();call.on('stream',st=>{const v=VC.peers.get(call.peer);if(!v)return;
+ const hold=new Audio();hold.muted=true;hold.srcObject=st;hold.play().catch(()=>{});VC.els.push(hold);   // keeps the stream flowing into Web Audio
+ const src=actx.createMediaStreamSource(st);src.connect(actx.destination);for(const[id,o]of VC.peers)if(id!==call.peer)src.connect(o.dest);v.src=src;});}
+function hostVoiceGone(c){const v=VC.peers.get(c.peer);if(!v)return;try{v.src&&v.src.disconnect();}catch{}VC.peers.delete(c.peer);}
+async function voiceToggle(){if(!NP.role){toast('Host or join a game first');return;}
+ if(VC.on){VC.muted=!VC.muted;for(const t of VC.mic.getAudioTracks())t.enabled=!VC.muted;voiceUI();return;}
+ try{await audioOn();VC.mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});}
+ catch{toast('Microphone access wasn’t allowed. Allow it for this site in Safari settings, then try again.',5500);return;}
+ VC.on=true;VC.muted=false;
+ if(NP.role==='host'){VC.micSrc=actx.createMediaStreamSource(VC.mic);for(const v of VC.peers.values())VC.micSrc.connect(v.dest);}
+ else{const c=NP.conns[0];if(c)NP.peer.call(c.peer,VC.mic,{metadata:{kind:'voice'}});}
+ voiceUI();toast('Voice chat is on');}
+function voiceEnd(){if(VC.mic)for(const t of VC.mic.getTracks())t.stop();try{VC.micSrc&&VC.micSrc.disconnect();}catch{}
+ for(const v of VC.peers.values())try{v.src&&v.src.disconnect();}catch{}for(const a of VC.els){a.srcObject=null;}
+ Object.assign(VC,{on:false,mic:null,micSrc:null,muted:false,peers:new Map(),els:[]});voiceUI();}
+$('#vcBtn').onclick=voiceToggle;$('#micFab').onclick=e=>{e.stopPropagation();voiceToggle();};
+$('#micFab').addEventListener('pointerdown',e=>e.stopPropagation());
+
 /* ---------- play together: the host streams the game, friends join with their own controls (PeerJS) ---------- */
 const NP={peer:null,role:null,conns:[],code:'',stream:null,cv:null,cx:null,p2mask:0,lastSent:-1,tick:0,ping:0,seat:0,timer:0};
 const myName=()=>($('#netName').value.trim()||localStorage.getItem('tsnes.author')||'Player').slice(0,24);
 const setNet=t=>{$('#netStatus').textContent=t;};
 async function loadPeer(){if(window.Peer)return;await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
  s.onload=res;s.onerror=()=>rej(new Error('Couldn’t load the connection library. Check your internet connection.'));document.head.appendChild(s);});}
-const code6=()=>Array.from({length:6},()=>'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[Math.random()*31|0]).join('');
-const peerErr=e=>e.type==='peer-unavailable'?'No room with that code. Check it and try again.':e.type==='unavailable-id'?'That room code is taken. Try hosting again.':
+const code4=()=>Array.from({length:4},()=>'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[Math.random()*31|0]).join('');
+const peerErr=e=>e.type==='peer-unavailable'?'No room with that code. Check it and try again.':e.type==='unavailable-id'?'That room code was taken. Tap Host again for a new one.':
  e.type==='network'||e.type==='server-error'?'Can’t reach the connection service. Check your internet connection.':'Connection problem ('+(e.type||e.message)+').';
 async function hostStart(){if(!game){toast('Start the game you want to play together first');return;}
  if(!M._s9x_set_input2){toast('This core is older than Play together. Push bridge.cpp so GitHub rebuilds it, then reload.',6000);return;}
  try{await loadPeer();await audioOn();}catch(e){setNet(e.message);return;}
- netEnd(true);NP.role='host';NP.code=code6();NP.peer=new Peer('tsnes-'+NP.code);setNet('Opening a room…');
+ netEnd(true);NP.role='host';openRoom(0);}
+// Rooms have 4-character codes; if one is already in use somewhere, quietly pick another.
+function openRoom(tries){NP.code=code4();NP.peer=new Peer('tsnes-'+NP.code);setNet('Opening a room…');
  paused=false;
  NP.peer.on('open',()=>{setNet(`Room ${NP.code} is open. Send the invite to a friend.`);renderNet();});
- NP.peer.on('error',e=>setNet(peerErr(e)));
+ NP.peer.on('error',e=>{if(e.type==='unavailable-id'&&tries<4){try{NP.peer.destroy();}catch{}openRoom(tries+1);return;}setNet(peerErr(e));});
+ NP.peer.on('call',call=>{if(call.metadata?.kind==='voice')hostVoiceIn(call);});
  NP.peer.on('connection',c=>{c.on('open',()=>{c.seat=NP.conns.some(x=>x.seat===2)?0:2;NP.conns.push(c);
-   c.send({t:'hello',game:game.name,host:myName(),seat:c.seat});NP.peer.call(c.peer,hostStream());
-   toast(`${c.metadata?.name||'A friend'} joined${c.seat===2?' as Player 2':' to watch'}`);renderNet();});
+   c.send({t:'hello',game:game.name,host:myName(),seat:c.seat});NP.peer.call(c.peer,hostStream(),{metadata:{kind:'game'}});hostVoiceOut(c);voiceUI();
+   toast(`${nm(c)} joined${c.seat===2?' as Player 2':' to watch'}`);renderNet();});
   c.on('data',d=>{if(d.t==='in'&&c.seat===2)NP.p2mask=d.m|0;else if(d.t==='ping')c.send({t:'pong',at:d.at});
-   else if(d.t==='chat'){showChat(d);for(const o of NP.conns)if(o!==c&&o.open)o.send(d);}});
-  c.on('close',()=>{NP.conns=NP.conns.filter(x=>x!==c);if(c.seat===2)NP.p2mask=0;toast(`${c.metadata?.name||'Your friend'} left`);renderNet();});});
+   else if(d.t==='chat'){showChat(d);for(const o of NP.conns)if(o!==c&&o.open)o.send(d);}
+   else if(d.t==='name'){const was=nm(c);c.name=String(d.name||'').slice(0,24)||was;if(c.name!==was)toast(`${was} is now ${c.name}`);renderNet();}});
+  c.on('close',()=>{NP.conns=NP.conns.filter(x=>x!==c);hostVoiceGone(c);if(c.seat===2)NP.p2mask=0;toast(`${nm(c)} left`);renderNet();});});
  renderNet();}
 // What friends see: the screen (flat or 3D, with weather) at 3× size, plus the game's sound.
 function hostStream(){if(NP.stream)return NP.stream;const c=NP.cv=document.createElement('canvas');c.width=768;c.height=672;NP.cx=c.getContext('2d');
  const st=c.captureStream(60);if(actx&&anode){const ad=actx.createMediaStreamDestination();anode.connect(ad);for(const t of ad.stream.getAudioTracks())st.addTrack(t);}
  NP.stream=st;streamFrame();return st;}
 function streamFrame(){const x=NP.cx,c=NP.cv;x.imageSmoothingEnabled=false;x.drawImage(G.on?$('#gl'):cv,0,0,c.width,c.height);const fx=$('#fx');if(!fx.hidden)x.drawImage(fx,0,0,c.width,c.height);}
-async function joinRoom(){const code=$('#netCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length<4){toast('Type the room code from your friend');return;}
+async function joinRoom(){const code=$('#netCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length!==4){toast('Type the 4-character room code from your friend');return;}
  try{await loadPeer();}catch(e){setNet(e.message);return;}
  netEnd(true);localStorage.setItem('tsnes.author',myName());NP.role='guest';NP.peer=new Peer();setNet('Connecting…');
  NP.peer.on('open',()=>{const c=NP.peer.connect('tsnes-'+code,{metadata:{name:myName()}});
   c.on('open',()=>{NP.conns=[c];if(!NP.hello)setNet('Connected. Waiting for the picture…');});
-  c.on('data',d=>{if(d.t==='hello'||d.t==='seat'){NP.seat=d.seat;NP.hello=true;setNet(`Playing ${d.game||''} with ${d.host||'your friend'}${d.seat===2?' as Player 2':', watching'}.`);renderNet();}
+  c.on('data',d=>{if(d.t==='hello'||d.t==='seat'||d.t==='host'){const first=d.t==='hello';NP.info=Object.assign(NP.info||{},d.game?{game:d.game}:{},d.host?{host:d.host}:{},'seat'in d?{seat:d.seat}:{});
+    NP.seat=NP.info.seat;NP.hello=true;guestStatus();renderNet();
+    if(first&&!$('#netName').value.trim())setTimeout(()=>toast('You joined as “Player”. Add your name any time in ☰, Together.',5000),1500);}
    else if(d.t==='chat')showChat(d);else if(d.t==='pong')NP.ping=Math.round(performance.now()-d.at);else if(d.t==='bye')netEnd(false,'The host ended the session');});
   c.on('close',()=>{if(NP.role==='guest')netEnd(false,'The session ended');});});
- NP.peer.on('call',call=>{call.answer();call.on('stream',st=>showRemote(st));});
+ NP.peer.on('call',call=>{call.answer();call.on('stream',st=>call.metadata?.kind==='voice'?playVoice(st):showRemote(st));});
  NP.peer.on('error',e=>setNet(peerErr(e)));
  clearInterval(NP.timer);NP.timer=setInterval(guestTick,16);renderNet();}
 function showRemote(st){const v=$('#rv');v.srcObject=st;v.hidden=false;$('#empty').hidden=true;cv.style.visibility='hidden';$('#gl').hidden=true;
@@ -1746,16 +1788,17 @@ $('#rvTap').onclick=()=>{$('#rv').play().catch(()=>{});$('#rvTap').hidden=true;}
 function guestTick(){const c=NP.conns[0];if(NP.role!=='guest'||!c||!c.open)return;pollPads();const m=inp.touch|inp.key|inp.pad|inp.act|inp.toggle|(inp.turbo&&(++NP.tick>>2&1)?inp.turbo:0);
  if(m!==NP.lastSent||NP.tick%30===0){c.send({t:'in',m});NP.lastSent=m;}if(NP.tick%120===0)c.send({t:'ping',at:performance.now()});
  if(NP.tick%60===0&&NP.ping)$('#netPing').textContent=`Delay ${NP.ping} ms`;}
-function netEnd(quiet,msg){for(const c of NP.conns){try{if(NP.role==='host')c.send({t:'bye'});c.close();}catch{}}
+function guestStatus(){const i=NP.info||{};setNet(`Playing ${i.game||''} with ${i.host||'your friend'}${i.seat===2?' as Player 2':', watching'}.`);}
+function netEnd(quiet,msg){voiceEnd();for(const c of NP.conns){try{if(NP.role==='host')c.send({t:'bye'});c.close();}catch{}}
  try{NP.peer&&NP.peer.destroy();}catch{}clearInterval(NP.timer);const wasGuest=NP.role==='guest';
- Object.assign(NP,{peer:null,role:null,conns:[],code:'',p2mask:0,lastSent:-1,seat:0,ping:0,hello:false});NP.stream=null;NP.cx=null;
+ Object.assign(NP,{peer:null,role:null,conns:[],code:'',p2mask:0,lastSent:-1,seat:0,ping:0,hello:false,info:null});NP.stream=null;NP.cx=null;
  if(wasGuest){const v=$('#rv');v.srcObject=null;v.hidden=true;$('#rvTap').hidden=true;cv.style.visibility=G.on?'hidden':'';$('#gl').hidden=!G.on;
   $('#title').textContent=game?game.name:'Touch-SNES';$('#empty').hidden=!!game;$('#netPing').textContent='';}
  if(!quiet){setNet(msg||'Session ended.');if(msg)toast(msg);}renderNet();}
-function renderNet(){const host=NP.role==='host',guest=NP.role==='guest';$('#netHost').hidden=host||guest;$('#netInvite').hidden=!host||!NP.code;$('#netEnd').hidden=!host&&!guest;
+function renderNet(){voiceUI();const host=NP.role==='host',guest=NP.role==='guest';$('#netHost').hidden=host||guest;$('#netInvite').hidden=!host||!NP.code;$('#netEnd').hidden=!host&&!guest;
  $('#netJoinRow').hidden=host||guest;const box=$('#netList');box.innerHTML='';
  if(host)for(const c of NP.conns){const d=document.createElement('div');d.className='item';
-  d.innerHTML=`<div class="grow"><strong>${esc(c.metadata?.name||'Friend')}</strong><small>${c.seat===2?'Player 2':'Watching'}</small></div>${c.seat===2?'':'<button class="btn">Make Player 2</button>'}`;
+  d.innerHTML=`<div class="grow"><strong>${esc(nm(c))}</strong><small>${c.seat===2?'Player 2':'Watching'}</small></div>${c.seat===2?'':'<button class="btn">Make Player 2</button>'}`;
   const b=d.querySelector('button');if(b)b.onclick=()=>{for(const o of NP.conns){o.seat=o===c?2:0;if(o.open)o.send({t:'seat',seat:o.seat,game:game.name,host:myName()});}NP.p2mask=0;renderNet();};box.appendChild(d);}}
 function showChat(d){toast(`${d.name}: ${d.text}`,4000);}
 function sendChat(text){text=String(text).trim().slice(0,140);if(!text)return;if(!NP.role){toast('Host or join a game first');return;}
@@ -1765,7 +1808,11 @@ $('#netInvite').onclick=()=>{const url=location.origin+location.pathname+'#join=
  if(navigator.share)navigator.share({title:'Play together',text,url}).catch(()=>{});else{navigator.clipboard?.writeText(url);toast('Invite link copied');}};
 $('#netSend').onclick=()=>{sendChat($('#netMsg').value);$('#netMsg').value='';};
 for(const b of $$('[data-react]'))b.onclick=()=>sendChat(b.dataset.react);
-$('#netName').value=localStorage.getItem('tsnes.author')||'';$('#netName').onchange=()=>localStorage.setItem('tsnes.author',myName());
+$('#netName').value=localStorage.getItem('tsnes.author')||'';
+// Names can be added or changed during a session; everyone sees the new one.
+$('#netName').onchange=()=>{localStorage.setItem('tsnes.author',myName());const n=myName();
+ if(NP.role==='guest'&&NP.conns[0]?.open){NP.conns[0].send({t:'name',name:n});toast('Name updated');}
+ if(NP.role==='host'){for(const c of NP.conns)if(c.open)c.send({t:'host',host:n});toast('Name updated');}};
 {const m=location.hash.match(/join=([A-Za-z0-9]+)/);if(m){$('#netCode').value=m[1].toUpperCase();history.replaceState(null,'',location.pathname);
  setTimeout(()=>{openSheet('together');toast('Tap Join to play with your friend',4000);},600);}}
 
