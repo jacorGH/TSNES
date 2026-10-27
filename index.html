@@ -315,6 +315,9 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
    <div class="row"><label>Fast-forward speed <select id="setFF"><option>2</option><option>3</option><option>4</option><option>6</option></select></label></div>
    <div class="row"><label class="ck"><input type="checkbox" id="setRw"> Rewind</label><label>Seconds <select id="setRwSec"><option>5</option><option>10</option><option>20</option></select></label></div>
    <p class="note">Rewind keeps recent moments in memory. Longer rewind uses more memory, which older iPhones may not have.</p>
+   <h3>Cores</h3>
+   <div class="row"><button class="btn" id="coreCheck">Check which cores are installed</button></div>
+   <p class="note" id="coreNote"></p>
    <h3>About</h3>
    <p class="note">Emulation by Snes9x (non-commercial license), Gambatte for Game Boy and Game Boy Color (GPLv2), and VBA-Next for Game Boy Advance (GPLv2). 7z and RAR files are opened with 7-Zip (LGPL, with the unRAR license), loaded from jsDelivr when first needed. Their licenses are next to each core in the repo. Super NES is a trademark of Nintendo.</p>
   </section>
@@ -392,8 +395,11 @@ const CORES={snes:{js:'snes.js',fn:'createSnes',name:'SNES'},gb:{js:'gb.js',fn:'
 let Msys=null;const MODS={};
 async function loadCore(sys='snes'){if(M&&Msys===sys)return M;const c=CORES[sys];
  if(!MODS[sys]){if(!window[c.fn])await new Promise((res,rej)=>{const el=document.createElement('script');el.src=c.js;el.onload=res;
-   el.onerror=()=>rej(new Error(`${c.js} is missing. Run “Build emulator cores” in your repo’s Actions tab, then reload.`));document.head.appendChild(el);});
-  MODS[sys]=await window[c.fn]({locateFile:f=>f});MODS[sys]._s9x_init();}
+   el.onerror=()=>rej(new Error(sys==='snes'?'snes.js is missing. Run “Build emulator cores” in your repo’s Actions tab, then reload.':
+    `${c.js} isn’t in your repo yet, so ${c.name} games can’t start. In GitHub, open Actions and check that “Build emulator cores” exists and its ${sys==='gb'?'gb':'gba'} job passed. Settings, About has a core check.`));document.head.appendChild(el);});
+  MODS[sys]=await window[c.fn]({locateFile:f=>f});MODS[sys]._s9x_init();
+  // A snes.js built by the old SNES-only workflow from the new bridge lacks the SNES tools; say so instead of misbehaving.
+  if(sys==='snes'&&MODS[sys]._s9x_system&&MODS[sys]._s9x_system()!==1)toast('snes.js was built by the old workflow, so 3D and tile tools won’t work right. Update .github/workflows/build.yml and run “Build emulator cores”.',8000);}
  for(const k in MODS)if(k!==sys)delete MODS[k];
  if(Msys!==sys){romPtr=0;rw.ptr=0;rw.buf=[];PT.ptr=0;img=null;}M=MODS[sys];Msys=sys;return M;}
 const snesOn=()=>!!game&&game.sys==='snes';
@@ -1763,6 +1769,8 @@ $('#netName').value=localStorage.getItem('tsnes.author')||'';$('#netName').oncha
 {const m=location.hash.match(/join=([A-Za-z0-9]+)/);if(m){$('#netCode').value=m[1].toUpperCase();history.replaceState(null,'',location.pathname);
  setTimeout(()=>{openSheet('together');toast('Tap Join to play with your friend',4000);},600);}}
 
+$('#coreCheck').onclick=async()=>{const out=[];for(const[k,c]of Object.entries(CORES)){let ok=false;try{const r=await fetch(c.js+'?check='+Date.now(),{method:'HEAD',cache:'no-store'});ok=r.ok;}catch{}
+  out.push(`${c.name}: ${ok?'installed':'missing'}`);}$('#coreNote').textContent=out.join('. ')+'. A missing core means its job in “Build emulator cores” hasn’t succeeded yet.';};
 /* ---------- sheet + settings ---------- */
 const pauseFor=p=>!!game&&p!=='tools'&&NP.role!=='host';
 function openSheet(p){$('#sheet').hidden=false;paused=pauseFor(p);if(p)showPage(p);renderSlots();}
