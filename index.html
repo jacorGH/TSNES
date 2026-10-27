@@ -128,6 +128,31 @@ body[data-sys=gba] #d3Btn,body[data-sys=gba] #walkBtn{opacity:.35}
 #recbar .dot{width:10px;height:10px;border-radius:50%;background:#e5484d;animation:blink 1s infinite}@keyframes blink{50%{opacity:.3}}
 #micFab{position:absolute;left:8px;bottom:8px;z-index:5;width:40px;height:40px;border-radius:50%;border:0;background:#000a;color:#fff;font-size:18px}
 #micFab.on{background:var(--sel)}
+#mrbar{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 8px);transform:translateX(-50%);z-index:30;background:var(--ink);color:#fff;border-radius:22px;padding:6px 8px 6px 14px;display:flex;gap:8px;align-items:center;font-size:14px}
+#mrbar .dot{width:10px;height:10px;border-radius:50%;background:#e5484d;animation:blink 1s infinite}
+#layEd{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 50px);transform:translateX(-50%);z-index:30;background:var(--sheet);border-radius:16px;padding:10px 12px;box-shadow:0 6px 24px #0005;max-width:94vw}
+#amb{position:absolute;inset:-10%;width:120%;height:120%;filter:blur(36px) saturate(1.7) brightness(.75);pointer-events:none;z-index:0}
+#bezel{position:relative;z-index:1}
+#dpad.floating{opacity:1!important;transition:none}
+/* Full-screen: the game fills the screen and the controls float on top. */
+body.ov #app{display:block;padding:0}
+body.ov #stage{position:fixed;inset:0;background:#000;padding:0;overflow:hidden}
+body.ovp #stage{align-items:start;padding-top:calc(env(safe-area-inset-top) + 46px)}
+body.ov #wrap{width:min(100vw,calc(100dvh * var(--arn)))!important}
+body.ovp #wrap{width:min(100vw,calc((100dvh - 46px - env(safe-area-inset-top)) * var(--arn)))!important}
+body.ov #bar{position:fixed;top:env(safe-area-inset-top);left:env(safe-area-inset-left);right:env(safe-area-inset-right);z-index:6;display:flex!important;justify-content:space-between;padding:6px 8px;pointer-events:none}
+body.ov #barL,body.ov #barR{pointer-events:none;flex:none;padding:0}
+body.ov #bar .ib{pointer-events:auto;background:#0007;color:#fff;min-width:34px;height:32px}
+body.ov #bar .ib.on{background:var(--sel)}
+body.ov #title{display:none}
+body.ov #ctl{position:fixed;inset:0;display:block!important;z-index:5;pointer-events:none;padding:0;opacity:1}
+body.ov #ctl>*{position:absolute;pointer-events:auto;margin:0!important;transform:translate(-50%,-50%) scale(var(--s,1));grid-area:auto}
+body.ov #ctl #act{width:max-content;max-width:60vw}
+body.ov .sh{background:#ffffff38;color:#fff}
+body.ov #mid .lbl{color:#fffc}
+body.ov #dpad::before,body.ov #dpad::after{background:#1d1b24cc}
+body.lay #ctl>*{outline:2px dashed #fff8;outline-offset:4px;opacity:1!important}
+body.lay #ctl>.lsel{outline:3px solid var(--sel)}
 .checker{background:conic-gradient(#ddd 25%,#fff 0 50%,#ddd 0 75%,#fff 0) 0 0/10px 10px}
 body.pad #ctl{display:none}
 body.pad #app{grid-template-rows:auto 1fr}
@@ -146,7 +171,7 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
   <button class="ib" id="qsBtn" aria-label="Quick save">💾</button>
   <button class="ib" id="qlBtn" aria-label="Quick load">↺</button></div>
  </div>
- <div id="stage"><div id="bezel"><div id="wrap">
+ <div id="stage"><canvas id="amb" width="32" height="18" hidden></canvas><div id="bezel"><div id="wrap">
   <canvas id="screen" width="256" height="224"></canvas>
   <canvas id="gl" hidden></canvas>
   <video id="rv" playsinline autoplay hidden></video>
@@ -257,6 +282,14 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
    <div class="row"><input type="text" id="actIcon" placeholder="Icon" style="width:64px"><input type="text" id="actLabel" placeholder="Label, like Use tool" style="flex:1"></div>
    <div class="row" id="actBtns"></div>
    <div class="row"><select id="actMode"><option value="hold">Hold while pressed</option><option value="turbo">Turbo while pressed</option><option value="toggle">Tap to hold, tap to release</option></select><button class="btn main" id="actAdd">Add button</button></div>
+   <h2>Play style</h2>
+   <div class="row"><select id="psPreset"><option value="none">Standard</option><option value="puzzle">Puzzle: drag and flick pieces</option><option value="action">Action: gesture pad for side-scrollers</option></select></div>
+   <div class="row" id="psPuzzle" hidden><label>Tap rotates <select id="psRot"></select></label><label>Two-finger tap <select id="psRot2"></select></label>
+    <label>Flick down <select id="psDrop"><option value="Down">Holds Down to drop</option><option value="Up">Presses Up (hard drop)</option></select></label><label>Cell size <input type="number" id="psCell" style="width:58px"></label></div>
+   <div class="row" id="psAction" hidden><label>Jump <select id="psJump"></select></label><label>Attack <select id="psAtk"></select></label></div>
+   <p class="note" id="psNote"></p>
+   <div class="row"><label class="ck"><input type="checkbox" id="psTilt"> Tilt to steer (racing games)</label><button class="btn" id="mrStart">Record a move</button></div>
+   <p class="note">Record a move: play a combo once and it becomes a one-tap button under the controls.</p>
    <h2>Touch gestures</h2>
    <p class="note">With 👆 on: tap to walk, tap someone to walk over and talk, drag to steer. Anytime: hold the screen for a quick menu, tap with two fingers for Back.</p>
    <div class="row" id="gestRow"></div>
@@ -291,6 +324,7 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
   <section class="page" data-p="settings" hidden>
    <h3>Screen</h3>
    <div class="row"><label>Look <select id="setLook"><option value="original">Original</option><option value="vivid">Vivid</option><option value="soft">Soft</option><option value="warm">Warm</option><option value="green">Classic green</option></select></label><label class="ck"><input type="checkbox" id="setLcd"> Pixel grid</label></div>
+   <div class="row"><label class="ck"><input type="checkbox" id="setHd"> HD smoothing (smooth curves on pixel art, flat view)</label><label class="ck"><input type="checkbox" id="setGlowBg"> Glow backdrop</label><label class="ck"><input type="checkbox" id="setSparks"> Hit sparks</label></div>
    <div class="row"><label>Shape <select id="setAspect"><option value="4:3">TV (4:3)</option><option value="pixel">Square pixels</option></select></label></div>
    <div class="row"><label class="ck"><input type="checkbox" id="setCrt"> Scanlines</label><label class="ck"><input type="checkbox" id="setSmooth"> Smooth pixels</label><label class="ck"><input type="checkbox" id="setWatch" checked> Show watches</label></div>
    <h3>3D</h3>
@@ -306,6 +340,8 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
    <h3>Start up</h3>
    <div class="row"><label class="ck"><input type="checkbox" id="setResume"> Open my last game when the app starts</label></div>
    <h3>Controls</h3>
+   <div class="row"><label>Full-screen with controls on top <select id="setOverlay"><option value="off">Off</option><option value="landscape">In landscape</option><option value="always">Always</option></select></label><button class="btn" id="layBtn">Edit layout</button></div>
+   <div class="row"><label class="ck"><input type="checkbox" id="setFloat"> Floating stick: the D-pad appears where your left thumb lands</label></div>
    <div class="row"><label>Opacity <input type="range" id="setOp" min="30" max="100"></label></div>
    <div class="row"><label class="ck"><input type="checkbox" id="setGest"> Hold the screen for a quick menu, two-finger tap for Back</label></div>
    <div class="row"><label class="ck"><input type="checkbox" id="setPadHide"> Hide touch controls when a controller connects</label></div>
@@ -358,6 +394,10 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
 </div></div>
 
 <div id="qmenu" hidden></div>
+<div id="mrbar" hidden><span class="dot"></span><strong>Recording a move</strong><button class="btn main" id="mrDone">Done</button><button class="btn" id="mrCancel">Cancel</button></div>
+<div id="layEd" hidden><strong id="leName">D-pad</strong><span class="note" style="margin:0">Drag any control to move it</span>
+ <div class="row" style="margin:6px 0 0"><button class="btn" id="leSmaller" aria-label="Smaller">−</button><button class="btn" id="leBigger" aria-label="Bigger">+</button><label>See-through <input type="range" id="leOp" min="15" max="100"></label></div>
+ <div class="row" style="margin:6px 0 0"><button class="btn" id="leReset">Reset</button><button class="btn" id="leAll">Use for all games</button><button class="btn main" id="leDone">Done</button></div></div>
 <div id="recbar" hidden><span class="dot"></span><strong id="recText">Recording</strong><button class="btn main" id="recStop">Done</button><button class="btn" id="recCancel">Cancel</button></div>
 <div id="toast" hidden></div>
 <input type="file" id="romFile" hidden>
@@ -382,7 +422,7 @@ const DB=(()=>{let p,mem=null;const memStore=s=>(mem[s]||(mem[s]=new Map()));
   return new Promise((res,rej)=>{const t=d.transaction(st,mode);const r=fn(t.objectStore(st));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);});};
  return{get:(s,k)=>run(s,'readonly',o=>o.get(k),m=>m.get(k)),put:(s,k,v)=>run(s,'readwrite',o=>o.put(v,k),m=>{m.set(k,v);}),
   del:(s,k)=>run(s,'readwrite',o=>o.delete(k),m=>{m.delete(k);}),keys:s=>run(s,'readonly',o=>o.getAllKeys(),m=>[...m.keys()])};})();
-const SETDEF={lcd:false,saver:false,pad2:true,gestures:true,talkFlat:true,resume:true,sunShadow:true,glowFx:true,bloom:true,waterFx:true,fastText:2,moments:5,stand:true,dof:true,look:'original',fxAmt:40,padHide:true,aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10,d3:false,tilt:28,depth:100,shadow:true,motion:false};
+const SETDEF={overlay:'landscape',floatStick:false,hd:false,glowBg:true,sparks:true,lcd:false,saver:false,pad2:true,gestures:true,talkFlat:true,resume:true,sunShadow:true,glowFx:true,bloom:true,waterFx:true,fastText:2,moments:5,stand:true,dof:true,look:'original',fxAmt:40,padHide:true,aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10,d3:false,tilt:28,depth:100,shadow:true,motion:false};
 let S=Object.assign({},SETDEF,JSON.parse(localStorage.getItem('ht.settings')||'{}'));
 const saveSettings=()=>localStorage.setItem('ht.settings',JSON.stringify(S));
 const fnv=(a,o=0,n=a.length)=>{let h=0x811c9dc5;for(let i=o;i<o+n;i++){h^=a[i];h=Math.imul(h,16777619);}return h>>>0;};
@@ -422,8 +462,9 @@ let logical={w:256,h:224};
 function draw(){
  const w=M._s9x_vw(),h=M._s9x_vh();
  if(!img||img.width!==w||img.height!==h){cv.width=w;cv.height=h;img=cx.createImageData(w,h);logical=snesOn()?{w:256,h:h>240?h/2:h}:{w,h};applyAspect();}
- if(G.on&&game){if(game.sys==='gb')composeGB();else compose3D();glDraw();fxTick();if(NP.cx)streamFrame();hudTick();return;}
- blit();fxTick();if(NP.cx)streamFrame();hudTick();}
+ if(G.on&&game){if(game.sys==='gb')composeGB();else compose3D();glDraw();fxTick();if(NP.cx)streamFrame();ambTick();hudTick();return;}
+ if(S.hd&&game&&hdDraw()){fxTick();if(NP.cx)streamFrame();ambTick();hudTick();return;}
+ blit();fxTick();if(NP.cx)streamFrame();ambTick();hudTick();}
 function blit(){if(!img)return;const src=new Uint16Array(H8().buffer,P.video,img.width*img.height),dst=new Uint32Array(img.data.buffer);
  for(let i=0;i<dst.length;i++)dst[i]=LUT[src[i]];cx.putImageData(img,0,0);}
 function applyAspect(){const n=S.aspect==='pixel'||game&&!snesOn()?logical.w/logical.h:4/3;document.documentElement.style.setProperty('--ar',String(n));document.documentElement.style.setProperty('--gw',logical.w);document.documentElement.style.setProperty('--gh',logical.h);document.documentElement.style.setProperty('--arn',String(n));}
@@ -450,7 +491,7 @@ document.addEventListener('pointerdown',()=>{if(game)audioOn();},{capture:true})
 /* ---------- input ---------- */
 const inp={pad2:0,touch:0,key:0,pad:0,walk:0,act:0,turbo:0,toggle:0};let frameNo=0,macro=null;
 const ptrs=new Map();
-function dpadMask(e){const r=$('#dpad').getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
+function dpadMask(e,p){const r=$('#dpad').getBoundingClientRect(),cx=p&&p.float?p.cx:r.left+r.width/2,cy=p&&p.float?p.cy:r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy;
  if(Math.hypot(dx,dy)<r.width*0.14)return 0;const s=((Math.round(Math.atan2(dy,dx)/(Math.PI/4))%8)+8)%8;
  return[BIT('Right'),BIT('Right')|BIT('Down'),BIT('Down'),BIT('Down')|BIT('Left'),BIT('Left'),BIT('Left')|BIT('Up'),BIT('Up'),BIT('Up')|BIT('Right')][s];}
 function btnMask(e){const el=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-b]');return el?BIT(el.dataset.b):0;}
@@ -458,10 +499,12 @@ function refreshTouch(){let m=0;for(const p of ptrs.values())m|=p.m;inp.touch=m;
  for(const el of $$('#ctl [data-b]'))el.classList.toggle('on',!!(m&BIT(el.dataset.b)));
  const d={u:'Up',d:'Down',l:'Left',r:'Right'};for(const i of $$('#dpad i'))i.classList.toggle('on',!!(m&BIT(d[i.dataset.d])));}
 const ctl=$('#ctl');
-ctl.addEventListener('pointerdown',e=>{if(e.target.closest('#act'))return;const dp=!!e.target.closest('#dpad');if(!dp&&!e.target.closest('[data-b]'))return;
+ctl.addEventListener('pointerdown',e=>{if(LE.on){leDown(e);return;}if(e.target.closest('#act'))return;const dp=!!e.target.closest('#dpad');
+ if(S.floatStick&&!dp&&!e.target.closest('[data-b]')&&e.clientX<innerWidth*.5&&!document.body.classList.contains('ov')){e.preventDefault();floatStart(e);return;}
+ if(!dp&&!e.target.closest('[data-b]'))return;
  e.preventDefault();ptrs.set(e.pointerId,{dp,m:dp?dpadMask(e):btnMask(e)});refreshTouch();});
-ctl.addEventListener('pointermove',e=>{const p=ptrs.get(e.pointerId);if(!p)return;e.preventDefault();p.m=p.dp?dpadMask(e):btnMask(e);refreshTouch();});
-for(const t of['pointerup','pointercancel'])window.addEventListener(t,e=>{if(ptrs.delete(e.pointerId))refreshTouch();});
+ctl.addEventListener('pointermove',e=>{const p=ptrs.get(e.pointerId);if(!p)return;e.preventDefault();p.m=p.dp?dpadMask(e,p):btnMask(e);refreshTouch();});
+for(const t of['pointerup','pointercancel'])window.addEventListener(t,e=>{if(ptrs.delete(e.pointerId)){refreshTouch();floatEnd();}});
 const KEYS={ArrowUp:'Up',ArrowDown:'Down',ArrowLeft:'Left',ArrowRight:'Right',KeyX:'A',KeyZ:'B',KeyS:'X',KeyA:'Y',KeyQ:'L',KeyW:'R',Enter:'Start',ShiftLeft:'Select',ShiftRight:'Select'};
 addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select'))return;const k=KEYS[e.code];if(k){inp.key|=BIT(k);e.preventDefault();}});
 addEventListener('keyup',e=>{const k=KEYS[e.code];if(k)inp.key&=~BIT(k);});
@@ -469,14 +512,14 @@ function pollPads(){inp.pad=0;inp.pad2=0;const gp=[...(navigator.getGamepads?.()
  const map=[[0,'B'],[1,'A'],[2,'Y'],[3,'X'],[4,'L'],[5,'R'],[8,'Select'],[9,'Start'],[12,'Up'],[13,'Down'],[14,'Left'],[15,'Right']];
  for(const[i,n]of map)if(b(i))m|=BIT(n);const ax=g.axes[0]||0,ay=g.axes[1]||0;
  if(ax<-.5)m|=BIT('Left');if(ax>.5)m|=BIT('Right');if(ay<-.5)m|=BIT('Up');if(ay>.5)m|=BIT('Down');if(two)inp.pad2|=m;else inp.pad|=m;});}
-function inputMask(){let m=inp.touch|inp.key|inp.pad|inp.walk|inp.act|inp.toggle;if(inp.turbo&&(frameNo>>2&1))m|=inp.turbo;
+function inputMask(){let m=inp.touch|inp.key|inp.pad|inp.walk|inp.act|inp.toggle|gxMask()|tiltMask();if(inp.turbo&&(frameNo>>2&1))m|=inp.turbo;
  if(macro){const st=macro.steps[macro.i];if(st){m|=st.mask;if(--macro.left<=0){macro.i++;macro.left=macro.steps[macro.i]?.frames||0;}}else macro=null;}return m;}
 
 /* ---------- action buttons (from game data) ---------- */
 function renderActions(){const box=$('#act');box.innerHTML='';inp.act=inp.turbo=inp.toggle=0;
  (game?.profile.actions||[]).forEach(a=>{const b=document.createElement('button');b.className='act';b.innerHTML=`<span>${esc(a.icon||'')}</span><span>${esc(a.label)}</span>`;
   const mask=(a.press||[]).reduce((m,n)=>m|BIT(n),0);
-  b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);
+  b.addEventListener('pointerdown',e=>{if(LE.on)return;e.preventDefault();b.setPointerCapture(e.pointerId);
    if(a.mode==='toggle'){inp.toggle^=mask;b.classList.toggle('on',!!(inp.toggle&mask));return;}
    if(a.mode==='macro'&&a.steps){macro={steps:a.steps.map(s=>({mask:(s.press||[]).reduce((m,n)=>m|BIT(n),0),frames:s.frames||6})),i:0};macro.left=macro.steps[0].frames;return;}
    b.classList.add('on');if(a.mode==='turbo')inp.turbo|=mask;else inp.act|=mask;});
@@ -491,8 +534,8 @@ function loop(now){requestAnimationFrame(loop);if(!running||paused){last=now;ret
  pollPads();
  if(rewinding){rewindStep();draw();return;}
  const fast=ff?S.ff:TX.on&&S.fastText>1?S.fastText:1,k=n*fast;for(let i=0;i<k;i++)step(!ff&&(fast===1||i%fast===0));if(!S.saver||(++G.rafN&1))draw();}
-function step(audio){frameNo++;M._s9x_set_input(inputMask());if(M._s9x_set_input2)M._s9x_set_input2(NP.p2mask|inp.pad2);applyFreezes();M._s9x_frame();if(audio)pushAudio();
- walkTick();patchTick();rewindCapture();if(frameNo%120===0)sramCheck();if(frameNo%8===0){textTick();gbTextTick();}if(REC.on&&frameNo%3===0)recTick();momentTick();if(frameNo%3600===0){const m=lib.find(g=>g.id===game.id);if(m)m.playMin=(m.playMin||0)+1;}if(frameNo%30===0)lightTick();if(frameNo%15===0)layerTick();}
+function step(audio){frameNo++;const im=inputMask();M._s9x_set_input(im);if(MR.on){MR.seq.push(im);if(MR.seq.length>900)stopMoveRec(true);}if(M._s9x_set_input2)M._s9x_set_input2(NP.p2mask|inp.pad2);applyFreezes();M._s9x_frame();if(audio)pushAudio();
+ walkTick();patchTick();rewindCapture();if(frameNo%120===0)sramCheck();if(frameNo%8===0){textTick();gbTextTick();}if(REC.on&&frameNo%3===0)recTick();momentTick();if(frameNo%3600===0){const m=lib.find(g=>g.id===game.id);if(m)m.playMin=(m.playMin||0)+1;}if(frameNo%30===0)lightTick();if(frameNo%15===0)layerTick();sparksTick();}
 requestAnimationFrame(loop);
 
 /* ---------- fast text: speed up while a text box is open ---------- */
@@ -703,6 +746,7 @@ async function startGame(id){const meta=lib.find(g=>g.id===id);if(!meta)return;c
  document.body.dataset.sys=sys;$('#title').textContent=game.name;$('#empty').hidden=true;
  // SNES-only tools (3D, tile editing, tap to walk) step aside for handheld games, and come back for SNES ones.
  if(!stageOn()){if(G.on)set3D(false,true);WK.on=false;WK.target=null;$('#walkBtn').classList.remove('on');}else if(S.d3&&!G.on)set3D(true,true);
+ if(game.profile.controls.preset==='puzzle'&&G.on)set3D(false,true);GX.q=[];GX.held=0;TL.base=null;SP.prev=[];SP.ps=[];applyOverlay();applyView();
  rebuildLUT();TC.fresh=false;MO.f=0;TX.on=false;TX.age.fill(0);TX.base=null;badge();await restoreSram();applyCheats();renderActions();patchIndex();rewindSetup();renderAllTools();WK.player=null;WK.target=null;
  const auto=await DB.get('data',`state:${id}:auto`);if(auto){loadStateBytes(auto.bytes);toast('Picked up where you left off');}
  await audioOn();anode?.port.postMessage({k:M._s9x_rate()/actx.sampleRate});lightTick();running=true;}
@@ -710,13 +754,14 @@ async function startGame(id){const meta=lib.find(g=>g.id===id);if(!meta)return;c
 /* ---------- game data (profile) ---------- */
 function normProfile(p,name){p=p||{};return{v:1,name:p.name||name,actions:p.actions||[],walk:Object.assign({layer:0,diagonal:true},p.walk),
  watches:p.watches||[],cheats:p.cheats||[],tiles:p.tiles||{},sheets:p.sheets||[],colors:p.colors||[],depth:{style:p.depth?.style||'top',tiles:p.depth?.tiles||{},stand:p.depth?.stand||{},flat:p.depth?.flat||{},glow:p.depth?.glow||{},water:p.depth?.water||{},overlay:p.depth?.overlay??(p.depth?.flatBG3?[2]:null)},light:Object.assign({source:'off',addr:'',max:24},p.light),
- fx:Object.assign({mode:'off',addr:''},p.fx),packs:p.packs||[],gestures:Object.assign({talk:['A'],menu:['X'],tool:['Y'],back:['B']},p.gestures),notes:p.notes||''};}
+ fx:Object.assign({mode:'off',addr:''},p.fx),packs:p.packs||[],gestures:Object.assign({talk:['A'],menu:['X'],tool:['Y'],back:['B']},p.gestures),
+ controls:Object.assign({preset:'none',rotate:['A'],rotate2:['B'],drop:['Down'],cell:8,jump:['B'],attack:['Y'],tilt:false},p.controls),layout:p.layout||{},notes:p.notes||''};}
 const saveProfile=()=>game&&DB.put('data','prof:'+game.id,game.profile);
 
 /* ---------- saves ---------- */
 function stateBytes(){const n=M._s9x_state_size(),p=M._malloc(n);M._s9x_state_save(p,n);const b=H8().slice(p,p+n);M._free(p);return b;}
 function loadStateBytes(b){TC.fresh=false;const p=M._malloc(b.length);H8().set(b,p);const ok=M._s9x_state_load(p,b.length);M._free(p);PT.full=true;PT.patched.clear();return ok;}
-function thumb(){if(G.on&&M&&game)blit();const c=document.createElement('canvas');c.width=128;c.height=Math.round(128/(cv.width/cv.height));c.getContext('2d').drawImage(cv,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.7);}
+function thumb(){if(M&&game)blit();const c=document.createElement('canvas');c.width=128;c.height=Math.round(128/(cv.width/cv.height));c.getContext('2d').drawImage(cv,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.7);}
 async function saveSlot(slot){if(!game)return;await DB.put('data',`state:${game.id}:${slot}`,{bytes:stateBytes(),img:thumb(),t:Date.now()});}
 async function loadSlot(slot){if(!game)return false;const s=await DB.get('data',`state:${game.id}:${slot}`);if(!s)return false;loadStateBytes(s.bytes);rw.buf=[];return true;}
 async function saveAuto(){if(!game||!running)return;await sramCheck(true);await saveSlot('auto');const m=lib.find(g=>g.id===game.id);if(m){m.cover=thumb();await DB.put('data','lib',lib);}}
@@ -1487,7 +1532,7 @@ function glProject(x,y){const ix=Math.max(0,Math.min(G.W-1,Math.floor(x))),iy=Ma
  const r=$('#gl').getBoundingClientRect(),w=$('#wrap').getBoundingClientRect();
  return{left:r.left-w.left+(v[0]/v[3]*.5+.5)*r.width,top:r.top-w.top+(.5-v[1]/v[3]*.5)*r.height};}
 function set3D(on,keep){if(on&&game&&!stageOn()){on=false;keep=true;}if(on){try{if(!glInit()){toast('3D view needs WebGL 2, which this browser doesn’t have.');on=false;}}catch(e){toast('3D view couldn’t start: '+e.message,5000);on=false;}}
- G.on=on;if(!keep){S.d3=on;saveSettings();}$('#gl').hidden=!on;cv.style.visibility=on?'hidden':'';$('#crt').hidden=on||!S.crt;$('#lcd').hidden=on||!S.lcd;
+ G.on=on;if(!keep){S.d3=on;saveSettings();}applyView();$('#crt').hidden=on||!S.crt;$('#lcd').hidden=on||!S.lcd;
  $('#d3Btn').classList.toggle('on',on);$('#setD3').checked=on;lightTick();if(game&&running)draw();}
 $('#d3Btn').onclick=()=>{if(game&&!stageOn()){toast(game.sys==='gba'?'3D view isn’t available for Game Boy Advance':'This Game Boy core doesn’t share its video memory, so 3D can’t see the layers');return;}set3D(!G.on);};$('#setD3').onchange=e=>set3D(e.target.checked);
 function motionPermission(){if(S.motion&&typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission)
@@ -1517,7 +1562,8 @@ function fxKind(){const E=game?.profile.fx;if(!E||E.mode==='off')return null;let
 function fxSpawn(k,anywhere){const H=logical.h,p={x:Math.random()*logical.w,y:anywhere?Math.random()*H:-4-Math.random()*20,ph:Math.random()*6.3,s:.5+Math.random()};
  if(k==='rain'){p.vx=-.6;p.vy=4+Math.random()*2;}else if(k==='snow'){p.vx=0;p.vy=.25+Math.random()*.35;}
  else if(k==='fireflies'){p.vx=(Math.random()-.5)*.3;p.vy=(Math.random()-.5)*.3;p.y=Math.random()*H;}else{p.vx=.25+Math.random()*.35;p.vy=.35+Math.random()*.3;}return p;}
-function fxTick(){const k=fxKind(),el=$('#fx');if(!k){if(!el.hidden){el.hidden=true;FX.p=[];}FX.kind=null;return;}
+function fxTick(){const k=fxKind(),el=$('#fx');if(!k&&!SP.ps.length){if(!el.hidden){el.hidden=true;FX.p=[];}FX.kind=null;return;}
+ if(!k){const H=logical.h,W=logical.w;el.hidden=false;if(el.width!==W||el.height!==H){el.width=W;el.height=H;}const g=el.getContext('2d');g.clearRect(0,0,W,H);FX.p=[];FX.kind=null;drawSparks(g,W,H);return;}
  const H=logical.h,W=logical.w;el.hidden=false;if(el.width!==W||el.height!==H){el.width=W;el.height=H;}const g=el.getContext('2d');
  if(k!==FX.kind){FX.kind=k;FX.p=[];}const n=+S.fxAmt||40;while(FX.p.length<n)FX.p.push(fxSpawn(k,true));FX.p.length=n;g.clearRect(0,0,W,H);
  for(const p of FX.p){p.ph+=.05;if(k==='fireflies'){p.vx=(p.vx+(Math.random()-.5)*.04)*.98;p.vy=(p.vy+(Math.random()-.5)*.04)*.98;}
@@ -1528,7 +1574,8 @@ function fxTick(){const k=fxKind(),el=$('#fx');if(!k){if(!el.hidden){el.hidden=t
   else if(k==='snow'){g.fillStyle='#fff';const z=p.s>1?2:1;g.fillRect(x,y,z,z);}
   else if(k==='petals'){g.fillStyle=Math.sin(p.ph)>0?'#ffc4dc':'#f79abf';g.fillRect(x,y,2,1);if(p.s>1)g.fillRect(x+1,y+1,1,1);}
   else if(k==='leaves'){g.fillStyle=['#d9822b','#b5562a','#e8b04a'][(p.s*2|0)%3];g.fillRect(x,y,2,2);g.clearRect(x+(Math.sin(p.ph)>0?1:0),y,1,1);}
-  else{const a=.5+.5*Math.sin(p.ph*1.7);g.fillStyle=`rgba(255,240,120,${.18*a})`;g.fillRect(x-1,y-1,3,3);g.fillStyle=`rgba(255,250,180,${a})`;g.fillRect(x,y,1,1);}}}
+  else{const a=.5+.5*Math.sin(p.ph*1.7);g.fillStyle=`rgba(255,240,120,${.18*a})`;g.fillRect(x-1,y-1,3,3);g.fillStyle=`rgba(255,250,180,${a})`;g.fillRect(x,y,1,1);}}
+ drawSparks(g,W,H);}
 const LOOKS={green:'grayscale(1) sepia(1) hue-rotate(38deg) saturate(2.4) brightness(.9) contrast(1.05)',original:'',vivid:'saturate(1.35) contrast(1.06)',soft:'saturate(.9) contrast(.94) brightness(1.04)',warm:'sepia(.16) saturate(1.18) brightness(1.02)'};
 function renderOverlay(){const box=$('#ovRow');if(!game){box.innerHTML='';return;}const o=game.profile.depth.overlay,auto=!Array.isArray(o),set=auto?[2]:o;
  box.innerHTML=[0,1,2,3].map(b=>`<label class="ck"><input type="checkbox" data-ov="${b}" ${set.includes(b)?'checked':''}> BG${b+1}</label>`).join('')+
@@ -1702,7 +1749,7 @@ function reloadProfile(){applyCheats();renderActions();patchesOff();patchIndex()
 function renderGest(){const box=$('#gestRow');if(!game){box.innerHTML='';return;}const g=game.profile.gestures;
  box.innerHTML=[['talk','Talk'],['menu','Menu'],['tool','Tool'],['back','Back']].map(([k,l])=>`<label>${l} <select data-g="${k}">${Object.keys(BTN).map(n=>`<option ${g[k][0]===n?'selected':''}>${n}</option>`).join('')}</select></label>`).join('');
  for(const sel of box.querySelectorAll('select'))sel.onchange=()=>{g[sel.dataset.g]=[sel.value];saveProfile();};}
-function renderAllTools(){renderGest();renderTiles();renderSheets();if(game)$('#stageStyle').value=game.profile.depth.style;renderWatches();renderCheats();renderActList();renderRS();
+function renderAllTools(){renderGest();renderPlayStyle();renderTiles();renderSheets();if(game)$('#stageStyle').value=game.profile.depth.style;renderWatches();renderCheats();renderActList();renderRS();
  if(game){$('#walkLayer').value=game.profile.walk.layer;$('#walkDiag').checked=game.profile.walk.diagonal;renderOverlay();renderLookFx();renderPacks();$('#notes').value=game.profile.notes||'';}}
 
 
@@ -1767,7 +1814,7 @@ function openRoom(tries){NP.code=code4();NP.peer=new Peer('tsnes-'+NP.code);setN
 function hostStream(){if(NP.stream)return NP.stream;const c=NP.cv=document.createElement('canvas');c.width=768;c.height=672;NP.cx=c.getContext('2d');
  const st=c.captureStream(60);if(actx&&anode){const ad=actx.createMediaStreamDestination();anode.connect(ad);for(const t of ad.stream.getAudioTracks())st.addTrack(t);}
  NP.stream=st;streamFrame();return st;}
-function streamFrame(){const x=NP.cx,c=NP.cv;x.imageSmoothingEnabled=false;x.drawImage(G.on?$('#gl'):cv,0,0,c.width,c.height);const fx=$('#fx');if(!fx.hidden)x.drawImage(fx,0,0,c.width,c.height);}
+function streamFrame(){const x=NP.cx,c=NP.cv;x.imageSmoothingEnabled=false;x.drawImage(G.on||S.hd?$('#gl'):cv,0,0,c.width,c.height);const fx=$('#fx');if(!fx.hidden)x.drawImage(fx,0,0,c.width,c.height);}
 async function joinRoom(){const code=$('#netCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length!==4){toast('Type the 4-character room code from your friend');return;}
  try{await loadPeer();}catch(e){setNet(e.message);return;}
  netEnd(true);localStorage.setItem('tsnes.author',myName());NP.role='guest';NP.peer=new Peer();setNet('Connecting…');
@@ -1818,6 +1865,168 @@ $('#netName').onchange=()=>{localStorage.setItem('tsnes.author',myName());const 
 
 $('#coreCheck').onclick=async()=>{const out=[];for(const[k,c]of Object.entries(CORES)){let ok=false;try{const r=await fetch(c.js+'?check='+Date.now(),{method:'HEAD',cache:'no-store'});ok=r.ok;}catch{}
   out.push(`${c.name}: ${ok?'installed':'missing'}`);}$('#coreNote').textContent=out.join('. ')+'. A missing core means its job in “Build emulator cores” hasn’t succeeded yet.';};
+/* ---------- play styles: puzzle drag, action gesture zone, floating stick, tilt steering, recorded moves ---------- */
+const GX={q:[],held:0,p:new Map(),two:null};
+const ctlP=()=>game?.profile.controls;
+const maskOf=a=>(a||[]).reduce((m,n)=>m|BIT(n),0);
+function gxPulse(mask,frames,gap=2){GX.q.push({mask,frames},{mask:0,frames:gap});}
+function gxMask(){let m=GX.held;const h=GX.q[0];if(h){m|=h.mask;if(--h.frames<=0)GX.q.shift();}return m;}
+// Puzzle: drag sideways moves the piece one cell per cell of finger travel, drag down soft-drops, flick down drops, tap rotates.
+const cellPx=()=>{const r=wrapEl.getBoundingClientRect();return r.width/logical.w*(ctlP().cell||8);};
+function pzDown(e){GX.p.set(e.pointerId,{x0:e.clientX,y0:e.clientY,t:performance.now(),steps:0,moved:false,soft:false});if(GX.p.size===2)GX.two=performance.now();}
+function pzMove(e){const p=GX.p.get(e.pointerId),cell=cellPx(),dx=e.clientX-p.x0,dy=e.clientY-p.y0;if(Math.hypot(dx,dy)>8)p.moved=true;if(GX.two)return;
+ const want=Math.trunc(dx/cell);while(p.steps<want){gxPulse(BIT('Right'),2);p.steps++;}while(p.steps>want){gxPulse(BIT('Left'),2);p.steps--;}
+ const soft=dy>cell*1.5&&Math.abs(dy)>Math.abs(dx);if(soft!==p.soft){p.soft=soft;GX.held=soft?GX.held|BIT('Down'):GX.held&~BIT('Down');}}
+function pzUp(e,cancel){const p=GX.p.get(e.pointerId);GX.p.delete(e.pointerId);const c=ctlP(),dt=performance.now()-p.t,dx=e.clientX-p.x0,dy=e.clientY-p.y0;
+ if(p.soft)GX.held&=~BIT('Down');if(cancel)return;
+ if(GX.two){if(!GX.p.size){if(performance.now()-GX.two<400)gxPulse(maskOf(c.rotate2),4);GX.two=null;}return;}
+ if(dy>40&&dt<240&&dy>Math.abs(dx)*1.5){gxPulse(maskOf(c.drop),c.drop[0]==='Down'?60:6);return;}
+ if(!p.moved&&dt<350)gxPulse(maskOf(c.rotate),4);}
+// Action: tap or hold to jump (hold longer for a higher jump), swipe in any of 8 directions to attack that way.
+function acDown(e){const p={x0:e.clientX,y0:e.clientY,t:performance.now(),jump:false,swiped:false};GX.p.set(e.pointerId,p);
+ p.timer=setTimeout(()=>{if(!p.swiped){p.jump=true;GX.held|=maskOf(ctlP().jump);}},70);}
+function acMove(e){const p=GX.p.get(e.pointerId);if(p.swiped)return;const dx=e.clientX-p.x0,dy=e.clientY-p.y0;if(Math.hypot(dx,dy)<22)return;
+ if(p.jump&&performance.now()-p.t>200)return;p.swiped=true;clearTimeout(p.timer);const c=ctlP();if(p.jump){GX.held&=~maskOf(c.jump);p.jump=false;}
+ const s=((Math.round(Math.atan2(dy,dx)/(Math.PI/4))%8)+8)%8,dm=maskOf([['Right'],['Right','Down'],['Down'],['Down','Left'],['Left'],['Left','Up'],['Up'],['Up','Right']][s]);
+ GX.q.push({mask:dm,frames:3},{mask:dm|maskOf(c.attack),frames:8},{mask:0,frames:2});}
+function acUp(e,cancel){const p=GX.p.get(e.pointerId);GX.p.delete(e.pointerId);clearTimeout(p.timer);const c=ctlP();
+ if(p.jump){const held=performance.now()-p.t,rel=()=>{GX.held&=~maskOf(c.jump);};if(held<130)setTimeout(rel,130-held);else rel();}
+ else if(!p.swiped&&!cancel)gxPulse(maskOf(c.jump),8);}
+// Floating stick: the D-pad appears wherever your left thumb lands.
+function floatStart(e){const d=$('#dpad'),r=d.getBoundingClientRect();d.style.translate=`${e.clientX-(r.left+r.width/2)}px ${e.clientY-(r.top+r.height/2)}px`;d.classList.add('floating');
+ ptrs.set(e.pointerId,{dp:true,float:true,cx:e.clientX,cy:e.clientY,m:0});refreshTouch();}
+function floatEnd(){if([...ptrs.values()].some(p=>p.float))return;const d=$('#dpad');d.style.translate='';d.classList.remove('floating');}
+// Stage-level touches (captured first), so gesture zones also work over the black bars in full-screen mode.
+const stageEl=$('#stage');
+stageEl.addEventListener('pointerdown',e=>{if(!game||photo||pickMode||LE.on)return;const r=stageEl.getBoundingClientRect(),c=ctlP();
+ const fsZone=S.floatStick&&document.body.classList.contains('ov')&&e.clientX<r.left+r.width*.42&&e.clientY>r.top+r.height*.2;
+ if(fsZone&&c.preset!=='puzzle'){e.preventDefault();e.stopPropagation();try{stageEl.setPointerCapture(e.pointerId);}catch{}floatStart(e);return;}
+ if(WK.on||c.preset==='none')return;
+ if(c.preset==='puzzle'||e.clientX>r.left+r.width*.45){e.preventDefault();e.stopPropagation();try{stageEl.setPointerCapture(e.pointerId);}catch{}(c.preset==='puzzle'?pzDown:acDown)(e);}},{capture:true});
+stageEl.addEventListener('pointermove',e=>{const fp=ptrs.get(e.pointerId);if(fp&&fp.float){fp.m=dpadMask(e,fp);refreshTouch();e.stopPropagation();return;}
+ if(GX.p.has(e.pointerId)){e.stopPropagation();(ctlP().preset==='puzzle'?pzMove:acMove)(e);}},{capture:true});
+for(const t of['pointerup','pointercancel'])stageEl.addEventListener(t,e=>{if(GX.p.has(e.pointerId)){e.stopPropagation();(ctlP().preset==='puzzle'?pzUp:acUp)(e,t==='pointercancel');}},{capture:true});
+// Tilt to steer: tilting the phone presses left or right, more often the further you tilt (like an analog stick).
+const TL={base:null,v:0};
+addEventListener('deviceorientation',e=>{if(!ctlP()?.tilt||e.beta==null)return;const a=scrAngle(),side=a===90?e.beta:a===270?-e.beta:a===180?-e.gamma:e.gamma;
+ if(TL.base==null)TL.base=side;TL.v=side-TL.base;});
+function tiltMask(){const c=ctlP();if(!c||!c.tilt)return 0;const d=TL.v,k=Math.min(1,(Math.abs(d)-4)/16);if(k<=0)return 0;return(frameNo%10)<Math.round(k*10)?BIT(d>0?'Right':'Left'):0;}
+async function tiltOn(on){const c=ctlP();if(!c)return;if(on&&typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission){
+  try{if(await DeviceOrientationEvent.requestPermission()!=='granted'){toast('Motion access wasn’t allowed');$('#psTilt').checked=false;return;}}catch{}}
+ c.tilt=on;TL.base=null;TL.v=0;saveProfile();if(on)toast('Hold the phone the way you like to play: that’s the center. Tilt to steer.',4000);}
+// Move recorder: do a combo once, keep it as a one-tap button.
+const MR={on:false,seq:[]};
+function startMoveRec(){if(!game){toast('Start a game first');return;}closeSheet();MR.on=true;MR.seq=[];$('#mrbar').hidden=false;toast('Do the move now, then tap Done',3000);}
+function stopMoveRec(save){$('#mrbar').hidden=true;MR.on=false;const s=MR.seq;let a=0,b=s.length;while(a<b&&!s[a])a++;while(b>a&&!s[b-1])b--;
+ const seq=s.slice(a,b);if(!save)return;if(!seq.length){toast('Nothing was pressed');return;}
+ const steps=[];for(const m of seq){const l=steps[steps.length-1];if(l&&l.m===m)l.frames++;else steps.push({m,frames:1});}
+ const label=prompt('Name this move','Special move');if(label===null)return;
+ game.profile.actions.push({label:label||'Move',icon:'⭐',mode:'macro',steps:steps.map(x=>({press:Object.keys(BTN).filter(n=>x.m&BIT(n)),frames:x.frames}))});
+ saveProfile();renderActions();renderActList();toast('Move saved as a button under the controls');}
+$('#mrDone').onclick=()=>stopMoveRec(true);$('#mrCancel').onclick=()=>stopMoveRec(false);$('#mrStart').onclick=startMoveRec;
+function renderPlayStyle(){if(!game)return;const c=ctlP(),opts=sel=>Object.keys(BTN).map(n=>`<option ${sel===n?'selected':''}>${n}</option>`).join('');
+ $('#psPreset').value=c.preset;$('#psTilt').checked=!!c.tilt;$('#psPuzzle').hidden=c.preset!=='puzzle';$('#psAction').hidden=c.preset!=='action';
+ $('#psRot').innerHTML=opts(c.rotate[0]);$('#psRot2').innerHTML=opts(c.rotate2[0]);$('#psDrop').value=c.drop[0]==='Up'?'Up':'Down';$('#psCell').value=c.cell||8;
+ $('#psJump').innerHTML=opts(c.jump[0]);$('#psAtk').innerHTML=opts(c.attack[0]);
+ $('#psNote').textContent=c.preset==='puzzle'?'On the game screen: drag sideways to move the piece, drag down to drop faster, flick down to drop, tap to rotate, two-finger tap to rotate the other way.':
+  c.preset==='action'?'The right side of the screen is a gesture pad: tap or hold to jump (hold for higher), swipe in any direction to attack that way.':'';}
+$('#psPreset').onchange=e=>{const c=ctlP();if(!c)return;c.preset=e.target.value;saveProfile();renderPlayStyle();if(c.preset==='puzzle'&&G.on)set3D(false,true);};
+for(const[id,k]of[['#psRot','rotate'],['#psRot2','rotate2'],['#psJump','jump'],['#psAtk','attack'],['#psDrop','drop']])$(id).onchange=e=>{const c=ctlP();if(!c)return;c[k]=[e.target.value];saveProfile();};
+$('#psCell').onchange=e=>{const c=ctlP();if(!c)return;c.cell=Math.max(2,Math.min(32,+e.target.value||8));saveProfile();};
+$('#psTilt').onchange=e=>tiltOn(e.target.checked);
+
+/* ---------- full-screen controls on top of the game, with a layout editor ---------- */
+const LAY_IDS={dpad:'D-pad',face:'Buttons',lsh:'L',rsh:'R',mid:'Select/Start',act:'Action buttons'};
+const LAY_DEF={land:{lsh:{x:9,y:15},rsh:{x:91,y:15},dpad:{x:13,y:64},face:{x:87,y:62},mid:{x:50,y:92},act:{x:84,y:91}},
+ port:{lsh:{x:15,y:60},rsh:{x:85,y:60},dpad:{x:25,y:77},face:{x:75,y:77},mid:{x:50,y:94},act:{x:50,y:66}}};
+const orient=()=>innerWidth>innerHeight?'land':'port';
+function layoutFor(o){const g=game?.profile.layout?.[o]||{},d=JSON.parse(localStorage.getItem('tsnes.layout')||'{}')[o]||{},out={};
+ for(const k in LAY_IDS)out[k]=Object.assign({s:1,o:.6},LAY_DEF[o][k],d[k],g[k]);return out;}
+function applyOverlay(){const on=S.overlay==='always'||S.overlay==='landscape'&&innerWidth>innerHeight;const b=document.body;
+ b.classList.toggle('ov',on);b.classList.toggle('ovp',on&&orient()==='port');
+ const L=layoutFor(orient());for(const k in LAY_IDS){const el=$('#'+k);if(!on){el.style.left=el.style.top=el.style.opacity='';el.style.removeProperty('--s');continue;}
+  const v=L[k];el.style.left=v.x+'%';el.style.top=v.y+'%';el.style.setProperty('--s',v.s);el.style.opacity=LE.on?1:v.o;}}
+addEventListener('resize',()=>applyOverlay());
+const LE={on:false,sel:null,drag:null};
+function layoutEdit(on){LE.on=on;document.body.classList.toggle('lay',on);$('#layEd').hidden=!on;
+ if(on){if(!game){toast('Start a game first');LE.on=false;document.body.classList.remove('lay');$('#layEd').hidden=true;return;}closeSheet();paused=true;
+  if(!document.body.classList.contains('ov')){S.overlay='always';saveSettings();syncSettingsUI();}leSelect('dpad');}else paused=false;applyOverlay();}
+function leSave(k,v){const o=orient(),pr=game.profile;pr.layout=pr.layout||{};pr.layout[o]=pr.layout[o]||{};pr.layout[o][k]=Object.assign(layoutFor(o)[k],v);saveProfile();applyOverlay();}
+function leSelect(k){LE.sel=k;for(const id in LAY_IDS)$('#'+id).classList.toggle('lsel',id===k);$('#leName').textContent=LAY_IDS[k];$('#leOp').value=Math.round(layoutFor(orient())[k].o*100);}
+function leDown(e){const g=e.target.closest('#ctl > *');if(!g)return;e.preventDefault();e.stopPropagation();leSelect(g.id);const L=layoutFor(orient())[g.id];
+ LE.drag={id:g.id,x0:e.clientX,y0:e.clientY,x:L.x,y:L.y,pid:e.pointerId};}
+addEventListener('pointermove',e=>{const d=LE.drag;if(!d||d.pid!==e.pointerId)return;const el=$('#'+d.id);
+ const x=Math.max(2,Math.min(98,d.x+(e.clientX-d.x0)/innerWidth*100)),y=Math.max(2,Math.min(98,d.y+(e.clientY-d.y0)/innerHeight*100));el.style.left=x+'%';el.style.top=y+'%';d.nx=x;d.ny=y;});
+addEventListener('pointerup',e=>{const d=LE.drag;if(!d||d.pid!==e.pointerId)return;LE.drag=null;if(d.nx!=null)leSave(d.id,{x:d.nx,y:d.ny});});
+$('#leSmaller').onclick=()=>{const v=layoutFor(orient())[LE.sel];leSave(LE.sel,{s:Math.max(.5,+(v.s-.1).toFixed(2))});};
+$('#leBigger').onclick=()=>{const v=layoutFor(orient())[LE.sel];leSave(LE.sel,{s:Math.min(2,+(v.s+.1).toFixed(2))});};
+$('#leOp').oninput=e=>{leSave(LE.sel,{o:+e.target.value/100});};
+$('#leReset').onclick=()=>{if(game.profile.layout)delete game.profile.layout[orient()];saveProfile();applyOverlay();leSelect(LE.sel);toast('Layout reset for this game');};
+$('#leAll').onclick=()=>{const all=JSON.parse(localStorage.getItem('tsnes.layout')||'{}');all[orient()]=layoutFor(orient());localStorage.setItem('tsnes.layout',JSON.stringify(all));toast('This layout is now the default for every game');};
+$('#leDone').onclick=()=>layoutEdit(false);$('#layBtn').onclick=()=>layoutEdit(true);
+
+/* ---------- HD smoothing: Scale2x twice (4×) on the GPU, then a soft finish, for clean curves on pixel art ---------- */
+const VS5=`#version 300 es
+uniform float uFlip;out vec2 v;const vec2 Q[6]=vec2[6](vec2(-1,-1),vec2(1,-1),vec2(-1,1),vec2(-1,1),vec2(1,-1),vec2(1,1));
+void main(){vec2 p=Q[gl_VertexID];v=vec2(p.x*.5+.5,uFlip>.5?.5-p.y*.5:.5+p.y*.5);gl_Position=vec4(p,0.0,1.0);}`;
+const FS5=`#version 300 es
+precision highp float;uniform highp sampler2D uI;uniform ivec2 uSz;in vec2 v;out vec4 o;
+void main(){vec2 p=v*vec2(uSz);ivec2 c=ivec2(floor(p)),mx=uSz-1;vec2 f=fract(p);
+ vec4 E=texelFetch(uI,c,0),B=texelFetch(uI,clamp(c+ivec2(0,-1),ivec2(0),mx),0),D=texelFetch(uI,clamp(c+ivec2(-1,0),ivec2(0),mx),0),
+  F=texelFetch(uI,clamp(c+ivec2(1,0),ivec2(0),mx),0),H=texelFetch(uI,clamp(c+ivec2(0,1),ivec2(0),mx),0);
+ vec4 r=E;bool l=f.x<.5,u=f.y<.5;
+ if(B!=H&&D!=F){if(u&&l){if(D==B)r=D;}else if(u){if(B==F)r=F;}else if(l){if(D==H)r=D;}else{if(H==F)r=F;}}o=r;}`;
+const FS6=`#version 300 es
+precision mediump float;uniform sampler2D uO;in vec2 v;out vec4 o;void main(){o=vec4(texture(uO,v).rgb,1.0);}`;
+const HD={};
+function hdInit(){if(HD.ok)return true;if(!glInit())return false;const gl=G.gl;
+ const sh=(t,src)=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;};
+ const prog=(a,b)=>{const p=gl.createProgram();gl.attachShader(p,sh(gl.VERTEX_SHADER,a));gl.attachShader(p,sh(gl.FRAGMENT_SHADER,b));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p));return p;};
+ HD.ps=prog(VS5,FS5);HD.po=prog(VS5,FS6);HD.vao=gl.createVertexArray();HD.ok=true;return true;}
+function hdTex(w,h,lin){const gl=G.gl,t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+ const f=lin?gl.LINEAR:gl.NEAREST;for(const[k,v]of[[gl.TEXTURE_MIN_FILTER,f],[gl.TEXTURE_MAG_FILTER,f],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])gl.texParameteri(gl.TEXTURE_2D,k,v);return t;}
+function hdDraw(){try{if(!hdInit())return false;}catch(e){toast('HD smoothing couldn’t start: '+e.message,5000);S.hd=false;saveSettings();syncSettingsUI();applyView();return false;}
+ const gl=G.gl,c=$('#gl'),r=c.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1),cw=Math.max(1,Math.round(r.width*dpr)),ch=Math.max(1,Math.round(r.height*dpr));
+ if(c.width!==cw||c.height!==ch){c.width=cw;c.height=ch;}const vw=M._s9x_vw(),vh=M._s9x_vh(),passes=vw>256?1:2;
+ if(HD.w!==vw||HD.h!==vh){for(const t of[HD.src,HD.t1,HD.t2])if(t)gl.deleteTexture(t);for(const f of[HD.f1,HD.f2])if(f)gl.deleteFramebuffer(f);
+  HD.w=vw;HD.h=vh;HD.buf=new Uint32Array(vw*vh);HD.src=hdTex(vw,vh,false);HD.t1=hdTex(vw*2,vh*2,passes===1);HD.t2=passes===2?hdTex(vw*4,vh*4,true):null;
+  const fb=t=>{const f=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,f);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,t,0);return f;};
+  HD.f1=fb(HD.t1);HD.f2=HD.t2?fb(HD.t2):null;gl.bindFramebuffer(gl.FRAMEBUFFER,null);}
+ const src=new Uint16Array(H8().buffer,P.video,vw*vh),b=HD.buf;for(let i=0;i<b.length;i++)b[i]=LUT[src[i]];
+ gl.disable(gl.DEPTH_TEST);gl.bindVertexArray(HD.vao);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,HD.src);gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
+ gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,vw,vh,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array(b.buffer));
+ const pass=(tin,w,h,fbo,ow,oh)=>{gl.bindFramebuffer(gl.FRAMEBUFFER,fbo);gl.viewport(0,0,ow,oh);gl.useProgram(HD.ps);gl.bindTexture(gl.TEXTURE_2D,tin);
+  gl.uniform1i(gl.getUniformLocation(HD.ps,'uI'),0);gl.uniform2i(gl.getUniformLocation(HD.ps,'uSz'),w,h);gl.uniform1f(gl.getUniformLocation(HD.ps,'uFlip'),0);gl.drawArrays(gl.TRIANGLES,0,6);};
+ pass(HD.src,vw,vh,HD.f1,vw*2,vh*2);if(passes===2)pass(HD.t1,vw*2,vh*2,HD.f2,vw*4,vh*4);
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,cw,ch);gl.useProgram(HD.po);gl.bindTexture(gl.TEXTURE_2D,passes===2?HD.t2:HD.t1);
+ gl.uniform1i(gl.getUniformLocation(HD.po,'uO'),0);gl.uniform1f(gl.getUniformLocation(HD.po,'uFlip'),1);gl.drawArrays(gl.TRIANGLES,0,6);gl.enable(gl.DEPTH_TEST);return true;}
+// Which canvas shows the game: the 3D/HD WebGL one, or the plain one.
+function applyView(){let glv=G.on;if(!glv&&S.hd&&game){try{glv=hdInit();}catch{glv=false;}}$('#gl').hidden=!glv;cv.style.visibility=glv?'hidden':'';}
+
+/* ---------- glow backdrop: the space around the game glows with its colors ---------- */
+function ambTick(){const a=$('#amb'),show=S.glowBg&&document.body.classList.contains('ov')&&!!game;a.hidden=!show;if(!show||frameNo%4)return;
+ a.getContext('2d').drawImage(G.on||S.hd?$('#gl'):cv,0,0,a.width,a.height);}
+
+/* ---------- hit sparks: when an enemy or object vanishes, it bursts into particles in its own colors ---------- */
+const SP={prev:[],ps:[]};
+function groupsOf(all){const n=all.length,par=[...Array(n).keys()],f=i=>par[i]===i?i:(par[i]=f(par[i]));
+ for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=all[i],b=all[j];if(a.x<=b.x+b.w&&b.x<=a.x+a.w&&a.y<=b.y+b.h&&b.y<=a.y+a.h)par[f(i)]=f(j);}
+ const m=new Map();for(let i=0;i<n;i++){const r=f(i),s=all[i],g=m.get(r)||{x0:1e9,y0:1e9,x1:-1e9,y1:-1e9};g.x0=Math.min(g.x0,s.x);g.y0=Math.min(g.y0,s.y);g.x1=Math.max(g.x1,s.x+s.w);g.y1=Math.max(g.y1,s.y+s.h);m.set(r,g);}
+ return[...m.values()].map(g=>({cx:(g.x0+g.x1)/2,cy:(g.y0+g.y1)/2,w:g.x1-g.x0,h:g.y1-g.y0}));}
+function sampleCols(g){const vw=M._s9x_vw(),vh=M._s9x_vh(),sx=vw/logical.w,sy=vh/logical.h,src=new Uint16Array(H8().buffer,P.video,vw*vh),out=[];
+ for(const[dx,dy]of[[0,0],[-.25,-.2],[.25,.2],[.2,-.25],[-.2,.25]]){const x=Math.round((g.cx+dx*g.w)*sx),y=Math.round((g.cy+dy*g.h)*sy);if(x>=0&&y>=0&&x<vw&&y<vh)out.push(rgbHex(LUT[src[y*vw+x]]));}return out;}
+function sparksTick(){if(!S.sparks||!stageOn()||frameNo%2)return;const s=snap();if(!s)return;const now=groupsOf(sprites(s)).filter(g=>g.w<=64&&g.h<=64).map(g=>({...g,age:1,miss:0}));
+ // Something that had been on screen a while and is suddenly gone (not just flickering for a frame or two) bursts.
+ const gone=[];for(const p of SP.prev){const m=now.find(n=>!n.taken&&Math.abs(n.cx-p.cx)<10&&Math.abs(n.cy-p.cy)<10&&Math.abs(n.w-p.w)<14);
+  if(m){m.taken=true;m.age=p.age+(p.miss?0:1);m.cols=p.cols;}else if(p.miss+1<3)now.push({...p,miss:p.miss+1,taken:true});else if(p.age>=15)gone.push(p);}
+ if(gone.length&&gone.length<=3)for(const p of gone)if(p.cx>10&&p.cx<logical.w-10&&p.cy>10&&p.cy<logical.h-10)burst(p);
+ for(const n of now){delete n.taken;if(!n.cols&&n.age%10===1)n.cols=sampleCols(n);}SP.prev=now;}
+function burst(p){const cols=p.cols&&p.cols.length?p.cols:['#fff'];for(let i=0;i<26;i++){const a=Math.random()*Math.PI*2,v=.6+Math.random()*1.8;
+ SP.ps.push({x:p.cx,y:p.cy,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.8,life:28+Math.random()*16,c:cols[i%cols.length]});}if(SP.ps.length>300)SP.ps.splice(0,SP.ps.length-300);}
+function drawSparks(g,W,H){if(!SP.ps.length)return;const map=G.on&&G.M?(x,y)=>{const p=glProject(x,y),r=$('#wrap').getBoundingClientRect();return[p.left/r.width*W,p.top/r.height*H];}:(x,y)=>[x,y];
+ for(const p of SP.ps){p.x+=p.vx;p.y+=p.vy;p.vy+=.08;p.vx*=.98;p.life--;const[x,y]=map(p.x,p.y);g.globalAlpha=Math.max(0,Math.min(1,p.life/14));g.fillStyle=p.c;g.fillRect(x|0,y|0,2,2);}
+ g.globalAlpha=1;SP.ps=SP.ps.filter(p=>p.life>0);}
+
 /* ---------- sheet + settings ---------- */
 const pauseFor=p=>!!game&&p!=='tools'&&NP.role!=='host';
 function openSheet(p){$('#sheet').hidden=false;paused=pauseFor(p);if(p)showPage(p);renderSlots();}
@@ -1826,12 +2035,12 @@ function showPage(p){for(const t of $$('.tab'))t.classList.toggle('on',t.dataset
 for(const t of $$('.tab'))t.onclick=()=>showPage(t.dataset.p);
 $('#menuBtn').onclick=()=>openSheet(NP.role?'together':game?'saves':'games');$('#sheetClose').onclick=closeSheet;
 $('#sheet').addEventListener('pointerdown',e=>{if(e.target.id==='sheet')closeSheet();});
-function applySettings(){$('#crt').hidden=!S.crt||G.on;$('#lcd').hidden=!S.lcd||G.on;cv.style.filter=$('#gl').style.filter=LOOKS[S.look]||'';padState();cv.classList.toggle('smooth',S.smooth);document.documentElement.style.setProperty('--op',S.op/100);applyAspect();
+function applySettings(){if(typeof applyOverlay==='function'){applyOverlay();applyView();}$('#crt').hidden=!S.crt||G.on;$('#lcd').hidden=!S.lcd||G.on;cv.style.filter=$('#gl').style.filter=LOOKS[S.look]||'';padState();cv.classList.toggle('smooth',S.smooth);document.documentElement.style.setProperty('--op',S.op/100);applyAspect();
  anode?.port.postMessage({v:S.vol/100});saveSettings();}
 const BINDS=[];function syncSettingsUI(){for(const[id,key]of BINDS){const el=$(id);if(el.type==='checkbox')el.checked=!!S[key];else el.value=S[key];}}
 const bind=(id,key,get=e=>e.target.value)=>{BINDS.push([id,key]);const el=$(id);if(el.type==='checkbox')el.checked=S[key];else el.value=S[key];
  el.addEventListener(el.type==='range'?'input':'change',e=>{S[key]=el.type==='checkbox'?el.checked:typeof SETDEF[key]==='number'?+get(e):get(e);applySettings();if(key==='rw'||key==='rwSec'){if(game)rewindSetup();}});};
-bind('#setAspect','aspect');bind('#setCrt','crt');bind('#setSmooth','smooth');bind('#setWatch','watch');bind('#setOp','op');bind('#setVol','vol');bind('#setFF','ff');bind('#setRw','rw');bind('#setRwSec','rwSec');bind('#setLook','look');bind('#setFxAmt','fxAmt');bind('#setPadHide','padHide');bind('#setStand','stand');bind('#setResume','resume');bind('#setLcd','lcd');bind('#setSaver','saver');bind('#setPad2','pad2');bind('#setGest','gestures');bind('#setTalkFlat','talkFlat');bind('#setSun','sunShadow');bind('#setGlow','glowFx');bind('#setBloom','bloom');bind('#setWater','waterFx');bind('#setFastText','fastText');bind('#setMoments','moments');bind('#setDof','dof');bind('#setTilt','tilt');bind('#setDepth','depth');bind('#setShadow','shadow');bind('#setMotion','motion');
+bind('#setAspect','aspect');bind('#setCrt','crt');bind('#setSmooth','smooth');bind('#setWatch','watch');bind('#setOp','op');bind('#setVol','vol');bind('#setFF','ff');bind('#setRw','rw');bind('#setRwSec','rwSec');bind('#setLook','look');bind('#setFxAmt','fxAmt');bind('#setPadHide','padHide');bind('#setStand','stand');bind('#setResume','resume');bind('#setOverlay','overlay');bind('#setFloat','floatStick');bind('#setHd','hd');bind('#setGlowBg','glowBg');bind('#setSparks','sparks');bind('#setLcd','lcd');bind('#setSaver','saver');bind('#setPad2','pad2');bind('#setGest','gestures');bind('#setTalkFlat','talkFlat');bind('#setSun','sunShadow');bind('#setGlow','glowFx');bind('#setBloom','bloom');bind('#setWater','waterFx');bind('#setFastText','fastText');bind('#setMoments','moments');bind('#setDof','dof');bind('#setTilt','tilt');bind('#setDepth','depth');bind('#setShadow','shadow');bind('#setMotion','motion');
 $('#setMotion').addEventListener('change',motionPermission);$('#setD3').checked=S.d3;
 applySettings();if(S.d3)set3D(true);
 
