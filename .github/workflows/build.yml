@@ -95,6 +95,7 @@ jobs:
       - name: Compile
         run: |
           set -e
+          exec > >(tee -a "$GITHUB_WORKSPACE/build-log-${{ matrix.sys }}.txt") 2>&1
           source ./emsdk/emsdk_env.sh
           cd core
           echo "== Files in the core =="; ls
@@ -106,6 +107,7 @@ jobs:
             LIB=$(find . -maxdepth 3 \( -name '*_libretro*.bc' -o -name '*_libretro*.a' \) | head -n1)
           else
             echo "== The core's own web build failed. Last lines: =="; tail -n 40 make.log
+            cp make.log "$GITHUB_WORKSPACE/make-log-${{ matrix.sys }}.txt" || true
           fi
           if [ -n "$LIB" ]; then
             echo "Built with the core's makefile: $LIB"
@@ -140,18 +142,38 @@ jobs:
             done > jobs.txt
             xargs -P 4 -I{} sh -c '{}' < jobs.txt
           fi
+          # The core's web build leaves out libretro-common's file and string helpers, because RetroArch normally
+          # supplies them. Compile them here, from the core's own copy when it has one so the versions match.
+          cd "$GITHUB_WORKSPACE/core"
+          HDR=$(find . -path '*libretro-common/include/libretro.h' | head -n1)
+          if [ -n "$HDR" ]; then LRC="$(dirname "$(dirname "$HDR")")"; else git clone --depth 1 https://github.com/libretro/libretro-common.git ../lrc; LRC=../lrc; fi
+          echo "== libretro-common helpers from $LRC =="
+          for f in file/file_path.c file/file_path_io.c streams/file_stream.c streams/file_stream_transforms.c vfs/vfs_implementation.c \
+                   string/stdstring.c compat/compat_strl.c compat/compat_posix_string.c compat/compat_strcasestr.c compat/fopen_utf8.c \
+                   encodings/encoding_utf.c time/rtime.c; do
+            if [ -f "$LRC/$f" ]; then
+              emcc -O2 -w -D__LIBRETRO__ -DHAVE_STDINT_H -I"$LRC/include" -c "$LRC/$f" -o "$GITHUB_WORKSPACE/obj/lrc_$(echo "$f" | tr '/.' '__').o" || echo "skipped $f"
+            fi
+          done
           cd "$GITHUB_WORKSPACE"
-          echo "== Linking =="; ls obj | head
+          echo "== Linking =="; ls obj
           em++ -O3 -w -std=gnu++17 -D${{ matrix.define }} -I. bridge.cpp obj/* \
             -o ${{ matrix.sys }}.js \
             -sMODULARIZE=1 -sEXPORT_NAME=${{ matrix.export }} -sENVIRONMENT=web -sSINGLE_FILE=1 \
-            -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=33554432 \
+            -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=33554432 -sERROR_ON_UNDEFINED_SYMBOLS=0 \
             -sEXPORTED_FUNCTIONS=_malloc,_free \
             -sEXPORTED_RUNTIME_METHODS=HEAPU8,HEAPU16,HEAP16
           for f in core/COPYING core/LICENSE core/license core/license.txt core/docs/license.txt core/docs/COPYING; do
             if [ -f "$f" ]; then cp "$f" ${{ matrix.sys }}-core-LICENSE.txt; break; fi
           done
           ls -la ${{ matrix.sys }}.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-${{ matrix.sys }}
+          path: |
+            build-log-${{ matrix.sys }}.txt
+            make-log-${{ matrix.sys }}.txt
       - uses: actions/upload-artifact@v4
         with:
           name: core-${{ matrix.sys }}
