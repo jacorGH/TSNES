@@ -37,6 +37,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 #rvTap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
 #tint{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply}
 #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;image-rendering:pixelated}
+#lcd{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(to right,#0002 1px,transparent 1px),linear-gradient(to bottom,#0002 1px,transparent 1px);background-size:calc(100% / var(--gw,256)) calc(100% / var(--gh,224))}
 #crt{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(#0000 0 2px,#0004 2px 3px)}
 #empty{position:absolute;inset:0;display:grid;place-content:center;gap:10px;text-align:center;color:#e9e6f2;padding:16px}
 #empty p{margin:0;font-size:14px;color:#bcb7cb;max-width:28ch}
@@ -121,7 +122,9 @@ label.ck{display:flex;gap:6px;align-items:center;font-size:14px}
 body[data-sys=gb] #face [data-b=X],body[data-sys=gb] #face [data-b=Y],body[data-sys=gba] #face [data-b=X],body[data-sys=gba] #face [data-b=Y],body[data-sys=gb] .sh{visibility:hidden}
 body[data-sys=gb] #face [data-b=B],body[data-sys=gba] #face [data-b=B]{left:4px;top:74px;bottom:auto}
 body[data-sys=gb] #face [data-b=A],body[data-sys=gba] #face [data-b=A]{right:4px;top:28px}
-body[data-sys=gb] #d3Btn,body[data-sys=gba] #d3Btn,body[data-sys=gb] #walkBtn,body[data-sys=gba] #walkBtn{opacity:.35}
+body[data-sys=gba] #d3Btn,body[data-sys=gba] #walkBtn{opacity:.35}
+#recbar{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 8px);transform:translateX(-50%);z-index:30;background:var(--ink);color:#fff;border-radius:22px;padding:6px 8px 6px 14px;display:flex;gap:8px;align-items:center;font-size:14px}
+#recbar .dot{width:10px;height:10px;border-radius:50%;background:#e5484d;animation:blink 1s infinite}@keyframes blink{50%{opacity:.3}}
 .checker{background:conic-gradient(#ddd 25%,#fff 0 50%,#ddd 0 75%,#fff 0) 0 0/10px 10px}
 body.pad #ctl{display:none}
 body.pad #app{grid-template-rows:auto 1fr}
@@ -146,6 +149,7 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
   <video id="rv" playsinline autoplay hidden></video>
   <button class="btn main" id="rvTap" hidden>Tap to start sound and picture</button>
   <div id="crt" hidden></div>
+  <div id="lcd" hidden></div>
   <div id="tint" hidden></div>
   <canvas id="fx" hidden></canvas>
   <div id="hud"></div>
@@ -194,6 +198,18 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
     <div class="row"><button class="btn main" id="pickBtn">Pick from screen</button><label class="ck"><input type="checkbox" id="patchOn" checked> Show my edits</label></div>
     <div class="list" id="tileList"></div>
    </details>
+   <details id="sheetTool" open><summary>Sprite sheets and animations</summary>
+    <p class="note">Pick a character (or an animated tile area) and tap “Record frames”, then play: every pose and direction is captured. The sheet opens as one picture to edit, or to export as a PNG and redraw in your art app.</p>
+    <div class="list" id="sheetList"></div>
+   </details>
+   <details id="aiTool"><summary>AI makeover</summary>
+    <p class="note">Describe a change. An AI looks at the screen (and a sprite sheet if you choose one) and answers with data the app applies: recolors, redrawn sprites, lighting, weather and 3D settings. Undo is one tap.</p>
+    <textarea id="aiAsk" placeholder="Make it autumn with orange trees and a warm sunset" style="min-height:76px;font-family:inherit;font-size:14px"></textarea>
+    <div class="row"><label>Change <select id="aiScope"><option value="look">Colors, lighting and look</option></select></label></div>
+    <div class="row"><button class="btn main" id="aiRun">Ask AI</button><button class="btn" id="aiShare">Share prompt to an AI app</button><button class="btn" id="aiPaste">Paste answer</button><button class="btn warn" id="aiUndo" hidden>Undo makeover</button></div>
+    <div id="aiPasteBox" hidden><textarea id="aiJson" placeholder="Paste the AI’s answer here" style="min-height:120px"></textarea><div class="row"><button class="btn main" id="aiApply">Apply</button></div></div>
+    <p class="note" id="aiNote"></p>
+   </details>
    <details id="layerTool"><summary>Layer viewer</summary>
     <div class="row" id="layerToggles"></div>
     <canvas id="layerCv" width="256" height="224" style="width:100%;image-rendering:pixelated;border-radius:8px;background:#000"></canvas>
@@ -240,6 +256,8 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
    <h2>Tap to walk</h2>
    <div class="row"><label>Camera follows <select id="walkLayer"><option value="0">BG1</option><option value="1">BG2</option><option value="2">BG3</option><option value="3">BG4</option></select></label><label class="ck"><input type="checkbox" id="walkDiag" checked> Diagonal walking</label></div>
    <h2>3D view</h2>
+   <div class="row"><label>Stage <select id="stageStyle"><option value="top">Top-down (RPGs, Harvest Moon)</option><option value="side">Side view (platformers, side-scrollers)</option></select></label></div>
+   <p class="note">Side view spreads the layers into depth, adds haze and blur to the far background, and lets the camera drift so the scene feels like a diorama.</p>
    <p class="note">Layers checked here stay flat on top in 3D, like a real HUD. Text boxes and status bars belong here.</p>
    <div class="row" id="ovRow"></div>
    <h2>Lighting</h2>
@@ -265,14 +283,19 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
   </section>
   <section class="page" data-p="settings" hidden>
    <h3>Screen</h3>
-   <div class="row"><label>Look <select id="setLook"><option value="original">Original</option><option value="vivid">Vivid</option><option value="soft">Soft</option><option value="warm">Warm</option></select></label></div>
+   <div class="row"><label>Look <select id="setLook"><option value="original">Original</option><option value="vivid">Vivid</option><option value="soft">Soft</option><option value="warm">Warm</option><option value="green">Classic green</option></select></label><label class="ck"><input type="checkbox" id="setLcd"> Pixel grid</label></div>
    <div class="row"><label>Shape <select id="setAspect"><option value="4:3">TV (4:3)</option><option value="pixel">Square pixels</option></select></label></div>
    <div class="row"><label class="ck"><input type="checkbox" id="setCrt"> Scanlines</label><label class="ck"><input type="checkbox" id="setSmooth"> Smooth pixels</label><label class="ck"><input type="checkbox" id="setWatch" checked> Show watches</label></div>
    <h3>3D</h3>
    <div class="row"><label class="ck"><input type="checkbox" id="setD3"> 3D depth view</label><label class="ck"><input type="checkbox" id="setStand"> Standing characters (HD-2D)</label><label class="ck"><input type="checkbox" id="setTalkFlat"> Level the camera while text is up</label><label class="ck"><input type="checkbox" id="setDof"> Depth of field</label></div>
    <div class="row"><label class="ck"><input type="checkbox" id="setSun"> Sun shadows</label><label class="ck"><input type="checkbox" id="setGlow"> Night lights</label><label class="ck"><input type="checkbox" id="setBloom"> Bloom</label><label class="ck"><input type="checkbox" id="setWater"> Water shimmer</label><label class="ck"><input type="checkbox" id="setShadow"> Shadows</label><label class="ck"><input type="checkbox" id="setMotion"> Move with phone</label></div>
    <div class="row"><label>Tilt <input type="range" id="setTilt" min="0" max="60"></label><label>Depth <input type="range" id="setDepth" min="0" max="300"></label><button class="btn" id="photoBtn2">Photo mode</button></div>
-   <p class="note">Characters stand up like paper cutouts on a 3D stage, with soft shadows and a tilt-shift blur at the edges. Shadows follow the time of day when Lighting is on. From Tools, Pick, mark tiles to stand up, glow at night (lanterns, windows) or shimmer (water). Move with phone gently follows how you hold it and settles back to center.</p>
+   <p class="note">Works for SNES and Game Boy games. Characters stand up like paper cutouts on a 3D stage, with soft shadows and a tilt-shift blur at the edges. Shadows follow the time of day when Lighting is on. From Tools, Pick, mark tiles to stand up, glow at night (lanterns, windows) or shimmer (water). Move with phone gently follows how you hold it and settles back to center.</p>
+   <h3>AI</h3>
+   <p class="note">“Ask AI” in Tools uses your own Claude API key. It’s stored only on this device and is never put in backups or Mod packs. Use a key with a spending limit. Without a key, “Share prompt to an AI app” works with any AI.</p>
+   <div class="row"><label>API key <input type="password" id="aiKey" autocomplete="off" style="width:200px"></label><label>Model <input type="text" id="aiModel" style="width:150px"></label></div>
+   <h3>Battery</h3>
+   <div class="row"><label class="ck"><input type="checkbox" id="setSaver"> Battery saver: draw 30 pictures a second (the game itself still runs at full speed)</label></div>
    <h3>Start up</h3>
    <div class="row"><label class="ck"><input type="checkbox" id="setResume"> Open my last game when the app starts</label></div>
    <h3>Controls</h3>
@@ -325,6 +348,7 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
 </div></div>
 
 <div id="qmenu" hidden></div>
+<div id="recbar" hidden><span class="dot"></span><strong id="recText">Recording</strong><button class="btn main" id="recStop">Done</button><button class="btn" id="recCancel">Cancel</button></div>
 <div id="toast" hidden></div>
 <input type="file" id="romFile" hidden>
 <input type="file" id="jsonFile" accept=".json,application/json" hidden>
@@ -348,7 +372,7 @@ const DB=(()=>{let p,mem=null;const memStore=s=>(mem[s]||(mem[s]=new Map()));
   return new Promise((res,rej)=>{const t=d.transaction(st,mode);const r=fn(t.objectStore(st));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);});};
  return{get:(s,k)=>run(s,'readonly',o=>o.get(k),m=>m.get(k)),put:(s,k,v)=>run(s,'readwrite',o=>o.put(v,k),m=>{m.set(k,v);}),
   del:(s,k)=>run(s,'readwrite',o=>o.delete(k),m=>{m.delete(k);}),keys:s=>run(s,'readonly',o=>o.getAllKeys(),m=>[...m.keys()])};})();
-const SETDEF={pad2:true,gestures:true,talkFlat:true,resume:true,sunShadow:true,glowFx:true,bloom:true,waterFx:true,fastText:2,moments:5,stand:true,dof:true,look:'original',fxAmt:40,padHide:true,aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10,d3:false,tilt:28,depth:100,shadow:true,motion:false};
+const SETDEF={lcd:false,saver:false,pad2:true,gestures:true,talkFlat:true,resume:true,sunShadow:true,glowFx:true,bloom:true,waterFx:true,fastText:2,moments:5,stand:true,dof:true,look:'original',fxAmt:40,padHide:true,aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10,d3:false,tilt:28,depth:100,shadow:true,motion:false};
 let S=Object.assign({},SETDEF,JSON.parse(localStorage.getItem('ht.settings')||'{}'));
 const saveSettings=()=>localStorage.setItem('ht.settings',JSON.stringify(S));
 const fnv=(a,o=0,n=a.length)=>{let h=0x811c9dc5;for(let i=o;i<o+n;i++){h^=a[i];h=Math.imul(h,16777619);}return h>>>0;};
@@ -376,7 +400,7 @@ const snesOn=()=>!!game&&game.sys==='snes';
 function sysOf(name,b){const e=(name.split('.').pop()||'').toLowerCase();if(e==='gb'||e==='gbc')return'gb';if(e==='gba')return'gba';if(['sfc','smc','fig','swc'].includes(e))return'snes';
  if(b&&b.length>0x110&&b[0x104]===0xCE&&b[0x105]===0xED&&b[0x106]===0x66)return'gb';if(b&&b.length>8&&b[4]===0x24&&b[5]===0xFF&&b[6]===0xAE&&b[7]===0x51)return'gba';return'snes';}
 const H8=()=>M.HEAPU8;
-function snap(){const h=H8(),b=h.buffer;return{V:h.subarray(P.vram,P.vram+65536),C:new Uint16Array(b,P.cgram,256),O:h.subarray(P.oam,P.oam+544),R:h.subarray(P.regs,P.regs+64),S:new Uint16Array(b,P.scroll,8),W:h.subarray(P.wram,P.wram+0x20000)};}
+function snap(){if(game&&game.sys==='gb')return gbSnap();const h=H8(),b=h.buffer;return{V:h.subarray(P.vram,P.vram+65536),C:new Uint16Array(b,P.cgram,256),O:h.subarray(P.oam,P.oam+544),R:h.subarray(P.regs,P.regs+64),S:new Uint16Array(b,P.scroll,8),W:h.subarray(P.wram,P.wram+0x20000)};}
 
 /* ---------- video ---------- */
 const cv=$('#screen'),cx=cv.getContext('2d');let img=null;
@@ -385,11 +409,11 @@ let logical={w:256,h:224};
 function draw(){
  const w=M._s9x_vw(),h=M._s9x_vh();
  if(!img||img.width!==w||img.height!==h){cv.width=w;cv.height=h;img=cx.createImageData(w,h);logical=snesOn()?{w:256,h:h>240?h/2:h}:{w,h};applyAspect();}
- if(G.on&&game){compose3D();glDraw();fxTick();if(NP.cx)streamFrame();hudTick();return;}
+ if(G.on&&game){if(game.sys==='gb')composeGB();else compose3D();glDraw();fxTick();if(NP.cx)streamFrame();hudTick();return;}
  blit();fxTick();if(NP.cx)streamFrame();hudTick();}
 function blit(){if(!img)return;const src=new Uint16Array(H8().buffer,P.video,img.width*img.height),dst=new Uint32Array(img.data.buffer);
  for(let i=0;i<dst.length;i++)dst[i]=LUT[src[i]];cx.putImageData(img,0,0);}
-function applyAspect(){const n=S.aspect==='pixel'||game&&!snesOn()?logical.w/logical.h:4/3;document.documentElement.style.setProperty('--ar',String(n));document.documentElement.style.setProperty('--arn',String(n));}
+function applyAspect(){const n=S.aspect==='pixel'||game&&!snesOn()?logical.w/logical.h:4/3;document.documentElement.style.setProperty('--ar',String(n));document.documentElement.style.setProperty('--gw',logical.w);document.documentElement.style.setProperty('--gh',logical.h);document.documentElement.style.setProperty('--arn',String(n));}
 
 /* ---------- audio ---------- */
 let actx=null,anode=null;
@@ -453,9 +477,9 @@ function loop(now){requestAnimationFrame(loop);if(!running||paused){last=now;ret
  acc+=Math.min(100,now-last);last=now;const ft=1000/fps;let n=0;while(acc>=ft){acc-=ft;n++;}if(n>4){n=4;acc=0;}if(!n)return;
  pollPads();
  if(rewinding){rewindStep();draw();return;}
- const fast=ff?S.ff:TX.on&&S.fastText>1?S.fastText:1,k=n*fast;for(let i=0;i<k;i++)step(!ff&&(fast===1||i%fast===0));draw();}
+ const fast=ff?S.ff:TX.on&&S.fastText>1?S.fastText:1,k=n*fast;for(let i=0;i<k;i++)step(!ff&&(fast===1||i%fast===0));if(!S.saver||(++G.rafN&1))draw();}
 function step(audio){frameNo++;M._s9x_set_input(inputMask());if(M._s9x_set_input2)M._s9x_set_input2(NP.p2mask|inp.pad2);applyFreezes();M._s9x_frame();if(audio)pushAudio();
- walkTick();patchTick();rewindCapture();if(frameNo%120===0)sramCheck();if(frameNo%8===0)textTick();momentTick();if(frameNo%3600===0){const m=lib.find(g=>g.id===game.id);if(m)m.playMin=(m.playMin||0)+1;}if(frameNo%30===0)lightTick();if(frameNo%15===0)layerTick();}
+ walkTick();patchTick();rewindCapture();if(frameNo%120===0)sramCheck();if(frameNo%8===0){textTick();gbTextTick();}if(REC.on&&frameNo%3===0)recTick();momentTick();if(frameNo%3600===0){const m=lib.find(g=>g.id===game.id);if(m)m.playMin=(m.playMin||0)+1;}if(frameNo%30===0)lightTick();if(frameNo%15===0)layerTick();}
 requestAnimationFrame(loop);
 
 /* ---------- fast text: speed up while a text box is open ---------- */
@@ -548,9 +572,9 @@ async function restoreGame(b){const body=await unwrap(MAGIC.game,b),n=new DataVi
  for(const[k,v]of Object.entries(h.slots||{}))await DB.put('data',`state:${h.id}:${k}`,{bytes:unb64(v.b),img:v.img,t:v.t});
  await DB.put('data','lib',lib);persistAsk();renderGames();toast(`${h.name} restored with its saves and setup`);if(game&&game.id===h.id)startGame(h.id);}
 // Mod packs: everything you've built for a game except the game itself. They apply only to someone's own copy.
-const PACK_KEYS=['tiles','depth','light','fx','actions','watches','cheats','walk'];
+const PACK_KEYS=['tiles','colors','depth','light','fx','actions','watches','cheats','walk'];
 function packSummary(p){const d=p.depth||{},n=o=>Object.keys(o||{}).length,pl=(k,w)=>`${k} ${w}${k>1?'s':''}`,out=[];
- if(n(p.tiles))out.push(pl(n(p.tiles),'tile edit'));const tags=n(d.stand)+n(d.glow)+n(d.water)+n(d.tiles)+n(d.flat);if(tags)out.push(pl(tags,'3D tag'));
+ if(n(p.tiles))out.push(pl(n(p.tiles),'tile edit'));if(p.colors?.length)out.push(pl(p.colors.length,'recolor'));const tags=n(d.stand)+n(d.glow)+n(d.water)+n(d.tiles)+n(d.flat);if(tags)out.push(pl(tags,'3D tag'));
  if(p.light&&p.light.source!=='off')out.push('lighting');if(p.fx&&p.fx.mode!=='off')out.push('weather');
  if(p.actions?.length)out.push(pl(p.actions.length,'action button'));if(p.watches?.length)out.push(pl(p.watches.length,'watch'));if(p.cheats?.length)out.push(pl(p.cheats.length,'cheat'));
  return out.join(', ')||'no changes yet';}
@@ -568,7 +592,7 @@ async function openPack(b){const p=JSON.parse(dec(await unwrap(MAGIC.pack,b)));i
  const cur=game&&game.id===target.id?game.profile:normProfile(await DB.get('data','prof:'+target.id),target.name),d=p.data||{};
  Object.assign(cur.tiles,d.tiles||{});for(const k of['tiles','stand','flat','glow','water'])Object.assign(cur.depth[k],d.depth?.[k]||{});
  if(d.depth&&'overlay'in d.depth&&d.depth.overlay!==null)cur.depth.overlay=d.depth.overlay;
- if(d.light&&d.light.source!=='off')cur.light=d.light;if(d.fx&&d.fx.mode!=='off')cur.fx=d.fx;if(d.walk)Object.assign(cur.walk,d.walk);
+ if(d.colors?.length)cur.colors=d.colors;if(d.depth?.style)cur.depth.style=d.depth.style;if(d.light&&d.light.source!=='off')cur.light=d.light;if(d.fx&&d.fx.mode!=='off')cur.fx=d.fx;if(d.walk)Object.assign(cur.walk,d.walk);
  const addU=(arr,items,key)=>{for(const it of items||[])if(!arr.some(x=>x[key]===it[key]))arr.push(it);};
  addU(cur.actions,d.actions,'label');addU(cur.watches,d.watches,'addr');addU(cur.cheats,d.cheats,'code');
  cur.packs.push({title:p.title,author:p.author||'',summary:p.summary,t:Date.now()});
@@ -622,14 +646,14 @@ async function startGame(id){const meta=lib.find(g=>g.id===id);if(!meta)return;c
  game={id,sys,name:meta.name,profile:normProfile(await DB.get('data','prof:'+id),meta.name)};
  document.body.dataset.sys=sys;$('#title').textContent=game.name;$('#empty').hidden=true;
  // SNES-only tools (3D, tile editing, tap to walk) step aside for handheld games, and come back for SNES ones.
- if(sys!=='snes'){if(G.on)set3D(false,true);WK.on=false;WK.target=null;$('#walkBtn').classList.remove('on');}else if(S.d3&&!G.on)set3D(true,true);
- TC.fresh=false;MO.f=0;TX.on=false;TX.age.fill(0);TX.base=null;badge();await restoreSram();applyCheats();renderActions();patchIndex();rewindSetup();renderAllTools();WK.player=null;WK.target=null;
+ if(!stageOn()){if(G.on)set3D(false,true);WK.on=false;WK.target=null;$('#walkBtn').classList.remove('on');}else if(S.d3&&!G.on)set3D(true,true);
+ rebuildLUT();TC.fresh=false;MO.f=0;TX.on=false;TX.age.fill(0);TX.base=null;badge();await restoreSram();applyCheats();renderActions();patchIndex();rewindSetup();renderAllTools();WK.player=null;WK.target=null;
  const auto=await DB.get('data',`state:${id}:auto`);if(auto){loadStateBytes(auto.bytes);toast('Picked up where you left off');}
  await audioOn();anode?.port.postMessage({k:M._s9x_rate()/actx.sampleRate});lightTick();running=true;}
 
 /* ---------- game data (profile) ---------- */
 function normProfile(p,name){p=p||{};return{v:1,name:p.name||name,actions:p.actions||[],walk:Object.assign({layer:0,diagonal:true},p.walk),
- watches:p.watches||[],cheats:p.cheats||[],tiles:p.tiles||{},depth:{tiles:p.depth?.tiles||{},stand:p.depth?.stand||{},flat:p.depth?.flat||{},glow:p.depth?.glow||{},water:p.depth?.water||{},overlay:p.depth?.overlay??(p.depth?.flatBG3?[2]:null)},light:Object.assign({source:'off',addr:'',max:24},p.light),
+ watches:p.watches||[],cheats:p.cheats||[],tiles:p.tiles||{},sheets:p.sheets||[],colors:p.colors||[],depth:{style:p.depth?.style||'top',tiles:p.depth?.tiles||{},stand:p.depth?.stand||{},flat:p.depth?.flat||{},glow:p.depth?.glow||{},water:p.depth?.water||{},overlay:p.depth?.overlay??(p.depth?.flatBG3?[2]:null)},light:Object.assign({source:'off',addr:'',max:24},p.light),
  fx:Object.assign({mode:'off',addr:''},p.fx),packs:p.packs||[],gestures:Object.assign({talk:['A'],menu:['X'],tool:['Y'],back:['B']},p.gestures),notes:p.notes||''};}
 const saveProfile=()=>game&&DB.put('data','prof:'+game.id,game.profile);
 
@@ -712,16 +736,59 @@ const tileWA=(b,t)=>(b.nb+(t&0x3FF)*b.bpp*4)&0x7FFF;
 function pix(V,wa,bpp,px,py){const base=wa*2+py*2,sh=7-px;let c=0;
  for(let p=0;p<bpp;p+=2){c|=(V[base+p*8]>>sh&1)<<p;c|=(V[base+p*8+1]>>sh&1)<<(p+1);}return c;}
 function cgBase(kind,b,pal){if(kind==='obj')return 128+pal*16;if(b.bpp===8)return 0;if(b.mode===0)return b.bg*32+pal*4;return b.bpp===2?pal*4:pal*16;}
-function sprites(s){const R=s.R,O=s.O,ob=R[1],sz=OBJSZ[ob>>5],base=(ob&7)<<13,off=(((ob>>3)&3)+1)<<12,out=[];
+function sprites(s){if(s.gb)return gbSprites(s);const R=s.R,O=s.O,ob=R[1],sz=OBJSZ[ob>>5],base=(ob&7)<<13,off=(((ob>>3)&3)+1)<<12,out=[];
  for(let i=0;i<128;i++){const hi=O[512+(i>>2)]>>((i&3)*2);let x=O[i*4]|(hi&1)<<8;if(x>=256)x-=512;const big=hi>>1&1,w=sz[big*2],h=sz[big*2+1];
   let y=O[i*4+1]+1;if(y>=240)y-=256;if(x+w<=0||x>=256||y+h<=0||y>=240)continue;const a=O[i*4+3];
   out.push({i,x,y,w,h,c:O[i*4+2],n:a&1,pal:a>>1&7,prio:a>>4&3,hf:a>>6&1,vf:a>>7&1,base,off});}return out;}
 const objWA=(sp,cx,cy)=>(sp.base+(sp.n?sp.off:0)+((((sp.c>>4)+cy)&15)*16+(((sp.c&15)+cx)&15))*16)&0x7FFF;
-function objPix(s,sp,px,py){if(sp.hf)px=sp.w-1-px;if(sp.vf)py=sp.h-1-py;return pix(s.V,objWA(sp,px>>3,py>>3),4,px&7,py&7);}
+function objPix(s,sp,px,py){if(sp.gb)return gbObjPix(s,sp,px,py);if(sp.hf)px=sp.w-1-px;if(sp.vf)py=sp.h-1-py;return pix(s.V,objWA(sp,px>>3,py>>3),4,px&7,py&7);}
 const rgb=c=>[(c&31)<<3|(c&31)>>2,(c>>5&31)<<3|(c>>5&31)>>2,(c>>10&31)<<3|(c>>10&31)>>2];
 const rgba32=c=>{const[r,g,b]=rgb(c);return 0xff000000|b<<16|g<<8|r;};
 const toSnes=e=>{if(G.on&&G.M)return glPick(e.clientX,e.clientY);const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*logical.w,y:(e.clientY-r.top)/r.height*logical.h};};
 const toCss=(x,y)=>{if(G.on&&G.M)return glProject(x,y);const r=cv.getBoundingClientRect(),w=$('#wrap').getBoundingClientRect();return{left:r.left-w.left+x/logical.w*r.width,top:r.top-w.top+y/logical.h*r.height,sx:r.width/logical.w,sy:r.height/logical.h};};
+
+/* ---------- Game Boy and Game Boy Color: video memory through the core's shared memory map ---------- */
+function gbMem(){if(G.gbmMod===M)return G.gbm;G.gbmMod=M;G.gbm=null;if(!M||!M._s9x_map)return null;
+ const v=M._s9x_map(0x8000),vl=M._s9x_map_len(),o=M._s9x_map(0xFE00),io=M._s9x_map(0xFF00);if(!v||!o||!io)return null;
+ G.gbm={v,vl:Math.max(0x2000,Math.min(vl,0x4000)),o,io};return G.gbm;}
+const gbOn=()=>!!game&&game.sys==='gb'&&!!gbMem();
+const stageOn=()=>snesOn()||gbOn();
+function gbSnap(){const m=gbMem(),h=H8();return{gb:true,V:h.subarray(m.v,m.v+m.vl),O:h.subarray(m.o,m.o+160),IO:h.subarray(m.io,m.io+0x80)};}
+function gbSprites(s){const L=s.IO[0x40],O=s.O,out=[];if(!(L&2))return out;const tall=L&4?16:8;
+ for(let i=0;i<40;i++){const y=O[i*4]-16,x=O[i*4+1]-8,f=O[i*4+3];if(x<=-8||x>=160||y<=-tall||y>=144)continue;
+  out.push({i,x,y,w:8,h:tall,c:tall===16?O[i*4+2]&0xFE:O[i*4+2],pal:(f&7)*2+(f>>4&1),hf:f>>5&1,vf:f>>6&1,prio:f>>7&1,bank:f>>3&1,gb:true});}return out;}
+function gbObjPix(s,sp,px,py){if(sp.hf)px=7-px;if(sp.vf)py=sp.h-1-py;const a=(sp.bank&&s.V.length>=0x4000?0x2000:0)+(sp.c+(py>>3))*16+(py&7)*2,b=7-px;
+ return(s.V[a]>>b&1)|((s.V[a+1]>>b&1)<<1);}
+const gbWin=s=>{const L=s.IO[0x40];return L&0x20&&L&1&&s.IO[0x4A]<144&&s.IO[0x4B]<167?{x:s.IO[0x4B]-7,y:s.IO[0x4A]}:null;};
+// Background color number under a pixel (0 = the see-through color), and whether that tile always covers sprites.
+function gbBg(s,X,Y,win){const L=s.IO[0x40],IO=s.IO,V=s.V;if(!(L&1))return 0;let map,x,y;
+ if(win&&X>=win.x&&Y>=win.y){map=L&0x40?0x1C00:0x1800;x=X-win.x;y=Y-win.y;}else{map=L&8?0x1C00:0x1800;x=(X+IO[0x43])&255;y=(Y+IO[0x42])&255;}
+ const mi=map+(y>>3)*32+(x>>3),t=V[mi],at=V.length>=0x4000?V[0x2000+mi]:0;let px=x&7,py=y&7;if(at&0x20)px=7-px;if(at&0x40)py=7-py;
+ const a=(at&8?0x2000:0)+(L&0x10?t*16:0x1000+((t<<24)>>24)*16)+py*2,b=7-px,c=(V[a]>>b&1)|((V[a+1]>>b&1)<<1);return c|(at&0x80&&c?4:0);}
+function composeGB(){const s=gbSnap(),H=G.H=logical.h,W=G.W=logical.w,vw=M._s9x_vw(),vh=M._s9x_vh(),src=new Uint16Array(H8().buffer,P.video,vw*vh);
+ const px=new Uint32Array(G.rgba.buffer),ov32=new Uint32Array(G.ovl.buffer),aux=G.aux,hole=G.hole,own=G.obS,k=S.depth/100*(1-G.flatK),win=gbWin(s);
+ const nat=(x,y)=>LUT[src[y*vw+x]]&0x00ffffff,inWin=(x,y)=>win&&x>=win.x&&y>=win.y,sps=sprites(s);
+ G.cards=[];G.pack={x:0,y:0,rh:0};G.glows=[];G.glowSeen.clear();hole.fill(0);own.fill(0);
+ // A sprite pixel the real picture shows (not covered by background, not in the window/HUD).
+ const shows=(sp,x,y)=>{const X=sp.x+x,Y=sp.y+y;if(X<0||Y<0||X>=W||Y>=H||inWin(X,Y))return false;if(!gbObjPix(s,sp,x,y))return false;const b=gbBg(s,X,Y,win);return!(b&4||sp.prio&&b&3);};
+ const n=sps.length,par=[...Array(n).keys()],f=i=>par[i]===i?i:(par[i]=f(par[i]));
+ for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=sps[i],b=sps[j];if(a.x<=b.x+b.w&&b.x<=a.x+a.w&&a.y<=b.y+b.h&&b.y<=a.y+a.h)par[f(i)]=f(j);}
+ const groups=new Map();for(let i=0;i<n;i++){const r=f(i);if(!groups.has(r))groups.set(r,[]);groups.get(r).push(sps[i]);}
+ for(const grp of groups.values()){const x0=Math.min(...grp.map(p=>p.x)),y0=Math.min(...grp.map(p=>p.y)),x1=Math.max(...grp.map(p=>p.x+p.w)),y1=Math.max(...grp.map(p=>p.y+p.h)),w=x1-x0,h=y1-y0;
+  if(w>48||h>48)continue;const card=S.stand?cardAlloc(w,h):null;let shown=0;
+  for(const sp of[...grp].sort((a,b)=>b.i-a.i))for(let y=0;y<sp.h;y++)for(let x=0;x<sp.w;x++){if(!shows(sp,x,y))continue;const X=sp.x+x,Y=sp.y+y,i=Y*256+X;
+   own[i]=1;shown++;if(card)G.at32[(card.ay+Y-y0)*512+card.ax+X-x0]=(nat(X,Y)|0xff000000)>>>0;}
+  if(card&&shown)Object.assign(card,{box:{x:x0,y:y0,w,h},fx:x0+w/2,fy:y1,shadow:1,z:0}),G.cards.push(card);}
+ let any=false;
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*256+x,nv=nat(x,y),ov=inWin(x,y);let h4=0;
+  if(own[i]){if(S.stand)hole[i]=1;else h4=14;}
+  G.h[i]=h4*k/4;px[i]=(nv|h4<<24)>>>0;ov32[i]=ov?(nv|0xff000000)>>>0:0;aux[i*2]=aux[i*2+1]=0;if(ov)any=true;}
+ // Ground under a standing character continues from just below it.
+ for(let x=0;x<W;x++){let last=-1;for(let y=H-1;y>=0;y--){const i=y*256+x;if(hole[i]){if(last>=0){px[i]=px[last];hole[i]=0;}}else last=i;}
+  last=-1;for(let y=0;y<H;y++){const i=y*256+x;if(hole[i]&&last>=0)px[i]=px[last];else if(!hole[i])last=i;}}
+ G.hasOv=any;}
+// Game Boy text: the window layer sliding up across the whole width as a box (a short status bar doesn't count).
+function gbTextTick(){if(!(S.fastText>1||G.on&&S.talkFlat)||!gbOn())return;const w=gbWin(gbSnap()),was=TX.on;TX.on=!!w&&w.x<=8&&144-w.y>=40&&w.y>0;if(was!==TX.on)badge();}
 
 /* ---------- tile replacement (native: written into VRAM, so priorities and effects stay correct) ---------- */
 const PT={vmap:new Map(),map:new Map(),bpps:[],patched:new Map(),shadow:new Uint8Array(65536),dirty:new Uint8Array(4096),full:true,on:true,ptr:0};
@@ -756,16 +823,16 @@ $('#patchOn').onchange=e=>{PT.on=e.target.checked;if(!M||!game)return;if(PT.on)P
 
 /* ---------- tap to walk ---------- */
 const WK={on:false,talk:null,player:null,target:null,hold:false,lost:0,still:0,lastW:null,slide:0,ptr:null,timer:0};
-const wrap10=d=>((d%1024)+1536)%1024-512;
-function camera(s){const L=game.profile.walk.layer|0;return{h:s.S[L*2]&0x3FF,v:s.S[L*2+1]&0x3FF};}
+const wrap10=d=>{const n=game&&game.sys==='gb'?256:1024;return((d%n)+n*1.5)%n-n/2;};
+function camera(s){if(s.gb)return{h:s.IO[0x43],v:s.IO[0x42]};const L=game.profile.walk.layer|0;return{h:s.S[L*2]&0x3FF,v:s.S[L*2+1]&0x3FF};}
 function lockOn(pt){const s=snap();for(const sp of sprites(s)){const lx=Math.floor(pt.x-sp.x),ly=Math.floor(pt.y-sp.y);
   if(lx>=-4&&ly>=-4&&lx<sp.w+4&&ly<sp.h+4&&(lx<0||ly<0||lx>=sp.w||ly>=sp.h||objPix(s,sp,lx,ly))){WK.player={pal:sp.pal,x:sp.x+sp.w/2,y:sp.y+sp.h/2};WK.lost=0;return true;}}return false;}
 function track(s){const p=WK.player;if(!p)return null;let x=0,y=0,n=0;
  for(const sp of sprites(s)){if(sp.pal!==p.pal)continue;const cx=sp.x+sp.w/2,cy=sp.y+sp.h/2;if(Math.hypot(cx-p.x,cy-p.y)<34){x+=cx;y+=cy;n++;}}
  if(!n){if(++WK.lost>45){WK.player=null;WK.target=null;toast('Lost your character. Tap them to lock on again.');}return null;}
  WK.lost=0;p.x=x/n;p.y=y/n;return p;}
-function walkTick(){inp.walk=0;if(!WK.on||!snesOn())return;const s=snap(),p=track(s);if(!WK.target)return;
- const me=p||(WK.player?null:{x:128,y:112});if(!me)return;const c=camera(s);
+function walkTick(){inp.walk=0;if(!WK.on||!stageOn())return;const s=snap(),p=track(s);if(!WK.target)return;
+ const me=p||(WK.player?null:{x:logical.w/2,y:logical.h/2});if(!me)return;const c=camera(s);
  const dx=wrap10(WK.target.wx-c.h-me.x),dy=wrap10(WK.target.wy-c.v-me.y);
  if(Math.abs(dx)<4&&Math.abs(dy)<4){if(WK.talk){talkNow();return;}if(!WK.hold)WK.target=null;return;}
  const w={x:me.x+c.h,y:me.y+c.v};
@@ -777,7 +844,7 @@ function walkTick(){inp.walk=0;if(!WK.on||!snesOn())return;const s=snap(),p=trac
  else if(!game.profile.walk.diagonal&&h&&v){if(Math.abs(dx)>Math.abs(dy))v=null;else h=null;}
  inp.walk=(h?BIT(h):0)|(v?BIT(v):0);}
 function setTarget(pt){const c=camera(snap());WK.target={wx:pt.x+c.h,wy:pt.y+c.v};WK.still=0;WK.lastW=null;}
-$('#walkBtn').onclick=()=>{if(game&&!snesOn()){toast('Tap to walk is for SNES games for now');return;}WK.on=!WK.on;$('#walkBtn').classList.toggle('on',WK.on);WK.target=null;WK.talk=null;inp.walk=0;
+$('#walkBtn').onclick=()=>{if(game&&!stageOn()){toast(game.sys==='gba'?'Tap to walk isn’t available for Game Boy Advance yet':'This Game Boy core doesn’t share its video memory, so tap to walk can’t see your character');return;}WK.on=!WK.on;$('#walkBtn').classList.toggle('on',WK.on);WK.target=null;WK.talk=null;inp.walk=0;
  if(WK.on)toast(WK.player?'Tap to walk, tap someone to talk, drag to steer':'Tap your character to lock on',3000);};
 /* ---------- screen gestures: tap to walk or talk, drag to steer, hold for a quick menu, two-finger tap for Back ---------- */
 const GS={p:null,timer:0,count:0,two:null};
@@ -957,6 +1024,7 @@ function showCands(cands,empty){const box=$('#pickList');box.innerHTML='';$('#pi
   const[dn,up]=t.querySelectorAll('button'),hv=t.querySelector('b');
   const setH=n=>{h=Math.max(0,Math.min(24,n));hv.textContent=h;for(const k of keys){if(h)dt[k]=h;else delete dt[k];}saveProfile();};
   dn.onclick=()=>setH(h-1);up.onclick=()=>setH(h+1);d.appendChild(t);
+  const rb=document.createElement('button');rb.className='btn';rb.textContent='Record frames';rb.onclick=()=>startRecord(c);d.appendChild(rb);
   const b=document.createElement('button');b.className='btn main';b.textContent='Edit';b.onclick=()=>openEditor(c);d.appendChild(b);
   if(i===0)showBox(c.box);d.onpointerdown=()=>showBox(c.box);box.appendChild(d);});}
 const isSpriteObj=c=>c.cells[0].cg>=128;
@@ -1087,7 +1155,7 @@ function renderTiles(){const box=$('#tileList');box.innerHTML='';if(!game)return
   d.append(ed,x);box.appendChild(d);}}
 
 /* ---------- 3D depth view: layers and sprites lifted by drawing order, colors from the real frame ---------- */
-const G={on:false,gl:null,u:{},u2:{},H:224,ax:1,oy:0,ot:0,py:0,pt:0,zoom:1,tint:[1,1,1],hasOv:false,base:null,ovl:new Uint8Array(256*240*4),cgl:new Uint32Array(256),
+const G={rafN:0,W:256,on:false,gl:null,u:{},u2:{},H:224,ax:1,oy:0,ot:0,py:0,pt:0,zoom:1,tint:[1,1,1],hasOv:false,base:null,ovl:new Uint8Array(256*240*4),cgl:new Uint32Array(256),
  flatK:0,memoK:new Map(),wS:[0,1,2,3].map(()=>new Uint8Array(256*240)),aux:new Uint8Array(256*240*2),glows:[],glowSeen:new Set(),sun:{D:[.2,.6],L:.3,A:.3,K:.1,dark:0},bS:[0,1,2,3].map(()=>new Uint8Array(256*240)),obS:new Uint8Array(256*240),code:new Uint16Array(256*240),pm:new Uint8Array(256*240),
  hole:new Uint8Array(256*240),vis:new Uint8Array(256*240),rowOv:new Uint8Array(240),standIdx:new Uint8Array(128),cards:[],pack:{x:0,y:0,rh:0},
  atlas:new Uint8Array(512*512*4),cardData:new Float32Array(64*8),u3:{},u4:{},fbW:0,fbH:0,
@@ -1097,8 +1165,8 @@ const VS=`#version 300 es
 precision highp float;precision highp int;
 layout(location=0) in vec3 aP;layout(location=1) in float aF;
 uniform highp sampler2D uT;uniform highp sampler2D uX;uniform mat4 uM;uniform int uW;uniform int uH;uniform float uS;uniform float uSh;uniform float uAx;uniform vec3 uTint;
-uniform float uTime;uniform float uWater;uniform vec2 uSunL;uniform float uSunK;
-flat out vec3 vC;
+uniform float uTime;uniform float uWater;uniform vec2 uSunL;uniform float uSunK;uniform float uSide;uniform vec3 uHaze;
+flat out vec3 vC;flat out float vB;
 float hAt(ivec2 c){if(c.x<0||c.y<0||c.x>=uW||c.y>=uH)return 0.0;return texelFetch(uT,c,0).a*63.75*uS;}
 void main(){ivec2 c=ivec2(gl_InstanceID%uW,gl_InstanceID/uW);vec4 t=texelFetch(uT,c,0);vec2 ax=texelFetch(uX,c,0).rg;float h=t.a*63.75*uS,z=h,s=1.0;int f=int(aF+0.5);
  if(f>0){ivec2 d=f==1?ivec2(1,0):f==2?ivec2(-1,0):f==3?ivec2(0,1):ivec2(0,-1);float hn=hAt(c+d);
@@ -1109,7 +1177,7 @@ void main(){ivec2 c=ivec2(gl_InstanceID%uW,gl_InstanceID/uW);vec4 t=texelFetch(u
  vec3 p=vec3((float(c.x)+aP.x-float(uW)*0.5)*uAx,-(float(c.y)+aP.y-float(uH)*0.5),z);
  gl_Position=uM*vec4(p,1.0);vec3 col=t.rgb*s;
  if(ax.g>.5&&f==0){float w=sin(uTime*1.6+float(c.x)*.33+float(c.y)*.61)*.5+.5;col=mix(col,col*1.12+vec3(.04,.07,.12),uWater*(.25+.3*w));}
- vC=col*(uTint+vec3(1.0,.72,.42)*ax.r*1.15);}`;
+ vB=1.0-clamp(z/(uS*45.0+.01),0.0,1.0);col=mix(col,uHaze,uSide*.3*vB);vC=col*(uTint+vec3(1.0,.72,.42)*ax.r*1.15);}`;
 const VS2=`#version 300 es
 uniform float uK;out vec2 v;const vec2 Q[6]=vec2[6](vec2(-1,-1),vec2(1,-1),vec2(-1,1),vec2(-1,1),vec2(1,-1),vec2(1,1));
 void main(){vec2 p=Q[gl_VertexID];v=vec2(p.x*.5+.5,(.5-p.y*.5)*uK);gl_Position=vec4(p,0.0,1.0);}`;
@@ -1117,9 +1185,9 @@ const FS2=`#version 300 es
 precision mediump float;uniform sampler2D uO;in vec2 v;out vec4 o;void main(){vec4 c=texture(uO,v);if(c.a<.5)discard;o=vec4(c.rgb,1.0);}`;
 const VS4=`#version 300 es
 precision highp float;layout(location=0) in vec2 aQ;layout(location=1) in vec4 aA;layout(location=2) in vec4 aB;
-uniform highp sampler2D uX;uniform mat4 uM;uniform vec3 uR;uniform vec3 uU;uniform vec3 uF;uniform float uAx;uniform float uHh;uniform highp int uPass;uniform vec2 uSunD;uniform float uSunLen;
+uniform highp sampler2D uX;uniform mat4 uM;uniform vec3 uR;uniform vec3 uU;uniform vec3 uF;uniform float uAx;uniform float uHh;uniform float uHw;uniform highp int uPass;uniform vec2 uSunD;uniform float uSunLen;
 out vec2 vUV;out vec2 vQ;flat out float vL;
-void main(){vec3 base=vec3((aA.x-128.0)*uAx,uHh-aA.y,aA.z);vQ=aQ;vL=texelFetch(uX,ivec2(clamp(aA.x,0.0,255.0),clamp(aA.y-1.0,0.0,239.0)),0).r;
+void main(){vec3 base=vec3((aA.x-uHw)*uAx,uHh-aA.y,aA.z);vQ=aQ;vL=texelFetch(uX,ivec2(clamp(aA.x,0.0,255.0),clamp(aA.y-1.0,0.0,239.0)),0).r;
  vUV=(aB.zw+aQ*aB.xy)/512.0;
  if(uPass==1){if(aA.w<.5){gl_Position=vec4(0.0,0.0,-2.0,1.0);return;}vec2 pp=vec2(uSunD.y,-uSunD.x);
   vec3 p=base+vec3(pp*((aQ.x-.5)*aB.x*uAx)+uSunD*((1.0-aQ.y)*aB.y*uSunLen),.12);gl_Position=uM*vec4(p,1.0);return;}
@@ -1129,14 +1197,14 @@ precision mediump float;uniform sampler2D uC;uniform vec3 uTint;uniform float uS
 void main(){vec4 c=texture(uC,vUV);if(c.a<.5)discard;if(uPass==1){o=vec4(0.0,0.0,0.0,uShA*(.45+.55*vQ.y));return;}
  o=vec4(c.rgb*(uTint+vec3(1.0,.72,.42)*vL*1.15),1.0);}`;
 const FS3=`#version 300 es
-precision mediump float;uniform sampler2D uS;uniform vec2 uPx;uniform float uDof;uniform float uBloom;in vec2 v;out vec4 o;
-void main(){vec2 uv=vec2(v.x,1.0-v.y);float f=smoothstep(.16,.46,abs(v.y-.52)),r=uDof*f;vec3 c=texture(uS,uv).rgb;
+precision mediump float;uniform sampler2D uS;uniform vec2 uPx;uniform float uDof;uniform float uBloom;uniform float uSide;in vec2 v;out vec4 o;
+void main(){vec2 uv=vec2(v.x,1.0-v.y);float f=uSide>.5?texture(uS,uv).a:smoothstep(.16,.46,abs(v.y-.52)),r=uDof*f;vec3 c=texture(uS,uv).rgb;
  if(r>.05){vec3 a=c;for(int i=0;i<8;i++){float an=float(i)*.785398;vec2 d=vec2(cos(an),sin(an))*r*uPx;a+=texture(uS,uv+d).rgb+texture(uS,uv+d*.5).rgb;}c=a/17.0;}
  if(uBloom>0.0){vec3 bl=vec3(0.0);for(int i=0;i<8;i++){float an=float(i)*.785398+.39;vec2 d=vec2(cos(an),sin(an))*uPx*7.0;
   bl+=max(texture(uS,uv+d).rgb-vec3(.78),0.0)+max(texture(uS,uv+d*2.2).rgb-vec3(.78),0.0);}c+=bl*uBloom*.16;}
  float vg=1.0-.2*smoothstep(.45,.95,length((v-.5)*vec2(1.2,1.0)));o=vec4(c*vg,1.0);}`;
 const FS=`#version 300 es
-precision mediump float;flat in vec3 vC;out vec4 o;void main(){o=vec4(vC,1.0);}`;
+precision mediump float;flat in vec3 vC;flat in float vB;uniform highp float uSide;out vec4 o;void main(){o=vec4(vC,uSide>.5?vB:0.0);}`;
 const m4={
  persp(f,a,n,fa){const t=1/Math.tan(f/2);return[t/a,0,0,0,0,t,0,0,0,0,(fa+n)/(n-fa),-1,0,0,2*fa*n/(n-fa),0];},
  look(e,c,u){const sub=(a,b)=>a.map((v,i)=>v-b[i]),cr=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],nm=a=>{const l=Math.hypot(...a);return a.map(v=>v/l);},dt=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
@@ -1170,10 +1238,10 @@ function glInit(){if(G.gl)return true;const gl=$('#gl').getContext('webgl2',{ant
  gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,8,0);const cardBuf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,cardBuf);gl.bufferData(gl.ARRAY_BUFFER,64*32,gl.DYNAMIC_DRAW);
  gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,4,gl.FLOAT,false,32,0);gl.vertexAttribDivisor(1,1);gl.enableVertexAttribArray(2);gl.vertexAttribPointer(2,4,gl.FLOAT,false,32,16);gl.vertexAttribDivisor(2,1);
  gl.bindVertexArray(null);
- for(const n of['uT','uX','uM','uW','uH','uS','uSh','uAx','uTint','uTime','uWater','uSunL','uSunK'])G.u[n]=gl.getUniformLocation(p,n);
+ for(const n of['uT','uX','uM','uW','uH','uS','uSh','uAx','uTint','uTime','uWater','uSunL','uSunK','uSide','uHaze'])G.u[n]=gl.getUniformLocation(p,n);
  for(const n of['uO','uK'])G.u2[n]=gl.getUniformLocation(p2,n);
- for(const n of['uS','uK','uPx','uDof','uBloom'])G.u3[n]=gl.getUniformLocation(p3,n);
- for(const n of['uC','uX','uM','uR','uU','uF','uAx','uHh','uTint','uPass','uSunD','uSunLen','uShA'])G.u4[n]=gl.getUniformLocation(p4,n);
+ for(const n of['uS','uK','uPx','uDof','uBloom','uSide'])G.u3[n]=gl.getUniformLocation(p3,n);
+ for(const n of['uC','uX','uM','uR','uU','uF','uAx','uHh','uHw','uTint','uPass','uSunD','uSunLen','uShA'])G.u4[n]=gl.getUniformLocation(p4,n);
  G.at32=new Uint32Array(G.atlas.buffer);Object.assign(G,{gl,prog:p,prog2:p2,prog3:p3,prog4:p4,vao,vao2,vao4,cardBuf,tex,tex2,texA,texX,nv:v.length/4});gl.enable(gl.DEPTH_TEST);return true;}
 // Front-to-back drawing order per graphics mode. 0-7 = BG(n)·priority, 8-11 = sprites·priority.
 const B=(bg,p)=>bg*2+p,O=p=>8+p;
@@ -1254,8 +1322,8 @@ function standProps(H,nat){const vis=G.vis,cgl=G.cgl,stack=[];vis.fill(0);
    for(const i of pts){G.pm[i]|=1<<bg;const x=i&255,y=i>>8,front=G.wl[G.code[i]]===bg;
     G.at32[(card.ay+y-y0)*512+card.ax+x-x0]=((front?nat(i):cgl[G.cg[bg][i]])|0xff000000)>>>0;}
    Object.assign(card,{box:{x:x0,y:y0,w,h},fx:x0+w/2,fy:y1+1,shadow:1});G.cards.push(card);}}}
-function compose3D(){const s=snap(),H=G.H=logical.h,vw=M._s9x_vw(),vh=M._s9x_vh(),xs=vw>256?2:1,ys=vh>240?2:1;
- const src=new Uint16Array(H8().buffer,P.video,vw*vh),px=new Uint32Array(G.rgba.buffer),ov32=new Uint32Array(G.ovl.buffer),ord=orderFor(s),fn=tileFns(s),k=S.depth/100*(1-G.flatK),hd=S.stand&&!!ord;
+function compose3D(){G.W=256;const s=snap(),H=G.H=logical.h,vw=M._s9x_vw(),vh=M._s9x_vh(),xs=vw>256?2:1,ys=vh>240?2:1;
+ const side=game.profile.depth.style==='side',src=new Uint16Array(H8().buffer,P.video,vw*vh),px=new Uint32Array(G.rgba.buffer),ov32=new Uint32Array(G.ovl.buffer),ord=orderFor(s),fn=tileFns(s),k=S.depth/100*(1-G.flatK),hd=S.stand&&!!ord&&!side,RS6=side?11:6;
  const nat=i=>LUT[src[(i>>8)*ys*vw+(i&255)*xs]]&0x00ffffff;
  tcSync(s.V);
  const cgl=G.cgl;for(let i=0;i<256;i++)cgl[i]=rgba32(s.C[i])&0x00ffffff;G.groups=[];
@@ -1280,8 +1348,8 @@ function compose3D(){const s=snap(),H=G.H=logical.h,vw=M._s9x_vw(),vh=M._s9x_vh(
     const pm=G.pm[i];if(pm)for(let b=0;b<4;b++)if(pm>>b&1){c&=~(3<<(b*2));if(orig===b)dec=true;}
     const w=WL[c];
     if(rowOv[y]||(w>=0&&w<4&&ovm>>w&1)){ovp=1;const w2=WL2[c];
-     if(w2>=0){h4=RL2[c]*6+(w2===4?G.obB[i]*4:fn.boost?G.bgB[w2][i]*4:0);col=w2===4?cgl[G.obC[i]]:cgl[G.cg[w2][i]];}else col=cgl[0];}
-    else if(w>=0){wWin=w;h4=RL[c]*6+(w===4?G.obB[i]*4:fn.boost?G.bgB[w][i]*4:0);if(dec)col=w===4?cgl[G.obC[i]]:cgl[G.cg[w][i]];}
+     if(w2>=0){h4=RL2[c]*RS6+(w2===4?G.obB[i]*4:fn.boost?G.bgB[w2][i]*4:0);col=w2===4?cgl[G.obC[i]]:cgl[G.cg[w2][i]];}else col=cgl[0];}
+    else if(w>=0){wWin=w;h4=RL[c]*RS6+(w===4?G.obB[i]*4:fn.boost?G.bgB[w][i]*4:0);if(dec)col=w===4?cgl[G.obC[i]]:cgl[G.cg[w][i]];}
     else if(dec)hole[i]=1;}
    if(h4>255)h4=255;G.h[i]=h4*k/4;px[i]=(col|h4<<24)>>>0;ov32[i]=ovp?(nv|0xff000000)>>>0:0;if(ovp)any=true;
    aux[i*2]=0;aux[i*2+1]=wWin>=0&&wWin<4&&fn.water&&S.waterFx?G.wS[wWin][i]*255:0;}}
@@ -1311,34 +1379,37 @@ function ensureFB(w,h){const gl=G.gl;if(G.fbW===w&&G.fbH===h)return G.fbOK;
  gl.bindFramebuffer(gl.FRAMEBUFFER,null);G.fbW=w;G.fbH=h;return G.fbOK;}
 function glDraw(){const gl=G.gl,c=$('#gl'),r=c.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1),w=Math.max(1,Math.round(r.width*dpr)),h=Math.max(1,Math.round(r.height*dpr));
  if(c.width!==w||c.height!==h){c.width=w;c.height=h;}
- G.ax=S.aspect==='pixel'?1:(4/3)/(256/G.H);
+ G.ax=S.aspect==='pixel'||game&&game.sys!=='snes'?1:(4/3)/(256/G.H);
  G.flatK+=((S.talkFlat&&TX.on&&!photo?1:0)-G.flatK)*.12;if(G.flatK<.002)G.flatK=0;const lev=1-G.flatK;
- const tilt=Math.max(0,Math.min(75,S.tilt+G.ot+G.pt))*lev*Math.PI/180,yaw=(G.oy+G.py)*lev*Math.PI/180,fov=26*Math.PI/180,aspect=w/h;
- let rad=Math.max(G.H/2,128*G.ax/aspect)/Math.tan(fov/2);rad*=(1-0.2*Math.sin(tilt))*G.zoom;
+ const side=game&&game.profile.depth.style==='side',now=performance.now()/1000;G.side=side;
+ // Side view: the camera looks straight at the stage and drifts gently, so layers slide past each other like a diorama.
+ const baseTilt=side?3+2*Math.sin(now*.21):S.tilt,sway=side?5*Math.sin(now*.13):0;
+ const tilt=Math.max(0,Math.min(75,baseTilt+G.ot+G.pt))*lev*Math.PI/180,yaw=(G.oy+G.py+sway)*lev*Math.PI/180,fov=26*Math.PI/180,aspect=w/h;
+ let rad=Math.max(G.H/2,G.W/2*G.ax/aspect)/Math.tan(fov/2);rad*=(1-0.2*Math.sin(tilt))*G.zoom;
  const eye=[Math.sin(yaw)*Math.sin(tilt)*rad,-Math.cos(yaw)*Math.sin(tilt)*rad,Math.cos(tilt)*rad],V=m4.look(eye,[0,0,0],[-Math.sin(yaw),Math.cos(yaw),0]);
  G.M=m4.mul(m4.persp(fov,aspect,rad*0.1,rad*4),V);G.inv=m4.inv(G.M);G.R=[V[0],V[4],V[8]];G.U=[V[1],V[5],V[9]];G.F=[-V[2],-V[6],-V[10]];
- const useDof=S.dof&&tilt>0.05,dof=(useDof||S.bloom)&&ensureFB(w,h);
+ const useDof=S.dof&&(side||tilt>0.05),dof=(useDof||S.bloom)&&ensureFB(w,h);
  gl.bindFramebuffer(gl.FRAMEBUFFER,dof?G.fb:null);gl.viewport(0,0,w,h);
  gl.clearColor(0,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(G.prog);gl.bindVertexArray(G.vao);gl.enable(gl.DEPTH_TEST);
  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,G.tex);gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
  gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,256,G.H,gl.RGBA,gl.UNSIGNED_BYTE,G.rgba.subarray(0,256*G.H*4));
- gl.uniform1i(G.u.uT,0);gl.uniformMatrix4fv(G.u.uM,false,G.M);gl.uniform1i(G.u.uW,256);gl.uniform1i(G.u.uH,G.H);
+ gl.uniform1i(G.u.uT,0);gl.uniformMatrix4fv(G.u.uM,false,G.M);gl.uniform1i(G.u.uW,G.W);gl.uniform1i(G.u.uH,G.H);
  gl.uniform1f(G.u.uS,S.depth/100*lev);gl.uniform1f(G.u.uSh,S.shadow?lev:0);gl.uniform1f(G.u.uAx,G.ax);gl.uniform3fv(G.u.uTint,G.tint);
  sunState();const sun=G.sun;
  gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,G.texX);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,256,G.H,gl.RG,gl.UNSIGNED_BYTE,G.aux.subarray(0,256*G.H*2));gl.activeTexture(gl.TEXTURE0);
- gl.uniform1i(G.u.uX,1);gl.uniform1f(G.u.uTime,performance.now()/1000);gl.uniform1f(G.u.uWater,S.waterFx?1:0);gl.uniform2f(G.u.uSunL,-sun.D[0],-sun.D[1]);gl.uniform1f(G.u.uSunK,sun.K);
- gl.drawArraysInstanced(gl.TRIANGLES,0,G.nv,256*G.H);
+ gl.uniform1i(G.u.uX,1);gl.uniform1f(G.u.uTime,performance.now()/1000);gl.uniform1f(G.u.uWater,S.waterFx?1:0);gl.uniform2f(G.u.uSunL,-sun.D[0],-sun.D[1]);gl.uniform1f(G.u.uSunK,sun.K);gl.uniform1f(G.u.uSide,side?1:0);gl.uniform3f(G.u.uHaze,.72*G.tint[0],.8*G.tint[1],.92*G.tint[2]);
+ gl.drawArraysInstanced(gl.TRIANGLES,0,G.nv,G.W*G.H);
  const n=G.cards.length;
  if(n){const d=G.cardData;G.cards.forEach((c,i)=>d.set([c.fx,c.fy,c.z,c.shadow?1:0,c.w,c.h,c.ax,c.ay],i*8));
   gl.useProgram(G.prog4);gl.bindVertexArray(G.vao4);gl.bindBuffer(gl.ARRAY_BUFFER,G.cardBuf);gl.bufferSubData(gl.ARRAY_BUFFER,0,d.subarray(0,n*8));
   gl.bindTexture(gl.TEXTURE_2D,G.texA);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,512,Math.min(512,G.pack.y+G.pack.rh+1),gl.RGBA,gl.UNSIGNED_BYTE,G.atlas);
   const u=G.u4;gl.uniform1i(u.uC,0);gl.uniformMatrix4fv(u.uM,false,G.M);gl.uniform3fv(u.uR,G.R);gl.uniform3fv(u.uU,G.U);gl.uniform3fv(u.uF,G.F);
-  gl.uniform1f(u.uAx,G.ax);gl.uniform1f(u.uHh,G.H/2);gl.uniform3fv(u.uTint,G.tint);gl.uniform1i(u.uX,1);gl.uniform2fv(u.uSunD,sun.D);gl.uniform1f(u.uSunLen,sun.L);gl.uniform1f(u.uShA,sun.A*lev);
+  gl.uniform1f(u.uAx,G.ax);gl.uniform1f(u.uHh,G.H/2);gl.uniform1f(u.uHw,G.W/2);gl.uniform3fv(u.uTint,G.tint);gl.uniform1i(u.uX,1);gl.uniform2fv(u.uSunD,sun.D);gl.uniform1f(u.uSunLen,sun.L);gl.uniform1f(u.uShA,sun.A*lev);
   if(S.shadow){gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);gl.uniform1i(u.uPass,1);gl.drawArraysInstanced(gl.TRIANGLES,0,6,n);gl.disable(gl.BLEND);gl.depthMask(true);}
   gl.uniform1i(u.uPass,0);gl.drawArraysInstanced(gl.TRIANGLES,0,6,n);}
  if(dof){gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,w,h);gl.disable(gl.DEPTH_TEST);gl.useProgram(G.prog3);gl.bindVertexArray(G.vao2);
   gl.bindTexture(gl.TEXTURE_2D,G.fbTex);gl.uniform1i(G.u3.uS,0);gl.uniform1f(G.u3.uK,1);gl.uniform2f(G.u3.uPx,1/w,1/h);
-  gl.uniform1f(G.u3.uDof,useDof?2.6*dpr*Math.min(1.4,Math.sin(tilt)/Math.sin(28*Math.PI/180)):0);gl.uniform1f(G.u3.uBloom,S.bloom?1:0);gl.drawArrays(gl.TRIANGLES,0,6);gl.enable(gl.DEPTH_TEST);}
+  gl.uniform1f(G.u3.uDof,useDof?(side?3.2*dpr:2.6*dpr*Math.min(1.4,Math.sin(tilt)/Math.sin(28*Math.PI/180))):0);gl.uniform1f(G.u3.uBloom,S.bloom?1:0);gl.uniform1f(G.u3.uSide,side?1:0);gl.drawArrays(gl.TRIANGLES,0,6);gl.enable(gl.DEPTH_TEST);}
  if(G.hasOv&&!(photo&&!$('#phHud').checked)){gl.useProgram(G.prog2);gl.bindVertexArray(G.vao2);gl.disable(gl.DEPTH_TEST);gl.bindTexture(gl.TEXTURE_2D,G.tex2);
   gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,256,G.H,gl.RGBA,gl.UNSIGNED_BYTE,G.ovl.subarray(0,256*G.H*4));
   gl.uniform1i(G.u2.uO,0);gl.uniform1f(G.u2.uK,G.H/240);gl.drawArrays(gl.TRIANGLES,0,6);gl.enable(gl.DEPTH_TEST);}}
@@ -1347,22 +1418,22 @@ function glPick(cx,cy){const r=$('#gl').getBoundingClientRect(),nx=(cx-r.left)/r
  const a=m4.xf(G.inv,[nx,ny,-1,1]),b=m4.xf(G.inv,[nx,ny,1,1]),p0=a.slice(0,3).map(v=>v/a[3]),p1=b.slice(0,3).map(v=>v/b[3]),dz=p1[2]-p0[2]||1e-6;
  // Standing cards first: a tap on a character's head should find the character, not the ground behind it.
  const dot=(u,v)=>u[0]*v[0]+u[1]*v[1]+u[2]*v[2],dir=[0,1,2].map(i=>p1[i]-p0[i]);let best=null;
- for(const c of G.cards||[]){const base=[(c.fx-128)*G.ax-G.F[0]*6,G.H/2-c.fy-G.F[1]*6,c.z-G.F[2]*6],den=dot(dir,G.F);if(Math.abs(den)<1e-9)continue;
+ for(const c of G.cards||[]){const base=[(c.fx-G.W/2)*G.ax-G.F[0]*6,G.H/2-c.fy-G.F[1]*6,c.z-G.F[2]*6],den=dot(dir,G.F);if(Math.abs(den)<1e-9)continue;
   const t=dot([0,1,2].map(i=>base[i]-p0[i]),G.F)/den,P=[0,1,2].map(i=>p0[i]+dir[i]*t-base[i]),u=dot(P,G.R)/G.ax/c.w+.5,v=1-dot(P,G.U)/c.h;
   if(u<0||u>=1||v<0||v>=1)continue;if(!(G.at32[(c.ay+Math.floor(v*c.h))*512+c.ax+Math.floor(u*c.w)]>>>24))continue;
   if(!best||t<best.t)best={t,x:c.box.x+u*c.w,y:c.box.y+v*c.h};}
  if(best)return{x:best.x,y:best.y};
  const at=t=>[p0[0]+(p1[0]-p0[0])*t,p0[1]+(p1[1]-p0[1])*t,p0[2]+(p1[2]-p0[2])*t],t0=(80-p0[2])/dz,t1=(0-p0[2])/dz;
- for(let k=0;k<=300;k++){const[X,Y,Z]=at(t0+(t1-t0)*k/300),x=X/G.ax+128,y=G.H/2-Y,ix=Math.floor(x),iy=Math.floor(y);
-  if(ix>=0&&iy>=0&&ix<256&&iy<G.H&&G.h[iy*256+ix]>=Z)return{x,y};}
- const[X,Y]=at(t1);return{x:X/G.ax+128,y:G.H/2-Y};}
-function glProject(x,y){const ix=Math.max(0,Math.min(255,Math.floor(x))),iy=Math.max(0,Math.min(G.H-1,Math.floor(y))),v=m4.xf(G.M,[(x-128)*G.ax,G.H/2-y,G.h[iy*256+ix]||0,1]);
+ for(let k=0;k<=300;k++){const[X,Y,Z]=at(t0+(t1-t0)*k/300),x=X/G.ax+G.W/2,y=G.H/2-Y,ix=Math.floor(x),iy=Math.floor(y);
+  if(ix>=0&&iy>=0&&ix<G.W&&iy<G.H&&G.h[iy*256+ix]>=Z)return{x,y};}
+ const[X,Y]=at(t1);return{x:X/G.ax+G.W/2,y:G.H/2-Y};}
+function glProject(x,y){const ix=Math.max(0,Math.min(G.W-1,Math.floor(x))),iy=Math.max(0,Math.min(G.H-1,Math.floor(y))),v=m4.xf(G.M,[(x-G.W/2)*G.ax,G.H/2-y,G.h[iy*256+ix]||0,1]);
  const r=$('#gl').getBoundingClientRect(),w=$('#wrap').getBoundingClientRect();
  return{left:r.left-w.left+(v[0]/v[3]*.5+.5)*r.width,top:r.top-w.top+(.5-v[1]/v[3]*.5)*r.height};}
-function set3D(on,keep){if(on&&game&&!snesOn()){on=false;keep=true;}if(on){try{if(!glInit()){toast('3D view needs WebGL 2, which this browser doesn’t have.');on=false;}}catch(e){toast('3D view couldn’t start: '+e.message,5000);on=false;}}
- G.on=on;if(!keep){S.d3=on;saveSettings();}$('#gl').hidden=!on;cv.style.visibility=on?'hidden':'';$('#crt').hidden=on||!S.crt;
+function set3D(on,keep){if(on&&game&&!stageOn()){on=false;keep=true;}if(on){try{if(!glInit()){toast('3D view needs WebGL 2, which this browser doesn’t have.');on=false;}}catch(e){toast('3D view couldn’t start: '+e.message,5000);on=false;}}
+ G.on=on;if(!keep){S.d3=on;saveSettings();}$('#gl').hidden=!on;cv.style.visibility=on?'hidden':'';$('#crt').hidden=on||!S.crt;$('#lcd').hidden=on||!S.lcd;
  $('#d3Btn').classList.toggle('on',on);$('#setD3').checked=on;lightTick();if(game&&running)draw();}
-$('#d3Btn').onclick=()=>{if(game&&!snesOn()){toast('3D view is for SNES games');return;}set3D(!G.on);};$('#setD3').onchange=e=>set3D(e.target.checked);
+$('#d3Btn').onclick=()=>{if(game&&!stageOn()){toast(game.sys==='gba'?'3D view isn’t available for Game Boy Advance':'This Game Boy core doesn’t share its video memory, so 3D can’t see the layers');return;}set3D(!G.on);};$('#setD3').onchange=e=>set3D(e.target.checked);
 function motionPermission(){if(S.motion&&typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission)
  DeviceOrientationEvent.requestPermission().then(r=>{if(r!=='granted'){S.motion=false;$('#setMotion').checked=false;saveSettings();toast('Motion access wasn’t allowed');}}).catch(()=>{});G.base=null;G.oy=G.ot=0;}
 // Phone tilt: axes follow the screen's rotation, and the resting angle slowly re-centers so the picture never stays skewed.
@@ -1387,22 +1458,22 @@ const FX={p:[],kind:null};
 function fxKind(){const E=game?.profile.fx;if(!E||E.mode==='off')return null;let k=E.mode;
  if(k==='month'||k==='memory'){const se=k==='month'?[3,3,0,0,0,1,1,1,2,2,2,3][new Date().getMonth()]:(E.addr?readRam(parseAddr(E.addr),1)&3:0);
   k=['petals',G.night?'fireflies':null,'leaves','snow'][se];}return k;}
-function fxSpawn(k,anywhere){const H=logical.h,p={x:Math.random()*256,y:anywhere?Math.random()*H:-4-Math.random()*20,ph:Math.random()*6.3,s:.5+Math.random()};
+function fxSpawn(k,anywhere){const H=logical.h,p={x:Math.random()*logical.w,y:anywhere?Math.random()*H:-4-Math.random()*20,ph:Math.random()*6.3,s:.5+Math.random()};
  if(k==='rain'){p.vx=-.6;p.vy=4+Math.random()*2;}else if(k==='snow'){p.vx=0;p.vy=.25+Math.random()*.35;}
  else if(k==='fireflies'){p.vx=(Math.random()-.5)*.3;p.vy=(Math.random()-.5)*.3;p.y=Math.random()*H;}else{p.vx=.25+Math.random()*.35;p.vy=.35+Math.random()*.3;}return p;}
 function fxTick(){const k=fxKind(),el=$('#fx');if(!k){if(!el.hidden){el.hidden=true;FX.p=[];}FX.kind=null;return;}
- const H=logical.h;el.hidden=false;if(el.width!==256||el.height!==H){el.width=256;el.height=H;}const g=el.getContext('2d');
- if(k!==FX.kind){FX.kind=k;FX.p=[];}const n=+S.fxAmt||40;while(FX.p.length<n)FX.p.push(fxSpawn(k,true));FX.p.length=n;g.clearRect(0,0,256,H);
+ const H=logical.h,W=logical.w;el.hidden=false;if(el.width!==W||el.height!==H){el.width=W;el.height=H;}const g=el.getContext('2d');
+ if(k!==FX.kind){FX.kind=k;FX.p=[];}const n=+S.fxAmt||40;while(FX.p.length<n)FX.p.push(fxSpawn(k,true));FX.p.length=n;g.clearRect(0,0,W,H);
  for(const p of FX.p){p.ph+=.05;if(k==='fireflies'){p.vx=(p.vx+(Math.random()-.5)*.04)*.98;p.vy=(p.vy+(Math.random()-.5)*.04)*.98;}
   p.x+=p.vx+(k==='rain'||k==='fireflies'?0:Math.sin(p.ph)*.35);p.y+=p.vy;
-  if(k==='fireflies'){p.x=(p.x+256)%256;p.y=(p.y+H)%H;}else if(p.y>H+4||p.x>262||p.x<-6)Object.assign(p,fxSpawn(k,false));
+  if(k==='fireflies'){p.x=(p.x+W)%W;p.y=(p.y+H)%H;}else if(p.y>H+4||p.x>W+6||p.x<-6)Object.assign(p,fxSpawn(k,false));
   const x=p.x|0,y=p.y|0;
   if(k==='rain'){g.fillStyle='rgba(170,200,255,.55)';g.fillRect(x,y,1,4);}
   else if(k==='snow'){g.fillStyle='#fff';const z=p.s>1?2:1;g.fillRect(x,y,z,z);}
   else if(k==='petals'){g.fillStyle=Math.sin(p.ph)>0?'#ffc4dc':'#f79abf';g.fillRect(x,y,2,1);if(p.s>1)g.fillRect(x+1,y+1,1,1);}
   else if(k==='leaves'){g.fillStyle=['#d9822b','#b5562a','#e8b04a'][(p.s*2|0)%3];g.fillRect(x,y,2,2);g.clearRect(x+(Math.sin(p.ph)>0?1:0),y,1,1);}
   else{const a=.5+.5*Math.sin(p.ph*1.7);g.fillStyle=`rgba(255,240,120,${.18*a})`;g.fillRect(x-1,y-1,3,3);g.fillStyle=`rgba(255,250,180,${a})`;g.fillRect(x,y,1,1);}}}
-const LOOKS={original:'',vivid:'saturate(1.35) contrast(1.06)',soft:'saturate(.9) contrast(.94) brightness(1.04)',warm:'sepia(.16) saturate(1.18) brightness(1.02)'};
+const LOOKS={green:'grayscale(1) sepia(1) hue-rotate(38deg) saturate(2.4) brightness(.9) contrast(1.05)',original:'',vivid:'saturate(1.35) contrast(1.06)',soft:'saturate(.9) contrast(.94) brightness(1.04)',warm:'sepia(.16) saturate(1.18) brightness(1.02)'};
 function renderOverlay(){const box=$('#ovRow');if(!game){box.innerHTML='';return;}const o=game.profile.depth.overlay,auto=!Array.isArray(o),set=auto?[2]:o;
  box.innerHTML=[0,1,2,3].map(b=>`<label class="ck"><input type="checkbox" data-ov="${b}" ${set.includes(b)?'checked':''}> BG${b+1}</label>`).join('')+
   (auto?'<span class="note" style="margin:0">Automatic</span>':'<button class="btn" id="ovAuto">Back to automatic</button>');
@@ -1415,7 +1486,8 @@ $('#lightAddr').onchange=e=>{if(!game)return;game.profile.light.addr=e.target.va
 $('#lightMax').onchange=e=>{if(!game)return;game.profile.light.max=+e.target.value||24;saveProfile();lightTick();};
 $('#fxMode').onchange=e=>{if(!game)return;game.profile.fx.mode=e.target.value;saveProfile();renderLookFx();};
 $('#fxAddr').onchange=e=>{if(!game)return;game.profile.fx.addr=e.target.value.trim();saveProfile();};
-let notesT;$('#notes').oninput=e=>{if(!game)return;game.profile.notes=e.target.value;clearTimeout(notesT);notesT=setTimeout(saveProfile,600);};
+let notesT;$('#stageStyle').onchange=e=>{if(game){game.profile.depth.style=e.target.value;saveProfile();}};
+$('#notes').oninput=e=>{if(!game)return;game.profile.notes=e.target.value;clearTimeout(notesT);notesT=setTimeout(saveProfile,600);};
 
 /* ---------- controller: hide touch controls so the game gets the screen ---------- */
 function padState(){const has=[...(navigator.getGamepads?.()||[])].some(Boolean);document.body.classList.toggle('pad',has&&S.padHide);}
@@ -1436,6 +1508,125 @@ $('#phShot').onclick=()=>{glDraw();const g=$('#gl'),c=document.createElement('ca
  const fx=$('#fx');if(!fx.hidden){x.imageSmoothingEnabled=false;x.drawImage(fx,0,0,c.width,c.height);}
  c.toBlob(b=>download((game?.name||'snes')+' photo.png',b,'image/png'));};
 
+/* ---------- animation recorder: every pose of a character (or frames of animated tiles) while you play ---------- */
+let REC={on:false};
+function recCapture(o){const sig=o.cells.map(c=>`${c.x},${c.y},${c.key},${c.hf}${c.vf}`).sort().join('|');
+ for(const c of o.cells)if(!REC.tiles.has(c.key))REC.tiles.set(c.key,{bpp:c.bpp,orig:b64(c.orig),pal:c.pal.slice()});
+ if(!REC.poses.has(sig)&&REC.poses.size<96){REC.poses.set(sig,{W:o.W,H:o.H,cells:o.cells.map(c=>({x:c.x,y:c.y,key:c.key,hf:c.hf,vf:c.vf,z:c.z}))});recUI();}}
+function startRecord(c){const sprite=isSpriteObj(c);endPick();
+ REC=sprite?{on:true,kind:'obj',pals:new Set(c.cells.map(x=>x.cg)),x:c.box.x+c.box.w/2,y:c.box.y+c.box.h/2,poses:new Map(),tiles:new Map(),label:c.label,lost:0}
+  :{on:true,kind:'bg',bg:c.bg,rect:{...c.box},poses:new Map(),tiles:new Map(),label:c.label};
+ recCapture(c);$('#recbar').hidden=false;recUI();
+ toast(sprite?'Recording. Walk around, turn, run, use tools, so every move gets captured.':'Recording. Stay here while the tiles animate.',4500);}
+function recUI(){$('#recText').textContent=`Recording: ${REC.poses.size} pose${REC.poses.size===1?'':'s'}`;}
+function recTick(){if(!REC.on||!snesOn())return;const s=snap();
+ if(REC.kind==='bg'){const b=bgInfo(s,REC.bg);if(!b.bpp)return;const r=REC.rect;recCapture(bgObj(s,b,r.x,r.y,r.w,r.h,''));return;}
+ const all=sprites(s);let best=null,bd=1e9;
+ for(const sp of all){if(!REC.pals.has(128+sp.pal*16))continue;const d=Math.hypot(sp.x+sp.w/2-REC.x,sp.y+sp.h/2-REC.y);if(d<bd){bd=d;best=sp;}}
+ if(!best||bd>40){if(++REC.lost===150)toast('Lost the character. Come back on screen to keep recording.');return;}REC.lost=0;
+ let cl=cluster(all,best).filter(sp=>REC.pals.has(128+sp.pal*16));if(!cl.length)cl=[best];
+ const o=spriteObj(s,cl,'');REC.x=o.box.x+o.box.w/2;REC.y=o.box.y+o.box.h/2;recCapture(o);}
+function stopRecord(save){$('#recbar').hidden=true;const r=REC;REC={on:false};if(!save||!r.poses.size)return;
+ const name=prompt('Name this sprite sheet',r.label.replace(/,.*$/,''))||r.label;
+ game.profile.sheets.push({name,kind:r.kind,t:Date.now(),tiles:Object.fromEntries(r.tiles),poses:[...r.poses.values()]});saveProfile();renderSheets();
+ openSheetEditor(game.profile.sheets.length-1);}
+$('#recStop').onclick=()=>stopRecord(true);$('#recCancel').onclick=()=>stopRecord(false);
+// A sheet opens as one big picture: every pose side by side. Repeated and mirrored tiles stay linked, so one fix reaches every frame.
+function sheetObject(i){const sh=game.profile.sheets[i],cells=[];let x=0,y=0,rowH=0,W=0;
+ sh.poses.forEach((p,pi)=>{if(x>0&&x+p.W>168){x=0;y+=rowH+4;rowH=0;}
+  for(const c of p.cells){const t=sh.tiles[c.key];if(!t)continue;const orig=unb64(t.orig),e=game.profile.tiles[c.key];
+   cells.push({x:x+c.x,y:y+c.y,wa:-1,key:c.key,bpp:t.bpp,cg:sh.kind==='obj'?128:0,hf:c.hf,vf:c.vf,z:pi*2000+(c.z||0),orig,cur:e?unb64(e.variants[0].data):orig,vi:e?0:-1,pal:t.pal});}
+  x+=p.W+4;rowH=Math.max(rowH,p.H);W=Math.max(W,x);});
+ cells.sort((a,b)=>a.z-b.z);return{label:`${sh.name}: ${sh.poses.length} poses`,W:Math.max(8,W-4),H:Math.max(8,y+rowH),cells,box:{x:0,y:0,w:0,h:0}};}
+function openSheetEditor(i){closeSheet();openEditor(sheetObject(i));}
+function renderSheets(){const box=$('#sheetList');box.innerHTML='';if(!game)return;
+ game.profile.sheets.forEach((sh,i)=>{const d=document.createElement('div');d.className='item';d.appendChild(compCanvas(sheetObject(i),72));
+  const t=document.createElement('div');t.className='grow';t.innerHTML=`<strong>${esc(sh.name)}</strong><small>${sh.poses.length} poses, ${Object.keys(sh.tiles).length} tiles</small>`;d.appendChild(t);
+  const ed=document.createElement('button');ed.className='btn main';ed.textContent='Edit';ed.onclick=()=>openSheetEditor(i);
+  const ai=document.createElement('button');ai.className='btn';ai.textContent='AI';ai.onclick=()=>{$('#aiScope').value='sheet:'+i;$('#aiTool').open=true;$('#aiAsk').focus();};
+  const x=document.createElement('button');x.className='btn warn';x.textContent='✕';x.setAttribute('aria-label','Remove sheet');
+  x.onclick=()=>{if(!confirm(`Remove the sheet “${sh.name}”? Your edits to its tiles stay.`))return;game.profile.sheets.splice(i,1);saveProfile();renderSheets();renderAIScope();};
+  d.append(ed,ai,x);box.appendChild(d);});renderAIScope();}
+
+/* ---------- colors: game-wide recolors applied to the picture (works for every system) ---------- */
+const LUT0=LUT.slice();
+const hex2rgb=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(String(h||'').trim());if(!m)return null;const n=parseInt(m[1],16);return[n>>16,n>>8&255,n&255];};
+const rgbHex=v=>'#'+[v&255,v>>8&255,v>>16&255].map(n=>n.toString(16).padStart(2,'0')).join('');
+function rebuildLUT(){LUT.set(LUT0);const cm=game?.profile.colors||[];if(!cm.length)return;const map=new Map();
+ for(const m of cm){const f=hex2rgb(m.from),t=hex2rgb(m.to);if(f&&t)map.set((f[0]>>3)<<10|(f[1]>>3)<<5|f[2]>>3,0xff000000|t[2]<<16|t[1]<<8|t[0]);}
+ for(let v=0;v<65536;v++){const k=(v>>11)<<10|((v>>6)&31)<<5|(v&31),o=map.get(k);if(o!==undefined)LUT[v]=o;}}
+
+/* ---------- AI makeover: describe a change, an AI answers with data, the app applies it ---------- */
+const AIU={undo:null};
+function renderAIScope(){const sel=$('#aiScope'),v=sel.value;sel.innerHTML='<option value="look">Colors, lighting and look</option>'+
+ (game?game.profile.sheets.map((s,i)=>`<option value="sheet:${i}">Redraw “${esc(s.name)}”</option>`).join(''):'');if([...sel.options].some(o=>o.value===v))sel.value=v;}
+function screenColors(){const w=M._s9x_vw(),h=M._s9x_vh(),src=new Uint16Array(H8().buffer,P.video,w*h),m=new Map();for(let i=0;i<src.length;i+=2)m.set(src[i],(m.get(src[i])||0)+1);
+ const seen=new Set(),out=[];for(const[c,n]of[...m].sort((a,b)=>b[1]-a[1])){const hx=rgbHex(LUT0[c]);if(seen.has(hx))continue;seen.add(hx);out.push(`${hx} (${(n*200/src.length).toFixed(1)}%)`);if(out.length>=48)break;}return out;}
+function pngOf(canvas,scale){const c=document.createElement('canvas');c.width=canvas.width*scale;c.height=canvas.height*scale;const x=c.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(canvas,0,0,c.width,c.height);return c;}
+function curSheet(){const v=$('#aiScope').value;return v.startsWith('sheet:')?+v.slice(6):-1;}
+function buildPrompt(){if(G.on)blit();const ask=$('#aiAsk').value.trim()||'Make it look more beautiful while keeping it readable.',si=curSheet(),sh=si>=0?game.profile.sheets[si]:null;
+ const sys=CORES[game.sys||'snes'].name,images=[pngOf(cv,2)];
+ let text=`You are restyling the ${sys} game "${game.name}" inside the Touch-SNES app. The player asked: "${ask}"
+
+Reply with ONLY one JSON object, no code fences and no other text. Every field is optional; leave out what you don't change:
+{
+ "summary": "one short sentence describing your changes",
+ "colorMap": [{"from": "#RRGGBB", "to": "#RRGGBB"}],
+ "tiles": [{"key": "tile key from the sheet below", "pixels": ["8 rows of 8 hex digits, each a palette index; 0 is transparent"]}],
+ "look": "original | vivid | soft | warm | green",
+ "scanlines": true, "pixelGrid": false,
+ "lighting": "off | clock",
+ "weather": "off | month | petals | leaves | snow | rain | fireflies",
+ "stage": {"view3D": true, "style": "top | side", "tilt": 28, "depth": 100, "bloom": true, "depthOfField": true}
+}
+Rules: "colorMap.from" must be one of the screen colors listed below (up to 40 recolors). Keep the game readable and playable. ${sys==='SNES'||sys==='Game Boy'?'"style" is "side" for side-scrolling games and "top" for top-down ones.':'3D settings only apply to SNES and Game Boy games.'}
+The first image is the current screen.
+
+Screen colors, most used first: ${screenColors().join(', ')}`;
+ if(sh){const keys=Object.keys(sh.tiles).filter(k=>!unb64(sh.tiles[k].orig).every(v=>!v)).slice(0,64);
+  text+=`\n\nThe second image is the sprite sheet "${sh.name}" (${sh.poses.length} poses, shown 4x). Redraw it by sending "tiles". Each tile is 8x8, uses only its own palette (index 0 is transparent), and is shared by every pose that uses it, so a change shows in all of them. Keep each pose's silhouette close to the original so the game still plays right.\nTiles:\n`+
+   keys.map(k=>{const t=sh.tiles[k],e=game.profile.tiles[k],cur=e?unb64(e.variants[0].data):unb64(t.orig),a=idxOf(cur,t.bpp),pal=t.pal.slice(0,Math.min(16,1<<t.bpp)).map(c=>rgbHex(rgba32(c)));
+    return JSON.stringify({key:k,palette:pal,pixels:[0,1,2,3,4,5,6,7].map(y=>[...a.slice(y*8,y*8+8)].map(v=>v.toString(16)).join(''))});}).join('\n')+
+   `\nPoses (tile placement inside each pose; hf/vf mean mirrored):\n`+sh.poses.slice(0,24).map((p,i)=>`${i}: `+p.cells.map(c=>`${c.key}@${c.x},${c.y}${c.hf?' hf':''}${c.vf?' vf':''}`).join('; ')).join('\n');
+  const c=document.createElement('canvas'),o=sheetObject(si);c.width=o.W;c.height=o.H;const g=c.getContext('2d'),im=g.createImageData(o.W,o.H);new Uint32Array(im.data.buffer).set(compose(o));g.putImageData(im,0,0);images.push(pngOf(c,4));}
+ return{text,images,sheet:sh};}
+function parseAIJson(t){t=String(t).replace(/```(json)?/g,'');const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)throw new Error('The answer had no JSON in it.');return JSON.parse(t.slice(a,b+1));}
+function applyMakeover(j,sh){const before={profile:JSON.parse(JSON.stringify(game.profile)),S:{...S},d3:G.on},pr=game.profile;let changes=0;
+ if(Array.isArray(j.colorMap)){pr.colors=j.colorMap.filter(m=>hex2rgb(m.from)&&hex2rgb(m.to)).slice(0,64).map(m=>({from:m.from,to:m.to}));changes+=pr.colors.length;}
+ if(Array.isArray(j.tiles)&&sh)for(const t of j.tiles){const st=sh.tiles[t.key];if(!st||!Array.isArray(t.pixels)||t.pixels.length!==8)continue;const orig=unb64(st.orig);if(orig.every(v=>!v))continue;
+  const max=(1<<st.bpp)-1,a=new Uint8Array(64);t.pixels.forEach((row,y)=>{for(let x=0;x<8;x++){const v=parseInt(String(row)[x]||'0',16);a[y*8+x]=isNaN(v)?0:Math.min(v,max);}});
+  const e=pr.tiles[t.key]||(pr.tiles[t.key]={bpp:st.bpp,orig:st.orig,pal:st.pal,rule:{type:'first'},variants:[]});e.variants=[{data:b64(encodeTile(a,8,0,0,st.bpp))}];changes++;}
+ if(j.look in LOOKS){S.look=j.look;changes++;}if(typeof j.scanlines==='boolean')S.crt=j.scanlines;if(typeof j.pixelGrid==='boolean')S.lcd=j.pixelGrid;
+ if(j.lighting==='off'||j.lighting==='clock'){pr.light.source=j.lighting;changes++;}
+ if(['off','month','petals','leaves','snow','rain','fireflies'].includes(j.weather)){pr.fx.mode=j.weather;changes++;}
+ const st=j.stage||{},num=(v,a,b)=>Math.max(a,Math.min(b,+v));
+ if(typeof st.tilt==='number')S.tilt=num(st.tilt,0,60);if(typeof st.depth==='number')S.depth=num(st.depth,0,300);
+ if(typeof st.bloom==='boolean')S.bloom=st.bloom;if(typeof st.depthOfField==='boolean')S.dof=st.depthOfField;if(st.style==='top'||st.style==='side')pr.depth.style=st.style;
+ saveProfile();saveSettings();syncSettingsUI();applySettings();rebuildLUT();patchesOff();patchIndex();renderAllTools();lightTick();if(typeof st.view3D==='boolean')set3D(st.view3D);
+ AIU.undo=before;$('#aiUndo').hidden=false;$('#aiNote').textContent=j.summary||'';toast(changes?(j.summary||'Makeover applied'):'The AI didn’t send any changes the app understood.',5000);}
+$('#aiUndo').onclick=()=>{const u=AIU.undo;if(!u||!game)return;patchesOff();game.profile=u.profile;Object.assign(S,u.S);saveProfile();saveSettings();syncSettingsUI();applySettings();rebuildLUT();
+ patchIndex();renderAllTools();lightTick();set3D(u.d3);AIU.undo=null;$('#aiUndo').hidden=true;toast('Makeover undone');};
+$('#aiRun').onclick=async()=>{if(!game){toast('Start a game first');return;}const key=localStorage.getItem('tsnes.aikey');
+ if(!key){toast('Add a Claude API key in Settings, AI, or use “Share prompt” to ask any AI app.',5000);return;}
+ const p=buildPrompt(),btn=$('#aiRun');btn.disabled=true;$('#aiNote').textContent='Asking the AI… this can take up to a minute.';
+ try{const content=[...p.images.map(c=>({type:'image',source:{type:'base64',media_type:'image/png',data:c.toDataURL('image/png').split(',')[1]}})),{type:'text',text:p.text}];
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+   body:JSON.stringify({model:localStorage.getItem('tsnes.aimodel')||'claude-sonnet-5-5',max_tokens:8000,messages:[{role:'user',content}]})});
+  const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error?.message||`the AI service answered ${r.status}`);
+  applyMakeover(parseAIJson((d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n')),p.sheet);}
+ catch(e){$('#aiNote').textContent='That didn’t work: '+e.message;}finally{btn.disabled=false;}};
+// Without a key: send the prompt and pictures to any AI app, then paste its answer back.
+$('#aiShare').onclick=async()=>{if(!game){toast('Start a game first');return;}const p=buildPrompt();
+ const files=await Promise.all(p.images.map((c,i)=>new Promise(res=>c.toBlob(b=>res(new File([b],i?'sprite-sheet.png':'screen.png',{type:'image/png'}))))));
+ try{await navigator.clipboard?.writeText(p.text);}catch{}
+ if(navigator.canShare?.({files}))navigator.share({files,text:p.text}).catch(()=>{});else toast('Prompt copied. Paste it into an AI app with a screenshot.',4500);
+ $('#aiPasteBox').hidden=false;$('#aiNote').textContent='When the AI answers, paste its reply below and tap Apply.';};
+$('#aiPaste').onclick=()=>{$('#aiPasteBox').hidden=!$('#aiPasteBox').hidden;};
+$('#aiApply').onclick=()=>{if(!game)return;try{const si=curSheet();applyMakeover(parseAIJson($('#aiJson').value),si>=0?game.profile.sheets[si]:null);$('#aiJson').value='';$('#aiPasteBox').hidden=true;}
+ catch(e){toast('That answer couldn’t be read: '+e.message,5000);}};
+$('#aiKey').value=localStorage.getItem('tsnes.aikey')||'';$('#aiKey').onchange=e=>{const v=e.target.value.trim();if(v)localStorage.setItem('tsnes.aikey',v);else localStorage.removeItem('tsnes.aikey');};
+$('#aiModel').value=localStorage.getItem('tsnes.aimodel')||'claude-sonnet-5-5';$('#aiModel').onchange=e=>localStorage.setItem('tsnes.aimodel',e.target.value.trim()||'claude-sonnet-5-5');
+
 /* ---------- game setup page ---------- */
 $('#actBtns').innerHTML=Object.keys(BTN).map(n=>`<label class="ck"><input type="checkbox" value="${n}"> ${n}</label>`).join('');
 $('#actAdd').onclick=()=>{if(!game){toast('Start a game first');return;}const press=$$('#actBtns input:checked').map(i=>i.value),label=$('#actLabel').value.trim();
@@ -1455,7 +1646,7 @@ function reloadProfile(){applyCheats();renderActions();patchesOff();patchIndex()
 function renderGest(){const box=$('#gestRow');if(!game){box.innerHTML='';return;}const g=game.profile.gestures;
  box.innerHTML=[['talk','Talk'],['menu','Menu'],['tool','Tool'],['back','Back']].map(([k,l])=>`<label>${l} <select data-g="${k}">${Object.keys(BTN).map(n=>`<option ${g[k][0]===n?'selected':''}>${n}</option>`).join('')}</select></label>`).join('');
  for(const sel of box.querySelectorAll('select'))sel.onchange=()=>{g[sel.dataset.g]=[sel.value];saveProfile();};}
-function renderAllTools(){renderGest();renderTiles();renderWatches();renderCheats();renderActList();renderRS();
+function renderAllTools(){renderGest();renderTiles();renderSheets();if(game)$('#stageStyle').value=game.profile.depth.style;renderWatches();renderCheats();renderActList();renderRS();
  if(game){$('#walkLayer').value=game.profile.walk.layer;$('#walkDiag').checked=game.profile.walk.diagonal;renderOverlay();renderLookFx();renderPacks();$('#notes').value=game.profile.notes||'';}}
 
 
@@ -1536,11 +1727,12 @@ function showPage(p){for(const t of $$('.tab'))t.classList.toggle('on',t.dataset
 for(const t of $$('.tab'))t.onclick=()=>showPage(t.dataset.p);
 $('#menuBtn').onclick=()=>openSheet(NP.role?'together':game?'saves':'games');$('#sheetClose').onclick=closeSheet;
 $('#sheet').addEventListener('pointerdown',e=>{if(e.target.id==='sheet')closeSheet();});
-function applySettings(){$('#crt').hidden=!S.crt||G.on;cv.style.filter=$('#gl').style.filter=LOOKS[S.look]||'';padState();cv.classList.toggle('smooth',S.smooth);document.documentElement.style.setProperty('--op',S.op/100);applyAspect();
+function applySettings(){$('#crt').hidden=!S.crt||G.on;$('#lcd').hidden=!S.lcd||G.on;cv.style.filter=$('#gl').style.filter=LOOKS[S.look]||'';padState();cv.classList.toggle('smooth',S.smooth);document.documentElement.style.setProperty('--op',S.op/100);applyAspect();
  anode?.port.postMessage({v:S.vol/100});saveSettings();}
-const bind=(id,key,get=e=>e.target.value)=>{const el=$(id);if(el.type==='checkbox')el.checked=S[key];else el.value=S[key];
+const BINDS=[];function syncSettingsUI(){for(const[id,key]of BINDS){const el=$(id);if(el.type==='checkbox')el.checked=!!S[key];else el.value=S[key];}}
+const bind=(id,key,get=e=>e.target.value)=>{BINDS.push([id,key]);const el=$(id);if(el.type==='checkbox')el.checked=S[key];else el.value=S[key];
  el.addEventListener(el.type==='range'?'input':'change',e=>{S[key]=el.type==='checkbox'?el.checked:typeof SETDEF[key]==='number'?+get(e):get(e);applySettings();if(key==='rw'||key==='rwSec'){if(game)rewindSetup();}});};
-bind('#setAspect','aspect');bind('#setCrt','crt');bind('#setSmooth','smooth');bind('#setWatch','watch');bind('#setOp','op');bind('#setVol','vol');bind('#setFF','ff');bind('#setRw','rw');bind('#setRwSec','rwSec');bind('#setLook','look');bind('#setFxAmt','fxAmt');bind('#setPadHide','padHide');bind('#setStand','stand');bind('#setResume','resume');bind('#setPad2','pad2');bind('#setGest','gestures');bind('#setTalkFlat','talkFlat');bind('#setSun','sunShadow');bind('#setGlow','glowFx');bind('#setBloom','bloom');bind('#setWater','waterFx');bind('#setFastText','fastText');bind('#setMoments','moments');bind('#setDof','dof');bind('#setTilt','tilt');bind('#setDepth','depth');bind('#setShadow','shadow');bind('#setMotion','motion');
+bind('#setAspect','aspect');bind('#setCrt','crt');bind('#setSmooth','smooth');bind('#setWatch','watch');bind('#setOp','op');bind('#setVol','vol');bind('#setFF','ff');bind('#setRw','rw');bind('#setRwSec','rwSec');bind('#setLook','look');bind('#setFxAmt','fxAmt');bind('#setPadHide','padHide');bind('#setStand','stand');bind('#setResume','resume');bind('#setLcd','lcd');bind('#setSaver','saver');bind('#setPad2','pad2');bind('#setGest','gestures');bind('#setTalkFlat','talkFlat');bind('#setSun','sunShadow');bind('#setGlow','glowFx');bind('#setBloom','bloom');bind('#setWater','waterFx');bind('#setFastText','fastText');bind('#setMoments','moments');bind('#setDof','dof');bind('#setTilt','tilt');bind('#setDepth','depth');bind('#setShadow','shadow');bind('#setMotion','motion');
 $('#setMotion').addEventListener('change',motionPermission);$('#setD3').checked=S.d3;
 applySettings();if(S.d3)set3D(true);
 

@@ -23,6 +23,9 @@ static uint32_t pad = 0, pad2 = 0;
 static uint8_t regs[0x40];      // copy of $2100-$213F after each frame
 static uint16_t scroll[8];      // BG1-4 horizontal/vertical scroll
 static bool loaded = false;
+// Memory map the core shares (Game Boy video memory, sprite table and registers live here).
+static struct retro_memory_descriptor mdesc[64];
+static unsigned mcount = 0;
 static double rate = 32040.0, fps = 60.0988;
 
 static void log_cb(enum retro_log_level, const char *fmt, ...) {
@@ -40,6 +43,12 @@ static bool env_cb(unsigned cmd, void *data) {
       *(bool *)data = true; return true;
     case RETRO_ENVIRONMENT_GET_LOG_INTERFACE:
       ((struct retro_log_callback *)data)->log = log_cb; return true;
+    case RETRO_ENVIRONMENT_SET_MEMORY_MAPS: {
+      const struct retro_memory_map *m = (const struct retro_memory_map *)data;
+      mcount = m->num_descriptors < 64 ? m->num_descriptors : 64;
+      memcpy(mdesc, m->descriptors, mcount * sizeof(struct retro_memory_descriptor));
+      return true;
+    }
     case RETRO_ENVIRONMENT_GET_VARIABLE:
       ((struct retro_variable *)data)->value = NULL; return false;
     default: return false;
@@ -194,6 +203,22 @@ EMSCRIPTEN_KEEPALIVE uint8_t *s9x_regs() { return regs; }
 EMSCRIPTEN_KEEPALIVE uint16_t *s9x_scroll() { return scroll; }
 EMSCRIPTEN_KEEPALIVE void s9x_vram_write(uint32_t, const uint16_t *, int) {}
 #endif
+
+// Pointer to a system address in the core's shared memory map, and how many bytes follow it there (0 if not shared).
+static uint32_t maplen = 0;
+EMSCRIPTEN_KEEPALIVE uint8_t *s9x_map(uint32_t addr) {
+  maplen = 0;
+  for (unsigned i = 0; i < mcount; i++) {
+    const struct retro_memory_descriptor &d = mdesc[i];
+    if (!d.ptr) continue;
+    size_t len = d.len ? d.len : (d.select ? ((~d.select) & 0xFFFF) + 1 : 0);
+    if (addr < d.start || addr >= d.start + len) continue;
+    maplen = (uint32_t)(d.start + len - addr);
+    return (uint8_t *)d.ptr + d.offset + (addr - d.start);
+  }
+  return 0;
+}
+EMSCRIPTEN_KEEPALIVE uint32_t s9x_map_len() { return maplen; }
 
 EMSCRIPTEN_KEEPALIVE void s9x_cheat_reset() { retro_cheat_reset(); }
 EMSCRIPTEN_KEEPALIVE void s9x_cheat_set(int index, int on, const char *code) { retro_cheat_set(index, on != 0, code); }
