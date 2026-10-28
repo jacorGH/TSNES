@@ -232,13 +232,23 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
     <p class="note">Pick a character (or an animated tile area) and tap “Record frames”, then play: every pose and direction is captured. The sheet opens as one picture to edit, or to export as a PNG and redraw in your art app.</p>
     <div class="list" id="sheetList"></div>
    </details>
-   <details id="aiTool"><summary>AI makeover</summary>
-    <p class="note">Describe a change. An AI looks at the screen (and a sprite sheet if you choose one) and answers with data the app applies: recolors, redrawn sprites, lighting, weather and 3D settings. Undo is one tap.</p>
-    <textarea id="aiAsk" placeholder="Make it autumn with orange trees and a warm sunset" style="min-height:76px;font-family:inherit;font-size:14px"></textarea>
+   <details id="aiTool" open><summary>AI makeover: free, works with any AI</summary>
+    <p class="note"><b>1.</b> Say what you want, or tap an idea. Choose “Redraw” with a recorded sprite sheet to get new art for a character.</p>
+    <div class="row"><button class="btn" data-idea="pretty">✨ Prettier</button><button class="btn" data-idea="surprise">🎲 Surprise me</button><button class="btn" data-idea="redraw">🎨 Redraw art</button>
+     <button class="btn" data-idea="autumn">🍂 Autumn</button><button class="btn" data-idea="spring">🌸 Spring</button><button class="btn" data-idea="winter">❄️ Winter</button><button class="btn" data-idea="neon">🌙 Night neon</button></div>
+    <textarea id="aiAsk" placeholder="Or describe it: “give the hero a red cape and make the castle moonlit”" style="min-height:70px;font-family:inherit;font-size:14px"></textarea>
     <div class="row"><label>Change <select id="aiScope"><option value="look">Colors, lighting and look</option></select></label></div>
-    <div class="row"><button class="btn main" id="aiRun">Ask AI</button><button class="btn" id="aiShare">Share prompt to an AI app</button><button class="btn" id="aiPaste">Paste answer</button><button class="btn warn" id="aiUndo" hidden>Undo makeover</button></div>
-    <div id="aiPasteBox" hidden><textarea id="aiJson" placeholder="Paste the AI’s answer here" style="min-height:120px"></textarea><div class="row"><button class="btn main" id="aiApply">Apply</button></div></div>
+    <p class="note"><b>2.</b> Copy the prompt the game writes and paste it into any AI chat, like ChatGPT, Gemini or Claude, free versions included. It describes the screen in words, so a picture is optional; attaching the screenshot can help.</p>
+    <div class="row"><button class="btn main" id="aiCopy">Copy prompt</button><button class="btn" id="aiShare">Share prompt + pictures</button><button class="btn" id="aiShot">Save screenshot</button></div>
+    <div id="aiPromptBox" hidden><textarea id="aiPrompt" readonly style="min-height:90px"></textarea></div>
+    <p class="note"><b>3.</b> Copy the AI’s whole answer, then come back and tap “Paste and apply”.</p>
+    <div class="row"><button class="btn main" id="aiClip">Paste and apply</button><button class="btn warn" id="aiUndo" hidden>Undo makeover</button></div>
+    <textarea id="aiJson" placeholder="…or paste the answer here and tap Apply" style="min-height:90px"></textarea>
+    <div class="row"><button class="btn" id="aiApply">Apply</button></div>
     <p class="note" id="aiNote"></p>
+    <details style="padding:0 4px"><summary style="font-weight:600">Ask Claude directly (your own API key)</summary>
+     <p class="note">With a Claude API key in Settings, AI, this sends the same prompt and pictures for you and applies the answer.</p>
+     <div class="row"><button class="btn" id="aiRun">Ask Claude</button></div></details>
    </details>
    <details id="layerTool"><summary>Layer viewer</summary>
     <div class="row" id="layerToggles"></div>
@@ -422,8 +432,8 @@ const DB=(()=>{let p,mem=null;const memStore=s=>(mem[s]||(mem[s]=new Map()));
   return new Promise((res,rej)=>{const t=d.transaction(st,mode);const r=fn(t.objectStore(st));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);});};
  return{get:(s,k)=>run(s,'readonly',o=>o.get(k),m=>m.get(k)),put:(s,k,v)=>run(s,'readwrite',o=>o.put(v,k),m=>{m.set(k,v);}),
   del:(s,k)=>run(s,'readwrite',o=>o.delete(k),m=>{m.delete(k);}),keys:s=>run(s,'readonly',o=>o.getAllKeys(),m=>[...m.keys()])};})();
-const SETDEF={overlay:'landscape',floatStick:false,hd:false,glowBg:true,sparks:true,lcd:false,saver:false,pad2:true,gestures:true,talkFlat:true,resume:true,sunShadow:true,glowFx:true,bloom:true,waterFx:true,fastText:2,moments:5,stand:true,dof:true,look:'original',fxAmt:40,padHide:true,aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10,d3:false,tilt:28,depth:100,shadow:true,motion:false};
-let S=Object.assign({},SETDEF,JSON.parse(localStorage.getItem('ht.settings')||'{}'));
+const SETDEF={overlay:'landscape',floatStick:false,hd:false,glowBg:true,sparks:false,lcd:false,saver:false,pad2:true,gestures:true,talkFlat:true,resume:true,sunShadow:true,glowFx:true,bloom:true,waterFx:true,fastText:2,moments:5,stand:true,dof:true,look:'original',fxAmt:40,padHide:true,aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10,d3:false,tilt:28,depth:100,shadow:true,motion:false};
+let S=Object.assign({},SETDEF,JSON.parse(localStorage.getItem('ht.settings')||'{}'));if(!S.sparksV2){S.sparks=false;S.sparksV2=true;}
 const saveSettings=()=>localStorage.setItem('ht.settings',JSON.stringify(S));
 const fnv=(a,o=0,n=a.length)=>{let h=0x811c9dc5;for(let i=o;i<o+n;i++){h^=a[i];h=Math.imul(h,16777619);}return h>>>0;};
 const hex=h=>h.toString(16).padStart(8,'0');
@@ -1667,38 +1677,75 @@ function screenColors(){const w=M._s9x_vw(),h=M._s9x_vh(),src=new Uint16Array(H8
  const seen=new Set(),out=[];for(const[c,n]of[...m].sort((a,b)=>b[1]-a[1])){const hx=rgbHex(LUT0[c]);if(seen.has(hx))continue;seen.add(hx);out.push(`${hx} (${(n*200/src.length).toFixed(1)}%)`);if(out.length>=48)break;}return out;}
 function pngOf(canvas,scale){const c=document.createElement('canvas');c.width=canvas.width*scale;c.height=canvas.height*scale;const x=c.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(canvas,0,0,c.width,c.height);return c;}
 function curSheet(){const v=$('#aiScope').value;return v.startsWith('sheet:')?+v.slice(6):-1;}
-function buildPrompt(){if(G.on)blit();const ask=$('#aiAsk').value.trim()||'Make it look more beautiful while keeping it readable.',si=curSheet(),sh=si>=0?game.profile.sheets[si]:null;
- const sys=CORES[game.sys||'snes'].name,images=[pngOf(cv,2)];
- let text=`You are restyling the ${sys} game "${game.name}" inside the Touch-SNES app. The player asked: "${ask}"
+// The prompt is written from the game itself: name, system, a text map of the screen and its colors, and (for redraws) the sprite sheet's
+// tiles as numbers, so it works in any AI chat, even ones that can't see pictures.
+const AI_IDEAS={pretty:'Make the game look more beautiful and polished: richer, harmonious colors, nicer lighting, and the best look and 3D settings for this kind of game.',
+ autumn:'Turn it into autumn: warm orange and red foliage, golden light, falling leaves.',spring:'Turn it into spring: fresh greens, pink blossoms, soft light, drifting petals.',
+ winter:'Turn it into winter: snowy whites and icy blues, cold light, falling snow.',neon:'Give it a night-time neon look: deep blues and purples with glowing neon accents.',
+ redraw:'Redraw this character with more detail, cleaner shading and a cooler, more modern pixel-art style, keeping the same silhouette and the same palette indexes.',
+ surprise:'Surprise me with a creative, fresh new art direction for this game, as long as it stays readable and fun to play.'};
+function screenMap(){const w=M._s9x_vw(),h=M._s9x_vh(),src=new Uint16Array(H8().buffer,P.video,w*h),GW=32,GH=Math.round(32*logical.h/logical.w),cols=[],keyOf=new Map(),cnt=new Map();
+ for(let i=0;i<src.length;i+=3)cnt.set(src[i],(cnt.get(src[i])||0)+1);
+ for(const[c]of[...cnt].sort((a,b)=>b[1]-a[1])){const hx=rgbHex(LUT0[c]);if(keyOf.has(hx))continue;keyOf.set(hx,cols.length);cols.push(hx);if(cols.length>=52)break;}
+ const letters='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',rgbOf=cols.map(hex2rgb),rows=[];
+ for(let gy=0;gy<GH;gy++){let r='';for(let gx=0;gx<GW;gx++){const x=Math.floor((gx+.5)*w/GW),y=Math.floor((gy+.5)*h/GH),v=LUT0[src[y*w+x]],c=[v&255,v>>8&255,v>>16&255];
+  let best=0,bd=1e9;rgbOf.forEach((q,i)=>{const d=(q[0]-c[0])**2+(q[1]-c[1])**2+(q[2]-c[2])**2;if(d<bd){bd=d;best=i;}});r+=letters[best];}rows.push(r);}
+ return{cols,letters,rows};}
+function buildPrompt(){if(G.on||S.hd)blit();const ask=$('#aiAsk').value.trim()||AI_IDEAS.pretty,si=curSheet(),sh=si>=0?game.profile.sheets[si]:null;
+ const sys=CORES[game.sys||'snes'].name,images=[pngOf(cv,2)],map=screenMap(),stage=sys==='SNES'||sys==='Game Boy';
+ let text=`You are an art director restyling the ${sys} game "${game.name}" in Touch-SNES, a retro game app. The changes are applied on top of the original game, so it must stay readable and playable.
 
-Reply with ONLY one JSON object, no code fences and no other text. Every field is optional; leave out what you don't change:
+THE PLAYER'S REQUEST: ${ask}
+
+Reply with ONE JSON object inside a \`\`\`json code block and nothing else. Every field is optional:
 {
- "summary": "one short sentence describing your changes",
+ "summary": "one sentence describing your changes",
  "colorMap": [{"from": "#RRGGBB", "to": "#RRGGBB"}],
- "tiles": [{"key": "tile key from the sheet below", "pixels": ["8 rows of 8 hex digits, each a palette index; 0 is transparent"]}],
  "look": "original | vivid | soft | warm | green",
- "scanlines": true, "pixelGrid": false,
+ "scanlines": false, "pixelGrid": false,
  "lighting": "off | clock",
- "weather": "off | month | petals | leaves | snow | rain | fireflies",
- "stage": {"view3D": true, "style": "top | side", "tilt": 28, "depth": 100, "bloom": true, "depthOfField": true}
+ "weather": "off | month | petals | leaves | snow | rain | fireflies"${stage?`,
+ "stage": {"view3D": true, "style": "top | side", "tilt": 28, "depth": 100, "bloom": true, "depthOfField": true}`:''}${sh?`,
+ "tiles": [{"key": "tile key", "pixels": ["8 strings of 8 hex digits"]}],
+ "animate": [{"key": "tile key", "speed": 20, "frames": [["8 strings of 8 hex digits"], ["..."]]}],
+ "tags": {"glow": ["tile keys that should glow at night"], "water": ["tile keys that are water"], "stand": ["tile keys that stand up in 3D"], "height": {"tile key": 4}}`:''}
 }
-Rules: "colorMap.from" must be one of the screen colors listed below (up to 40 recolors). Keep the game readable and playable. ${sys==='SNES'||sys==='Game Boy'?'"style" is "side" for side-scrolling games and "top" for top-down ones.':'3D settings only apply to SNES and Game Boy games.'}
-The first image is the current screen.
+Rules:
+- "colorMap.from" must be one of the screen colors below; up to 40 recolors. Recolor families of colors together so the result looks intentional.
+- Keep contrast between characters and backgrounds so the game stays easy to read.${stage?'\n- "style" is "side" for side-scrolling games and "top" for top-down games. "view3D" turns on the app’s HD-2D 3D view.':''}
 
-Screen colors, most used first: ${screenColors().join(', ')}`;
+SCREEN COLORS (letter = color, most used first):
+${map.cols.map((c,i)=>`${map.letters[i]}=${c}`).join(' ')}
+
+SCREEN MAP (${map.rows[0].length}×${map.rows.length}, each letter is the color of that spot):
+${map.rows.join('\n')}`;
  if(sh){const keys=Object.keys(sh.tiles).filter(k=>!unb64(sh.tiles[k].orig).every(v=>!v)).slice(0,64);
-  text+=`\n\nThe second image is the sprite sheet "${sh.name}" (${sh.poses.length} poses, shown 4x). Redraw it by sending "tiles". Each tile is 8x8, uses only its own palette (index 0 is transparent), and is shared by every pose that uses it, so a change shows in all of them. Keep each pose's silhouette close to the original so the game still plays right.\nTiles:\n`+
-   keys.map(k=>{const t=sh.tiles[k],e=game.profile.tiles[k],cur=e?unb64(e.variants[0].data):unb64(t.orig),a=idxOf(cur,t.bpp),pal=t.pal.slice(0,Math.min(16,1<<t.bpp)).map(c=>rgbHex(rgba32(c)));
-    return JSON.stringify({key:k,palette:pal,pixels:[0,1,2,3,4,5,6,7].map(y=>[...a.slice(y*8,y*8+8)].map(v=>v.toString(16)).join(''))});}).join('\n')+
-   `\nPoses (tile placement inside each pose; hf/vf mean mirrored):\n`+sh.poses.slice(0,24).map((p,i)=>`${i}: `+p.cells.map(c=>`${c.key}@${c.x},${c.y}${c.hf?' hf':''}${c.vf?' vf':''}`).join('; ')).join('\n');
+  text+=`
+
+SPRITE SHEET "${sh.name}" (${sh.poses.length} poses). Each tile is 8×8 pixels; each pixel is a hex digit naming a color in that tile's palette, and 0 is transparent. A tile is shared by every pose that uses it, so redrawing it changes all of them. Use "tiles" to redraw, "animate" to add animation frames (2–4 frames, speed in game frames per step), and "tags" for 3D and lighting effects. Keep each pose's outline close to the original so the game still plays right.
+TILES:
+`+keys.map(k=>{const t=sh.tiles[k],e=game.profile.tiles[k],cur=e?unb64(e.variants[0].data):unb64(t.orig),a=idxOf(cur,t.bpp),pal=t.pal.slice(0,Math.min(16,1<<t.bpp)).map(c=>rgbHex(rgba32(c)));
+   return JSON.stringify({key:k,palette:pal,pixels:[0,1,2,3,4,5,6,7].map(y=>[...a.slice(y*8,y*8+8)].map(v=>v.toString(16)).join(''))});}).join('\n')+
+  `\nPOSES (tile positions inside each pose; hf/vf = mirrored):\n`+sh.poses.slice(0,24).map((p,i)=>`${i}: `+p.cells.map(c=>`${c.key}@${c.x},${c.y}${c.hf?' hf':''}${c.vf?' vf':''}`).join('; ')).join('\n');
   const c=document.createElement('canvas'),o=sheetObject(si);c.width=o.W;c.height=o.H;const g=c.getContext('2d'),im=g.createImageData(o.W,o.H);new Uint32Array(im.data.buffer).set(compose(o));g.putImageData(im,0,0);images.push(pngOf(c,4));}
  return{text,images,sheet:sh};}
-function parseAIJson(t){t=String(t).replace(/```(json)?/g,'');const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)throw new Error('The answer had no JSON in it.');return JSON.parse(t.slice(a,b+1));}
+// AI chats often add comments, trailing commas or curly quotes; clean those up before reading.
+function parseAIJson(t){t=String(t).replace(/```(?:json)?/gi,'');const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0)throw new Error('There’s no JSON in that answer.');if(b<a)throw new Error('The answer looks cut off. Ask the AI to send the whole JSON again.');
+ let j=t.slice(a,b+1);try{return JSON.parse(j);}catch{}
+ j=j.replace(/[“”]/g,'"').replace(/[‘’]/g,"'").replace(/\/\*[\s\S]*?\*\//g,'').replace(/(^|[^:"])\/\/[^\n]*/g,'$1').replace(/,\s*([}\]])/g,'$1');
+ try{return JSON.parse(j);}catch{throw new Error('The answer looks cut off or broken. Ask the AI to send the whole JSON again.');}}
+const pixRows=(rows,bpp)=>{if(!Array.isArray(rows)||rows.length!==8)return null;const max=(1<<bpp)-1,a=new Uint8Array(64);
+ rows.forEach((row,y)=>{for(let x=0;x<8;x++){const v=parseInt(String(row)[x]||'0',16);a[y*8+x]=isNaN(v)?0:Math.min(v,max);}});return encodeTile(a,8,0,0,bpp);};
 function applyMakeover(j,sh){const before={profile:JSON.parse(JSON.stringify(game.profile)),S:{...S},d3:G.on},pr=game.profile;let changes=0;
  if(Array.isArray(j.colorMap)){pr.colors=j.colorMap.filter(m=>hex2rgb(m.from)&&hex2rgb(m.to)).slice(0,64).map(m=>({from:m.from,to:m.to}));changes+=pr.colors.length;}
- if(Array.isArray(j.tiles)&&sh)for(const t of j.tiles){const st=sh.tiles[t.key];if(!st||!Array.isArray(t.pixels)||t.pixels.length!==8)continue;const orig=unb64(st.orig);if(orig.every(v=>!v))continue;
-  const max=(1<<st.bpp)-1,a=new Uint8Array(64);t.pixels.forEach((row,y)=>{for(let x=0;x<8;x++){const v=parseInt(String(row)[x]||'0',16);a[y*8+x]=isNaN(v)?0:Math.min(v,max);}});
-  const e=pr.tiles[t.key]||(pr.tiles[t.key]={bpp:st.bpp,orig:st.orig,pal:st.pal,rule:{type:'first'},variants:[]});e.variants=[{data:b64(encodeTile(a,8,0,0,st.bpp))}];changes++;}
+ const entry=(k,st)=>pr.tiles[k]||(pr.tiles[k]={bpp:st.bpp,orig:st.orig,pal:st.pal,rule:{type:'first'},variants:[]});
+ const usable=k=>sh&&sh.tiles[k]&&!unb64(sh.tiles[k].orig).every(v=>!v);
+ if(Array.isArray(j.tiles))for(const t of j.tiles){if(!usable(t.key))continue;const st=sh.tiles[t.key],bytes=pixRows(t.pixels,st.bpp);if(!bytes)continue;
+  const e=entry(t.key,st);e.variants=[{data:b64(bytes)}];e.rule={type:'first'};changes++;}
+ if(Array.isArray(j.animate))for(const t of j.animate){if(!usable(t.key)||!Array.isArray(t.frames))continue;const st=sh.tiles[t.key],fr=t.frames.map(f=>pixRows(f,st.bpp)).filter(Boolean).slice(0,8);
+  if(fr.length<2)continue;const e=entry(t.key,st);e.variants=fr.map(b=>({data:b64(b)}));e.rule={type:'cycle',frames:Math.max(4,Math.min(120,+t.speed||20))};changes++;}
+ if(j.tags&&typeof j.tags==='object'){const d=pr.depth;for(const[k,dst]of[['glow',d.glow],['water',d.water],['stand',d.stand]])for(const key of j.tags[k]||[])if(usable(key)){dst[key]=1;changes++;}
+  for(const[key,n]of Object.entries(j.tags.height||{}))if(usable(key)){d.tiles[key]=Math.max(0,Math.min(24,+n||0));changes++;}}
  if(j.look in LOOKS){S.look=j.look;changes++;}if(typeof j.scanlines==='boolean')S.crt=j.scanlines;if(typeof j.pixelGrid==='boolean')S.lcd=j.pixelGrid;
  if(j.lighting==='off'||j.lighting==='clock'){pr.light.source=j.lighting;changes++;}
  if(['off','month','petals','leaves','snow','rain','fireflies'].includes(j.weather)){pr.fx.mode=j.weather;changes++;}
@@ -1723,9 +1770,17 @@ $('#aiShare').onclick=async()=>{if(!game){toast('Start a game first');return;}co
  const files=await Promise.all(p.images.map((c,i)=>new Promise(res=>c.toBlob(b=>res(new File([b],i?'sprite-sheet.png':'screen.png',{type:'image/png'}))))));
  try{await navigator.clipboard?.writeText(p.text);}catch{}
  if(navigator.canShare?.({files}))navigator.share({files,text:p.text}).catch(()=>{});else toast('Prompt copied. Paste it into an AI app with a screenshot.',4500);
- $('#aiPasteBox').hidden=false;$('#aiNote').textContent='When the AI answers, paste its reply below and tap Apply.';};
-$('#aiPaste').onclick=()=>{$('#aiPasteBox').hidden=!$('#aiPasteBox').hidden;};
-$('#aiApply').onclick=()=>{if(!game)return;try{const si=curSheet();applyMakeover(parseAIJson($('#aiJson').value),si>=0?game.profile.sheets[si]:null);$('#aiJson').value='';$('#aiPasteBox').hidden=true;}
+ $('#aiNote').textContent='When the AI answers, paste its reply below and tap Apply.';};
+// The free way: copy the prompt into any AI chat, paste its JSON answer back.
+for(const b of $$('[data-idea]'))b.onclick=()=>{const k=b.dataset.idea;$('#aiAsk').value=AI_IDEAS[k];
+ if(k==='redraw'){const i=game?game.profile.sheets.length-1:-1;if(i<0){toast('First record a sprite sheet: Tools, Pick, tap a character, Record frames.',5000);return;}if(!curSheet()+1)$('#aiScope').value='sheet:'+i;}};
+$('#aiCopy').onclick=async()=>{if(!game){toast('Start a game first');return;}const p=buildPrompt();$('#aiPrompt').value=p.text;$('#aiPromptBox').hidden=false;
+ try{await navigator.clipboard.writeText(p.text);toast('Prompt copied. Paste it into ChatGPT, Gemini, Claude or any AI chat.',4500);}catch{$('#aiPrompt').select();toast('Select all in the prompt box and copy it.',4000);}};
+$('#aiShot').onclick=()=>{if(!game)return;const p=buildPrompt();p.images.forEach((c,i)=>c.toBlob(b=>download(i?'sprite-sheet.png':'screen.png',b,'image/png')));};
+$('#aiClip').onclick=async()=>{try{const t=await navigator.clipboard.readText();if(!t){toast('The clipboard is empty');return;}$('#aiJson').value=t;$('#aiApply').click();}
+ catch{toast('Paste the answer into the box, then tap Apply.',4000);$('#aiJson').focus();}};
+
+$('#aiApply').onclick=()=>{if(!game)return;try{const si=curSheet();applyMakeover(parseAIJson($('#aiJson').value),si>=0?game.profile.sheets[si]:null);$('#aiJson').value='';}
  catch(e){toast('That answer couldn’t be read: '+e.message,5000);}};
 $('#aiKey').value=localStorage.getItem('tsnes.aikey')||'';$('#aiKey').onchange=e=>{const v=e.target.value.trim();if(v)localStorage.setItem('tsnes.aikey',v);else localStorage.removeItem('tsnes.aikey');};
 $('#aiModel').value=localStorage.getItem('tsnes.aimodel')||'claude-sonnet-5-5';$('#aiModel').onchange=e=>localStorage.setItem('tsnes.aimodel',e.target.value.trim()||'claude-sonnet-5-5');
