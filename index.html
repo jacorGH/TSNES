@@ -132,7 +132,8 @@ body[data-sys=gba] #d3Btn,body[data-sys=gba] #walkBtn{opacity:.35}
 #mrbar .dot{width:10px;height:10px;border-radius:50%;background:#e5484d;animation:blink 1s infinite}
 #layEd{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 50px);transform:translateX(-50%);z-index:30;background:var(--sheet);border-radius:16px;padding:10px 12px;box-shadow:0 6px 24px #0005;max-width:94vw}
 #amb{position:absolute;inset:-10%;width:120%;height:120%;filter:blur(36px) saturate(1.7) brightness(.75);pointer-events:none;z-index:0}
-#bezel{position:relative;z-index:1}
+#mir{position:absolute;inset:0;width:100%;height:100%;filter:blur(3px) brightness(.55) saturate(1.2);pointer-events:none;z-index:0}
+#bezel{position:relative;z-index:1;overflow:hidden}
 #dpad.floating{opacity:1!important;transition:none}
 /* Full-screen: the game fills the screen and the controls float on top. */
 body.ov #app{display:block;padding:0}
@@ -171,7 +172,7 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
   <button class="ib" id="qsBtn" aria-label="Quick save">💾</button>
   <button class="ib" id="qlBtn" aria-label="Quick load">↺</button></div>
  </div>
- <div id="stage"><canvas id="amb" width="32" height="18" hidden></canvas><div id="bezel"><div id="wrap">
+ <div id="stage"><canvas id="amb" width="32" height="18" hidden></canvas><canvas id="mir" hidden></canvas><div id="bezel"><div id="wrap">
   <canvas id="screen" width="256" height="224"></canvas>
   <canvas id="gl" hidden></canvas>
   <video id="rv" playsinline autoplay hidden></video>
@@ -304,6 +305,15 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
    <div class="row"><input type="text" id="actIcon" placeholder="Icon" style="width:64px"><input type="text" id="actLabel" placeholder="Label, like Use tool" style="flex:1"></div>
    <div class="row" id="actBtns"></div>
    <div class="row"><select id="actMode"><option value="hold">Hold while pressed</option><option value="turbo">Turbo while pressed</option><option value="toggle">Tap to hold, tap to release</option></select><button class="btn main" id="actAdd">Add button</button></div>
+   <h2>Enhancements</h2>
+   <div id="enhSnes"><div class="row"><label>Reduce slowdown <select id="enhSlow"><option value="disabled">Off (original)</option><option value="light">Light</option><option value="compatible">Compatible</option><option value="max">Max</option></select></label>
+    <label class="ck"><input type="checkbox" id="enhFlicker"> Less sprite flicker</label><label>SuperFX speed <select id="enhFx"><option>100%</option><option>150%</option><option>200%</option><option>300%</option><option>400%</option></select></label></div>
+    <p class="note">Reduce slowdown speeds up the console’s processor so busy scenes stop dragging. Less flicker lifts the limit of sprites per line. SuperFX speed smooths games like Star Fox. All three can upset a few games; turn them back down if something acts strangely.</p></div>
+   <div id="enhGb" hidden><div class="row"><label>Colors <select id="enhGbColor"><option value="auto">Automatic (best for each game)</option><option value="GBC">Game Boy Color</option><option value="SGB">Super Game Boy</option><option value="disabled">Original green-gray</option></select></label>
+    <label>Screen blur <select id="enhGhost"><option value="disabled">Off</option><option value="mix">Smooth flicker</option><option value="lcd_ghosting">Original LCD ghosting</option></select></label></div>
+    <p class="note">Automatic colors give original Game Boy games the palette Nintendo chose for them on Game Boy Color or Super Game Boy. Smooth flicker fixes games that flash sprites on and off.</p></div>
+   <p class="note" id="enhNone" hidden>Game Boy Advance games don’t have extra enhancements yet; Play style, looks and sound still apply.</p>
+   <p class="note" id="enhOld" hidden>These need the newer core: push bridge.cpp so “Build emulator cores” rebuilds it.</p>
    <h2>Play style</h2>
    <div class="row"><select id="psPreset"><option value="none">Standard</option><option value="puzzle">Puzzle: drag and flick pieces</option><option value="action">Action: gesture pad for side-scrollers</option></select></div>
    <div class="row" id="psPuzzle" hidden><label>Tap rotates <select id="psRot"></select></label><label>Two-finger tap <select id="psRot2"></select></label>
@@ -346,7 +356,7 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
   <section class="page" data-p="settings" hidden>
    <h3>Screen</h3>
    <div class="row"><label>Look <select id="setLook"><option value="original">Original</option><option value="vivid">Vivid</option><option value="soft">Soft</option><option value="warm">Warm</option><option value="green">Classic green</option></select></label><label class="ck"><input type="checkbox" id="setLcd"> Pixel grid</label></div>
-   <div class="row"><label class="ck"><input type="checkbox" id="setHd"> HD smoothing (smooth curves on pixel art, flat view)</label><label class="ck"><input type="checkbox" id="setGlowBg"> Glow backdrop</label><label class="ck"><input type="checkbox" id="setSparks"> Hit sparks</label></div>
+   <div class="row"><label class="ck"><input type="checkbox" id="setHd"> HD smoothing (smooth curves on pixel art, flat view)</label><label>Sides in full-screen <select id="setBackdrop"><option value="glow">Glow</option><option value="mirror">Mirrored widescreen</option><option value="off">Black</option></select></label><label class="ck"><input type="checkbox" id="setSparks"> Hit sparks</label></div>
    <div class="row"><label>Shape <select id="setAspect"><option value="4:3">TV (4:3)</option><option value="pixel">Square pixels</option></select></label></div>
    <div class="row"><label class="ck"><input type="checkbox" id="setCrt"> Scanlines</label><label class="ck"><input type="checkbox" id="setSmooth"> Smooth pixels</label><label class="ck"><input type="checkbox" id="setWatch" checked> Show watches</label></div>
    <h3>3D</h3>
@@ -389,6 +399,8 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
    <p class="note">Turn weather on per game under Setup.</p>
    <h3>Sound</h3>
    <div class="row"><label>Volume <input type="range" id="setVol" min="0" max="100"></label></div>
+   <div class="row"><label>Bass <select id="setBass"><option value="0">Normal</option><option value="4">Boost</option><option value="8">Big boost</option></select></label><label class="ck"><input type="checkbox" id="setWide"> Wide stereo</label>
+    <label>Room <select id="setReverb"><option value="off">None</option><option value="room">Small room</option><option value="hall">Concert hall</option></select></label></div>
    <h3>Time</h3>
    <div class="row"><label>Fast text <select id="setFastText"><option value="0">Off</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option></select></label>
     <label>Moments <select id="setMoments"><option value="0">Off</option><option value="2">Every 2 min</option><option value="5">Every 5 min</option><option value="10">Every 10 min</option></select></label></div>
@@ -461,8 +473,8 @@ const DB=(()=>{let p,mem=null;const memStore=s=>(mem[s]||(mem[s]=new Map()));
   return new Promise((res,rej)=>{const t=d.transaction(st,mode);const r=fn(t.objectStore(st));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);});};
  return{get:(s,k)=>run(s,'readonly',o=>o.get(k),m=>m.get(k)),put:(s,k,v)=>run(s,'readwrite',o=>o.put(v,k),m=>{m.set(k,v);}),
   del:(s,k)=>run(s,'readwrite',o=>o.delete(k),m=>{m.delete(k);}),keys:s=>run(s,'readonly',o=>o.getAllKeys(),m=>[...m.keys()])};})();
-const SETDEF={overlay:'landscape',floatStick:false,hd:false,glowBg:true,sparks:false,lcd:false,saver:false,pad2:true,gestures:true,talkFlat:true,resume:true,sunShadow:true,glowFx:true,bloom:true,waterFx:true,fastText:2,moments:5,stand:true,dof:true,look:'original',fxAmt:40,padHide:true,aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10,d3:false,tilt:28,depth:100,shadow:true,motion:false};
-let S=Object.assign({},SETDEF,JSON.parse(localStorage.getItem('ht.settings')||'{}'));if(!S.sparksV2){S.sparks=false;S.sparksV2=true;}
+const SETDEF={bass:0,wide:false,reverb:'off',backdrop:'glow',overlay:'landscape',floatStick:false,hd:false,glowBg:true,sparks:false,lcd:false,saver:false,pad2:true,gestures:true,talkFlat:true,resume:true,sunShadow:true,glowFx:true,bloom:true,waterFx:true,fastText:2,moments:5,stand:true,dof:true,look:'original',fxAmt:40,padHide:true,aspect:'4:3',crt:false,smooth:false,watch:true,op:90,vol:90,ff:3,rw:true,rwSec:10,d3:false,tilt:28,depth:100,shadow:true,motion:false};
+let S=Object.assign({},SETDEF,JSON.parse(localStorage.getItem('ht.settings')||'{}'));if(S.glowBg===false&&!S.backdropV){S.backdrop='off';}S.backdropV=1;if(!S.sparksV2){S.sparks=false;S.sparksV2=true;}
 const saveSettings=()=>localStorage.setItem('ht.settings',JSON.stringify(S));
 const fnv=(a,o=0,n=a.length)=>{let h=0x811c9dc5;for(let i=o;i<o+n;i++){h^=a[i];h=Math.imul(h,16777619);}return h>>>0;};
 const hex=h=>h.toString(16).padStart(8,'0');
@@ -501,9 +513,9 @@ let logical={w:256,h:224};
 function draw(){
  const w=M._s9x_vw(),h=M._s9x_vh();
  if(!img||img.width!==w||img.height!==h){cv.width=w;cv.height=h;img=cx.createImageData(w,h);logical=snesOn()?{w:256,h:h>240?h/2:h}:{w,h};applyAspect();}
- if(G.on&&game){if(game.sys==='gb')composeGB();else compose3D();glDraw();fxTick();if(NP.cx)streamFrame();ambTick();hudTick();return;}
- if(S.hd&&game&&hdDraw()){fxTick();if(NP.cx)streamFrame();ambTick();hudTick();return;}
- blit();fxTick();if(NP.cx)streamFrame();ambTick();hudTick();}
+ if(G.on&&game){if(game.sys==='gb')composeGB();else compose3D();glDraw();fxTick();if(NP.cx)streamFrame();ambTick();mirrorTick();hudTick();return;}
+ if(S.hd&&game&&hdDraw()){fxTick();if(NP.cx)streamFrame();ambTick();mirrorTick();zoomFollow();hudTick();return;}
+ blit();fxTick();if(NP.cx)streamFrame();ambTick();mirrorTick();zoomFollow();hudTick();}
 function blit(){if(!img)return;const src=new Uint16Array(H8().buffer,P.video,img.width*img.height),dst=new Uint32Array(img.data.buffer);
  for(let i=0;i<dst.length;i++)dst[i]=LUT[src[i]];cx.putImageData(img,0,0);}
 function applyAspect(){const n=S.aspect==='pixel'||game&&!snesOn()?logical.w/logical.h:4/3;document.documentElement.style.setProperty('--ar',String(n));document.documentElement.style.setProperty('--gw',logical.w);document.documentElement.style.setProperty('--gh',logical.h);document.documentElement.style.setProperty('--arn',String(n));}
@@ -521,7 +533,7 @@ async function audioOn(){
  if(actx){if(actx.state!=='running')actx.resume();return;}
  actx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
  await actx.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET],{type:'text/javascript'})));
- anode=new AudioWorkletNode(actx,'snes-out',{outputChannelCount:[2]});anode.connect(actx.destination);
+ anode=new AudioWorkletNode(actx,'snes-out',{outputChannelCount:[2]});anode.connect(actx.destination);setupAudioFx();
  anode.port.postMessage({v:S.vol/100});if(M&&game)anode.port.postMessage({k:M._s9x_rate()/actx.sampleRate});}
 function pushAudio(){const n=M._s9x_audio_frames();if(!n||!anode)return;const src=new Int16Array(H8().buffer,P.audio,n*2),f=new Float32Array(n*2);
  for(let i=0;i<f.length;i++)f[i]=src[i]/32768;anode.port.postMessage({s:f},[f.buffer]);}
@@ -776,13 +788,14 @@ async function startGame(id){const meta=lib.find(g=>g.id===id);if(!meta)return;c
  try{await saveAuto();running=false;await loadCore(sys);}catch(e){toast(e.message,6000);return;}
  const rom=await getRom(id);if(!rom){toast('That game isn’t on this device anymore.');return;}
  if(romPtr)M._free(romPtr);romPtr=M._malloc(rom.length);H8().set(rom,romPtr);
+ applyEnh(sys,normProfile(await DB.get('data','prof:'+id),meta.name));
  if(!M._s9x_load(romPtr,rom.length)){toast(`This file didn’t load. Check that it’s a ${CORES[sys].name} game.`);return;}
  for(const k of['video','audio','vram','cgram','oam','wram','regs','scroll'])P[k]=M['_s9x_'+k]();
  P.wsize=M._s9x_wram_size?M._s9x_wram_size():0x20000;if(!P.wram)P.wsize=0;
  P.sram=M._s9x_sram();fps=M._s9x_fps();
  meta.played=Date.now();DB.put('data','lib',lib);
  game={id,sys,name:meta.name,profile:normProfile(await DB.get('data','prof:'+id),meta.name)};
- document.body.dataset.sys=sys;$('#title').textContent=game.name;$('#empty').hidden=true;
+ document.body.dataset.sys=sys;$('#title').textContent=game.name;$('#empty').hidden=true;applyPreset(rom);applyEnh();PZ.z=1;pzApply();
  // SNES-only tools (3D, tile editing, tap to walk) step aside for handheld games, and come back for SNES ones.
  if(!stageOn()){if(G.on)set3D(false,true);WK.on=false;WK.target=null;$('#walkBtn').classList.remove('on');}else if(S.d3&&!G.on)set3D(true,true);
  if(game.profile.controls.preset==='puzzle'&&G.on)set3D(false,true);GX.q=[];GX.held=0;TL.base=null;SP.prev=[];SP.ps=[];applyOverlay();applyView();
@@ -794,7 +807,7 @@ async function startGame(id){const meta=lib.find(g=>g.id===id);if(!meta)return;c
 function normProfile(p,name){p=p||{};return{v:1,name:p.name||name,actions:p.actions||[],walk:Object.assign({layer:0,diagonal:true},p.walk),
  watches:p.watches||[],cheats:p.cheats||[],tiles:p.tiles||{},sheets:p.sheets||[],colors:p.colors||[],depth:{style:p.depth?.style||'top',tiles:p.depth?.tiles||{},stand:p.depth?.stand||{},flat:p.depth?.flat||{},glow:p.depth?.glow||{},water:p.depth?.water||{},overlay:p.depth?.overlay??(p.depth?.flatBG3?[2]:null)},light:Object.assign({source:'off',addr:'',max:24},p.light),
  fx:Object.assign({mode:'off',addr:''},p.fx),packs:p.packs||[],gestures:Object.assign({talk:['A'],menu:['X'],tool:['Y'],back:['B']},p.gestures),
- controls:Object.assign({preset:'none',rotate:['A'],rotate2:['B'],drop:['Down'],cell:8,jump:['B'],attack:['Y'],tilt:false},p.controls),layout:p.layout||{},notes:p.notes||''};}
+ controls:Object.assign({preset:'none',rotate:['A'],rotate2:['B'],drop:['Down'],cell:8,jump:['B'],attack:['Y'],tilt:false},p.controls),layout:p.layout||{},notes:p.notes||'',enh:Object.assign({},p.enh),presetDone:!!p.presetDone};}
 const saveProfile=()=>game&&DB.put('data','prof:'+game.id,game.profile);
 
 /* ---------- saves ---------- */
@@ -1018,7 +1031,9 @@ wrapEl.addEventListener('pointerdown',e=>{if(!game)return;
  if(photo){e.preventDefault();photo.drag={x:e.clientX,y:e.clientY,py:G.py,pt:G.pt,id:e.pointerId};try{wrapEl.setPointerCapture(e.pointerId);}catch{}return;}
  if(pickMode){e.preventDefault();pdrag={id:e.pointerId,a:toSnes(e),cx:e.clientX,cy:e.clientY,moved:false};try{wrapEl.setPointerCapture(e.pointerId);}catch{}return;}
  if(!WK.on&&!S.gestures)return;e.preventDefault();GS.count++;
- if(GS.count===2&&GS.p&&performance.now()-GS.p.t<250&&!GS.p.moved){GS.two={t:performance.now()};clearTimeout(GS.timer);GS.p.cancel=true;return;}
+ if(GS.count>=2){clearTimeout(GS.timer);if(GS.p)GS.p.cancel=true;}   // a second finger (tap or pinch) never opens the hold menu
+ if(GS.count===2&&GS.p&&performance.now()-GS.p.t<250&&!GS.p.moved){GS.two={t:performance.now()};return;}
+ if(GS.count>=2)return;
  GS.p={id:e.pointerId,pt:toSnes(e),cx:e.clientX,cy:e.clientY,t:performance.now(),moved:false,long:false,steer:false};try{wrapEl.setPointerCapture(e.pointerId);}catch{}
  clearTimeout(GS.timer);if(S.gestures)GS.timer=setTimeout(()=>{const g=GS.p;if(g&&!g.moved&&!g.cancel){g.long=true;openQuick(g.cx,g.cy);}},450);});
 wrapEl.addEventListener('pointermove',e=>{
@@ -1034,7 +1049,7 @@ for(const t of['pointerup','pointercancel'])wrapEl.addEventListener(t,e=>{
  if(pdrag&&pdrag.id===e.pointerId){const d=pdrag;pdrag=null;if(t==='pointercancel')return;
   if(d.moved&&d.b)showCands(pickArea(rectOf(d.a,d.b)),'Nothing to edit in that area.');else showCands(pickAt(d.a),'Nothing there. Try another spot.');return;}
  GS.count=Math.max(0,GS.count-1);
- if(GS.two){if(GS.count===0){if(t==='pointerup'&&performance.now()-GS.two.t<400)pressButtons(gest().back);GS.two=null;GS.p=null;}return;}
+ if(GS.two){if(GS.count===0){if(t==='pointerup'&&performance.now()-GS.two.t<400&&!PZ.used)pressButtons(gest().back);GS.two=null;GS.p=null;}return;}
  const g=GS.p;if(!g||g.id!==e.pointerId)return;GS.p=null;clearTimeout(GS.timer);
  if(g.steer){WK.target=null;WK.hold=false;inp.walk=0;return;}
  if(t==='pointercancel'||g.cancel)return;
@@ -1833,7 +1848,7 @@ function reloadProfile(){applyCheats();renderActions();patchesOff();patchIndex()
 function renderGest(){const box=$('#gestRow');if(!game){box.innerHTML='';return;}const g=game.profile.gestures;
  box.innerHTML=[['talk','Talk'],['menu','Menu'],['tool','Tool'],['back','Back']].map(([k,l])=>`<label>${l} <select data-g="${k}">${Object.keys(BTN).map(n=>`<option ${g[k][0]===n?'selected':''}>${n}</option>`).join('')}</select></label>`).join('');
  for(const sel of box.querySelectorAll('select'))sel.onchange=()=>{g[sel.dataset.g]=[sel.value];saveProfile();};}
-function renderAllTools(){renderGest();renderPlayStyle();renderTiles();renderSheets();if(game)$('#stageStyle').value=game.profile.depth.style;renderWatches();renderCheats();renderActList();renderRS();
+function renderAllTools(){renderGest();renderPlayStyle();renderEnh();renderTiles();renderSheets();if(game)$('#stageStyle').value=game.profile.depth.style;renderWatches();renderCheats();renderActList();renderRS();
  if(game){$('#walkLayer').value=game.profile.walk.layer;$('#walkDiag').checked=game.profile.walk.diagonal;renderOverlay();renderLookFx();renderPacks();$('#notes').value=game.profile.notes||'';}}
 
 
@@ -1969,7 +1984,7 @@ function hostAccept(c){const welcome=async()=>{c.id='g'+(++NP.seq);c.seat=NP.con
  c.on('close',()=>{NP.conns=NP.conns.filter(x=>x!==c);if(c.seat===2)NP.p2mask=0;dropPair(c.id);toast(`${nm(c)} left`);broadcastRoster();});}
 // What friends see: the screen (flat, HD or 3D, with weather) at 3× size, plus the game's sound.
 function hostStream(){if(NP.stream)return NP.stream;const c=NP.cv=document.createElement('canvas');c.width=768;c.height=672;NP.cx=c.getContext('2d');
- const st=c.captureStream(60);if(actx&&anode){const ad=actx.createMediaStreamDestination();anode.connect(ad);for(const t of ad.stream.getAudioTracks())st.addTrack(t);}
+ const st=c.captureStream(60);if(actx&&anode){const ad=actx.createMediaStreamDestination();(AFX.out||anode).connect(ad);for(const t of ad.stream.getAudioTracks())st.addTrack(t);}
  NP.stream=st;streamFrame();return st;}
 function streamFrame(){const x=NP.cx,c=NP.cv;x.imageSmoothingEnabled=false;x.drawImage(G.on||S.hd?$('#gl'):cv,0,0,c.width,c.height);const fx=$('#fx');if(!fx.hidden)x.drawImage(fx,0,0,c.width,c.height);}
 // Direct invite: no room server. The host makes an invite code; the friend answers with a reply code.
@@ -2082,12 +2097,12 @@ function gxMask(){let m=GX.held;const h=GX.q[0];if(h){m|=h.mask;if(--h.frames<=0
 // Puzzle: drag sideways moves the piece one cell per cell of finger travel, drag down soft-drops, flick down drops, tap rotates.
 const cellPx=()=>{const r=wrapEl.getBoundingClientRect();return r.width/logical.w*(ctlP().cell||8);};
 function pzDown(e){GX.p.set(e.pointerId,{x0:e.clientX,y0:e.clientY,t:performance.now(),steps:0,moved:false,soft:false});if(GX.p.size===2)GX.two=performance.now();}
-function pzMove(e){const p=GX.p.get(e.pointerId),cell=cellPx(),dx=e.clientX-p.x0,dy=e.clientY-p.y0;if(Math.hypot(dx,dy)>8)p.moved=true;if(GX.two)return;
+function pzMove(e){if(PZ.used)return;const p=GX.p.get(e.pointerId),cell=cellPx(),dx=e.clientX-p.x0,dy=e.clientY-p.y0;if(Math.hypot(dx,dy)>8)p.moved=true;if(GX.two)return;
  const want=Math.trunc(dx/cell);while(p.steps<want){gxPulse(BIT('Right'),2);p.steps++;}while(p.steps>want){gxPulse(BIT('Left'),2);p.steps--;}
  const soft=dy>cell*1.5&&Math.abs(dy)>Math.abs(dx);if(soft!==p.soft){p.soft=soft;GX.held=soft?GX.held|BIT('Down'):GX.held&~BIT('Down');}}
 function pzUp(e,cancel){const p=GX.p.get(e.pointerId);GX.p.delete(e.pointerId);const c=ctlP(),dt=performance.now()-p.t,dx=e.clientX-p.x0,dy=e.clientY-p.y0;
  if(p.soft)GX.held&=~BIT('Down');if(cancel)return;
- if(GX.two){if(!GX.p.size){if(performance.now()-GX.two<400)gxPulse(maskOf(c.rotate2),4);GX.two=null;}return;}
+ if(GX.two){if(!GX.p.size){if(performance.now()-GX.two<400&&!PZ.used)gxPulse(maskOf(c.rotate2),4);GX.two=null;}return;}
  if(dy>40&&dt<240&&dy>Math.abs(dx)*1.5){gxPulse(maskOf(c.drop),c.drop[0]==='Down'?60:6);return;}
  if(!p.moved&&dt<350)gxPulse(maskOf(c.rotate),4);}
 // Action: tap or hold to jump (hold longer for a higher jump), swipe in any of 8 directions to attack that way.
@@ -2212,7 +2227,7 @@ function hdDraw(){try{if(!hdInit())return false;}catch(e){toast('HD smoothing co
 function applyView(){let glv=G.on;if(!glv&&S.hd&&game){try{glv=hdInit();}catch{glv=false;}}$('#gl').hidden=!glv;cv.style.visibility=glv?'hidden':'';}
 
 /* ---------- glow backdrop: the space around the game glows with its colors ---------- */
-function ambTick(){const a=$('#amb'),show=S.glowBg&&document.body.classList.contains('ov')&&!!game;a.hidden=!show;if(!show||frameNo%4)return;
+function ambTick(){const a=$('#amb'),show=S.backdrop==='glow'&&document.body.classList.contains('ov')&&!!game;a.hidden=!show;if(!show||frameNo%4)return;
  a.getContext('2d').drawImage(G.on||S.hd?$('#gl'):cv,0,0,a.width,a.height);}
 
 /* ---------- hit sparks: when an enemy or object vanishes, it bursts into particles in its own colors ---------- */
@@ -2235,6 +2250,81 @@ function drawSparks(g,W,H){if(!SP.ps.length)return;const map=G.on&&G.M?(x,y)=>{c
  for(const p of SP.ps){p.x+=p.vx;p.y+=p.vy;p.vy+=.08;p.vx*=.98;p.life--;const[x,y]=map(p.x,p.y);g.globalAlpha=Math.max(0,Math.min(1,p.life/14));g.fillStyle=p.c;g.fillRect(x|0,y|0,2,2);}
  g.globalAlpha=1;SP.ps=SP.ps.filter(p=>p.life>0);}
 
+/* ---------- game enhancements (core options) and per-game presets ---------- */
+const ENH_DEF={slowdown:'disabled',flicker:false,superfx:'100%',gbColor:'auto',gbGhost:'disabled'};
+function setCoreOption(k,v){if(!M||!M._s9x_set_option)return false;const a=enc(k+'\0'),b=enc(v+'\0'),pa=M._malloc(a.length),pb=M._malloc(b.length);
+ H8().set(a,pa);H8().set(b,pb);M._s9x_set_option(pa,pb);M._free(pa);M._free(pb);return true;}
+function applyEnh(sys=game&&game.sys,prof=game&&game.profile){if(!prof)return;const e=Object.assign({},ENH_DEF,prof.enh);
+ if(sys==='snes'){setCoreOption('snes9x_overclock_cycles',e.slowdown);setCoreOption('snes9x_reduce_sprite_flicker',e.flicker?'enabled':'disabled');setCoreOption('snes9x_overclock_superfx',e.superfx);}
+ else if(sys==='gb'){setCoreOption('gambatte_gb_colorization',e.gbColor);setCoreOption('gambatte_mix_frames',e.gbGhost);}}
+// Read the game's own title from its cartridge header, to recognise well-known games.
+function romTitle(rom,sys){const txt=(o,n)=>String.fromCharCode(...rom.subarray(o,o+n)).replace(/[^\x20-\x7e]/g,'').trim();
+ if(sys==='gb')return txt(0x134,15);if(sys==='gba')return txt(0xA0,12);
+ for(const o of[0x7FC0,0xFFC0,0x40FFC0]){if(o+0x20>rom.length)continue;const c=rom[o+0x1C]|rom[o+0x1D]<<8,k=rom[o+0x1E]|rom[o+0x1F]<<8;if((c^k)===0xFFFF)return txt(o,21);}return txt(0x7FC0,21);}
+// Suggested setups for popular games, applied once (everything stays editable under Setup).
+const PRESETS=[
+ {m:/SUPERMARIOWORLD/,name:'Super Mario World',style:'side',enh:{slowdown:'light',flicker:true}},
+ {m:/CASTLEVANIA/,name:'Super Castlevania IV',style:'side',controls:{preset:'action',jump:['B'],attack:['Y']},enh:{flicker:true}},
+ {m:/MEGAMANX/,name:'Mega Man X',style:'side',controls:{preset:'action',jump:['B'],attack:['Y']},enh:{slowdown:'compatible'}},
+ {m:/SUPERMETROID/,name:'Super Metroid',style:'side',controls:{preset:'action',jump:['A'],attack:['X']}},
+ {m:/DONKEYKONG/,name:'Donkey Kong Country',style:'side'},
+ {m:/GRADIUS/,name:'Gradius III',style:'side',enh:{slowdown:'max',flicker:true}},
+ {m:/FZERO/,name:'F-Zero',tilt:true},{m:/MARIOKART/,name:'Super Mario Kart',tilt:true},
+ {m:/STARFOX|STARWING/,name:'Star Fox',enh:{superfx:'200%'}},
+ {m:/CHRONOTRIGGER|ZELDA|HARVESTMOON|SECRETOFMANA|EARTHBOUND|FINALFANTASY/,style:'top'},
+ {m:/^TETRIS|DRMARIO|DR\.MARIO|PUYO|COLUMNS|PANELDEPON|TETRISATTACK/,controls:{preset:'puzzle'}}];
+function applyPreset(rom){const pr=game.profile;if(pr.presetDone)return;pr.presetDone=true;const t=romTitle(rom,game.sys).toUpperCase().replace(/[^A-Z0-9.]/g,'');
+ const p=PRESETS.find(x=>x.m.test(t));if(!p){saveProfile();return;}
+ if(p.style)pr.depth.style=p.style;if(p.controls)Object.assign(pr.controls,p.controls);if(p.tilt)pr.controls.tilt=true;if(p.enh)pr.enh=Object.assign({},pr.enh,p.enh);
+ saveProfile();setTimeout(()=>toast(`Enhancements for ${p.name||game.name} are on. Change them any time under Setup.`,4500),1200);}
+function renderEnh(){if(!game)return;const e=Object.assign({},ENH_DEF,game.profile.enh),s=game.sys;$('#enhSnes').hidden=s!=='snes';$('#enhGb').hidden=s!=='gb';$('#enhNone').hidden=s!=='gba';
+ $('#enhSlow').value=e.slowdown;$('#enhFlicker').checked=e.flicker;$('#enhFx').value=e.superfx;$('#enhGbColor').value=e.gbColor;$('#enhGhost').value=e.gbGhost;
+ $('#enhOld').hidden=!M||!!M._s9x_set_option;}
+function enhSet(k,v,restart){if(!game)return;game.profile.enh=Object.assign({},game.profile.enh,{[k]:v});saveProfile();applyEnh();if(restart)toast('This one takes effect after Restart game (Saves tab).',3500);}
+$('#enhSlow').onchange=e=>enhSet('slowdown',e.target.value);$('#enhFlicker').onchange=e=>enhSet('flicker',e.target.checked);$('#enhFx').onchange=e=>enhSet('superfx',e.target.value);
+$('#enhGbColor').onchange=e=>enhSet('gbColor',e.target.value,true);$('#enhGhost').onchange=e=>enhSet('gbGhost',e.target.value);
+
+/* ---------- sound enhancements: bass, wide stereo and room reverb on the game's sound ---------- */
+const AFX={};
+function setupAudioFx(){if(!actx||!anode||AFX.out)return;const a=actx;
+ AFX.bass=a.createBiquadFilter();AFX.bass.type='lowshelf';AFX.bass.frequency.value=140;
+ const sp=a.createChannelSplitter(2),mg=a.createChannelMerger(2);AFX.ll=a.createGain();AFX.rr=a.createGain();AFX.lr=a.createGain();AFX.rl=a.createGain();
+ sp.connect(AFX.ll,0);sp.connect(AFX.lr,0);sp.connect(AFX.rr,1);sp.connect(AFX.rl,1);AFX.ll.connect(mg,0,0);AFX.rl.connect(mg,0,0);AFX.rr.connect(mg,0,1);AFX.lr.connect(mg,0,1);
+ AFX.out=a.createGain();AFX.wet=a.createGain();AFX.conv=a.createConvolver();
+ anode.disconnect();anode.connect(AFX.bass);AFX.bass.connect(sp);mg.connect(AFX.out);mg.connect(AFX.conv);AFX.conv.connect(AFX.wet);AFX.wet.connect(AFX.out);AFX.out.connect(a.destination);applyAudioFx();}
+function impulse(sec,decay){const a=actx,n=Math.round(a.sampleRate*sec),b=a.createBuffer(2,n,a.sampleRate);
+ for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,decay);}return b;}
+function applyAudioFx(){if(!AFX.out)return;AFX.bass.gain.value=+S.bass||0;const w=S.wide?1.7:1,same=(1+w)/2,cross=(1-w)/2;
+ AFX.ll.gain.value=AFX.rr.gain.value=same;AFX.lr.gain.value=AFX.rl.gain.value=cross;
+ if(S.reverb!=='off'){if(AFX.rv!==S.reverb){AFX.conv.buffer=S.reverb==='hall'?impulse(2.6,2.2):impulse(1.1,3);AFX.rv=S.reverb;}AFX.wet.gain.value=S.reverb==='hall'?.22:.14;}else AFX.wet.gain.value=0;}
+
+/* ---------- mirrored widescreen fill: the sides show softened, mirrored edges of the picture ---------- */
+function mirrorTick(){const m=$('#mir'),show=S.backdrop==='mirror'&&document.body.classList.contains('ov')&&!!game;m.hidden=!show;if(!show||frameNo%2)return;
+ const st=$('#stage').getBoundingClientRect(),w=$('#wrap').getBoundingClientRect(),W=Math.round(st.width/3),H=Math.round(st.height/3);if(m.width!==W||m.height!==H){m.width=W;m.height=H;}
+ const g=m.getContext('2d'),src=G.on||S.hd?$('#gl'):cv,sx=W/st.width,lx=(w.left-st.left)*sx,rx=(w.right-st.left)*sx,top=(w.top-st.top)*sx,hh=w.height*sx,sw=src.width,sh=src.height;
+ g.clearRect(0,0,W,H);if(lx<2)return;const strip=Math.min(sw*.35,sw*lx/(rx-lx));
+ g.save();g.translate(lx,0);g.scale(-1,1);g.drawImage(src,0,0,strip,sh,0,top,lx,hh);g.restore();
+ g.save();g.translate(W,0);g.scale(-1,1);g.drawImage(src,sw-strip,0,strip,sh,0,top,W-rx,hh);g.restore();}
+
+/* ---------- pinch to zoom: two fingers zoom the picture in and out; it follows your character when locked on ---------- */
+// Safari zooms the whole page on a pinch even with user-scalable=no; keep pinches on the game for the game.
+for(const t of['gesturestart','gesturechange'])document.addEventListener(t,e=>{if(e.target.closest&&e.target.closest('#stage'))e.preventDefault();},{passive:false});
+const PZ={pts:new Map(),d0:0,z0:1,z:1,tx:0,ty:0,used:false,mid:null};
+function pzApply(){const w=$('#wrap');if(PZ.z<=1.001){PZ.z=1;PZ.tx=PZ.ty=0;w.style.transform='';G.zoom=1;return;}
+ if(G.on){G.zoom=1/PZ.z;w.style.transform='';return;}G.zoom=1;const W=w.offsetWidth,H=w.offsetHeight;
+ PZ.tx=Math.min(0,Math.max(W*(1-PZ.z),PZ.tx));PZ.ty=Math.min(0,Math.max(H*(1-PZ.z),PZ.ty));w.style.transformOrigin='0 0';w.style.transform=`translate(${PZ.tx}px,${PZ.ty}px) scale(${PZ.z})`;}
+stageEl.addEventListener('pointerdown',e=>{PZ.pts.set(e.pointerId,{x:e.clientX,y:e.clientY});if(PZ.pts.size===2){const[a,b]=[...PZ.pts.values()];PZ.d0=Math.hypot(a.x-b.x,a.y-b.y);PZ.z0=PZ.z;PZ.used=false;
+ const r=$('#wrap').getBoundingClientRect();PZ.mid={x:(a.x+b.x)/2-r.left,y:(a.y+b.y)/2-r.top,tx:PZ.tx,ty:PZ.ty};}},{capture:true});
+stageEl.addEventListener('pointermove',e=>{const p=PZ.pts.get(e.pointerId);if(!p)return;p.x=e.clientX;p.y=e.clientY;if(PZ.pts.size!==2||!game||photo)return;
+ const[a,b]=[...PZ.pts.values()],d=Math.hypot(a.x-b.x,a.y-b.y);if(!PZ.used&&Math.abs(d-PZ.d0)>22)PZ.used=true;if(!PZ.used)return;e.stopPropagation();
+ const z=Math.max(1,Math.min(4,PZ.z0*d/PZ.d0)),k=z/PZ.z0,m=PZ.mid;
+ // keep the spot between your fingers under your fingers
+ PZ.tx=m.x-(m.x-m.tx)*k;PZ.ty=m.y-(m.y-m.ty)*k;PZ.z=z;pzApply();},{capture:true});
+for(const t of['pointerup','pointercancel'])stageEl.addEventListener(t,e=>{if(!PZ.pts.delete(e.pointerId))return;if(PZ.pts.size===0&&PZ.used){if(PZ.z<1.08){PZ.z=1;pzApply();}
+ setTimeout(()=>{PZ.used=false;},0);}},{capture:true});
+function zoomFollow(){if(PZ.z<=1||G.on||!WK.player)return;const w=$('#wrap'),W=w.offsetWidth,H=w.offsetHeight,px=WK.player.x/logical.w*W,py=WK.player.y/logical.h*H;
+ PZ.tx+=((W/2-px*PZ.z)-PZ.tx)*.15;PZ.ty+=((H/2-py*PZ.z)-PZ.ty)*.15;pzApply();}
+
 /* ---------- sheet + settings ---------- */
 const pauseFor=p=>!!game&&p!=='tools'&&NP.role!=='host';
 function openSheet(p){$('#sheet').hidden=false;paused=pauseFor(p);if(p)showPage(p);renderSlots();}
@@ -2243,12 +2333,12 @@ function showPage(p){for(const t of $$('.tab'))t.classList.toggle('on',t.dataset
 for(const t of $$('.tab'))t.onclick=()=>showPage(t.dataset.p);
 $('#menuBtn').onclick=()=>openSheet(NP.role?'together':game?'saves':'games');$('#sheetClose').onclick=closeSheet;
 $('#sheet').addEventListener('pointerdown',e=>{if(e.target.id==='sheet')closeSheet();});
-function applySettings(){if(typeof applyOverlay==='function'){applyOverlay();applyView();}$('#crt').hidden=!S.crt||G.on;$('#lcd').hidden=!S.lcd||G.on;cv.style.filter=$('#gl').style.filter=LOOKS[S.look]||'';padState();cv.classList.toggle('smooth',S.smooth);document.documentElement.style.setProperty('--op',S.op/100);applyAspect();
+function applySettings(){if(typeof applyAudioFx==='function')applyAudioFx();if(typeof applyOverlay==='function'){applyOverlay();applyView();}$('#crt').hidden=!S.crt||G.on;$('#lcd').hidden=!S.lcd||G.on;cv.style.filter=$('#gl').style.filter=LOOKS[S.look]||'';padState();cv.classList.toggle('smooth',S.smooth);document.documentElement.style.setProperty('--op',S.op/100);applyAspect();
  anode?.port.postMessage({v:S.vol/100});saveSettings();}
 const BINDS=[];function syncSettingsUI(){for(const[id,key]of BINDS){const el=$(id);if(el.type==='checkbox')el.checked=!!S[key];else el.value=S[key];}}
 const bind=(id,key,get=e=>e.target.value)=>{BINDS.push([id,key]);const el=$(id);if(el.type==='checkbox')el.checked=S[key];else el.value=S[key];
  el.addEventListener(el.type==='range'?'input':'change',e=>{S[key]=el.type==='checkbox'?el.checked:typeof SETDEF[key]==='number'?+get(e):get(e);applySettings();if(key==='rw'||key==='rwSec'){if(game)rewindSetup();}});};
-bind('#setAspect','aspect');bind('#setCrt','crt');bind('#setSmooth','smooth');bind('#setWatch','watch');bind('#setOp','op');bind('#setVol','vol');bind('#setFF','ff');bind('#setRw','rw');bind('#setRwSec','rwSec');bind('#setLook','look');bind('#setFxAmt','fxAmt');bind('#setPadHide','padHide');bind('#setStand','stand');bind('#setResume','resume');bind('#setOverlay','overlay');bind('#setFloat','floatStick');bind('#setHd','hd');bind('#setGlowBg','glowBg');bind('#setSparks','sparks');bind('#setLcd','lcd');bind('#setSaver','saver');bind('#setPad2','pad2');bind('#setGest','gestures');bind('#setTalkFlat','talkFlat');bind('#setSun','sunShadow');bind('#setGlow','glowFx');bind('#setBloom','bloom');bind('#setWater','waterFx');bind('#setFastText','fastText');bind('#setMoments','moments');bind('#setDof','dof');bind('#setTilt','tilt');bind('#setDepth','depth');bind('#setShadow','shadow');bind('#setMotion','motion');
+bind('#setAspect','aspect');bind('#setCrt','crt');bind('#setSmooth','smooth');bind('#setWatch','watch');bind('#setOp','op');bind('#setVol','vol');bind('#setFF','ff');bind('#setRw','rw');bind('#setRwSec','rwSec');bind('#setLook','look');bind('#setFxAmt','fxAmt');bind('#setPadHide','padHide');bind('#setStand','stand');bind('#setResume','resume');bind('#setBass','bass');bind('#setWide','wide');bind('#setReverb','reverb');bind('#setBackdrop','backdrop');bind('#setOverlay','overlay');bind('#setFloat','floatStick');bind('#setHd','hd');bind('#setSparks','sparks');bind('#setLcd','lcd');bind('#setSaver','saver');bind('#setPad2','pad2');bind('#setGest','gestures');bind('#setTalkFlat','talkFlat');bind('#setSun','sunShadow');bind('#setGlow','glowFx');bind('#setBloom','bloom');bind('#setWater','waterFx');bind('#setFastText','fastText');bind('#setMoments','moments');bind('#setDof','dof');bind('#setTilt','tilt');bind('#setDepth','depth');bind('#setShadow','shadow');bind('#setMotion','motion');
 $('#setMotion').addEventListener('change',motionPermission);$('#setD3').checked=S.d3;
 applySettings();if(S.d3)set3D(true);
 

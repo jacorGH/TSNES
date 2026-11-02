@@ -23,6 +23,10 @@ static uint32_t pad = 0, pad2 = 0;
 static uint8_t regs[0x40];      // copy of $2100-$213F after each frame
 static uint16_t scroll[8];      // BG1-4 horizontal/vertical scroll
 static bool loaded = false;
+// Core options set from the app (reduce slowdown, sprite flicker, Game Boy colors...). Read by the core through GET_VARIABLE.
+static char optk[32][64], optv[32][64];
+static int optn = 0;
+static bool optChanged = false;
 // Memory map the core shares (Game Boy video memory, sprite table and registers live here).
 static struct retro_memory_descriptor mdesc[64];
 static unsigned mcount = 0;
@@ -49,8 +53,15 @@ static bool env_cb(unsigned cmd, void *data) {
       memcpy(mdesc, m->descriptors, mcount * sizeof(struct retro_memory_descriptor));
       return true;
     }
-    case RETRO_ENVIRONMENT_GET_VARIABLE:
-      ((struct retro_variable *)data)->value = NULL; return false;
+    case RETRO_ENVIRONMENT_GET_VARIABLE: {
+      struct retro_variable *v = (struct retro_variable *)data;
+      v->value = NULL;
+      if (!v->key) return false;
+      for (int i = 0; i < optn; i++) if (!strcmp(optk[i], v->key)) { v->value = optv[i]; return true; }
+      return false;
+    }
+    case RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE:
+      *(bool *)data = optChanged; optChanged = false; return true;
     default: return false;
   }
 }
@@ -125,6 +136,10 @@ EMSCRIPTEN_KEEPALIVE void s9x_frame() {
 }
 
 EMSCRIPTEN_KEEPALIVE void s9x_reset() { retro_reset(); }
+EMSCRIPTEN_KEEPALIVE void s9x_set_option(const char *k, const char *v) {
+  for (int i = 0; i < optn; i++) if (!strcmp(optk[i], k)) { strncpy(optv[i], v, 63); optv[i][63] = 0; optChanged = true; return; }
+  if (optn < 32) { strncpy(optk[optn], k, 63); optk[optn][63] = 0; strncpy(optv[optn], v, 63); optv[optn][63] = 0; optn++; optChanged = true; }
+}
 EMSCRIPTEN_KEEPALIVE void s9x_set_input(uint32_t mask) { pad = mask; }
 EMSCRIPTEN_KEEPALIVE void s9x_set_input2(uint32_t mask) { pad2 = mask; }
 EMSCRIPTEN_KEEPALIVE uint16_t *s9x_video() { return vbuf; }
