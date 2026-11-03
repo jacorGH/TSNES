@@ -98,6 +98,7 @@ p.note{font-size:13px;color:var(--soft);margin:4px 0 10px;line-height:1.45}
 .btn.main{background:var(--ink);color:#fff}.btn.warn{background:#f2d3d4;color:#7a1f23}
 .list{display:flex;flex-direction:column;gap:6px}
 .item{display:flex;gap:10px;align-items:center;background:#fff;border-radius:12px;padding:8px 10px}
+a.item{color:inherit;text-decoration:none}
 .item .grow{flex:1;min-width:0}.item.game{flex-wrap:wrap}.item .acts{display:flex;gap:6px;width:100%;justify-content:flex-end}.item small{display:block;color:var(--soft);font-size:12px}
 .item img,.item canvas{border-radius:6px;image-rendering:pixelated;background:#0001;flex:none}
 details{background:#fff;border-radius:12px;padding:6px 12px;margin:8px 0}
@@ -205,7 +206,25 @@ body.pad #wrap{width:min(100vw - env(safe-area-inset-left) - env(safe-area-inset
  </div>
  <div class="pages">
   <section class="page" data-p="games">
-   <div class="row"><button class="btn main" id="addGame">Add a game or file</button></div>
+   <div class="row"><button class="btn main" id="addGame">Add a game or file</button><button class="btn" id="freeOpen">🎁 Free games</button></div>
+   <div id="freeBox" hidden>
+    <h3>Free games</h3>
+    <p class="note">Homebrew games that their creators share for free on Homebrew Hub, for Game Boy, Game Boy Color and GBA. Each shows who made it and its license.</p>
+    <div class="row"><input type="search" id="freeQ" placeholder="Search titles" style="flex:1;min-width:140px"><select id="freePlat"><option value="">All</option><option value="GB">Game Boy</option><option value="GBC">Game Boy Color</option><option value="GBA">GBA</option></select>
+     <button class="btn main" id="freeGo">Search</button><button class="btn" id="freeRand">🎲 Surprise me</button></div>
+    <div class="list" id="freeList"></div>
+    <div class="row"><button class="btn" id="freeMore" hidden>More</button></div>
+    <p class="note" id="freeNote"></p>
+    <h3>More places to find games legally</h3>
+    <div class="list">
+     <a class="item" href="https://hh.gbdev.io" target="_blank" rel="noopener"><div class="grow"><strong>Homebrew Hub</strong><small>The full free Game Boy, Game Boy Color and GBA homebrew library</small></div></a>
+     <a class="item" href="https://itch.io/search?q=snes+rom" target="_blank" rel="noopener"><div class="grow"><strong>itch.io: SNES games</strong><small>New games made for the SNES by independent creators, many free</small></div></a>
+     <a class="item" href="https://itch.io/search?q=game+boy+rom" target="_blank" rel="noopener"><div class="grow"><strong>itch.io: Game Boy games</strong><small>Download the .gb, .gbc or .zip file, then open it with “Add a game or file”</small></div></a>
+     <a class="item" href="https://itch.io/search?q=gba+rom" target="_blank" rel="noopener"><div class="grow"><strong>itch.io: GBA games</strong></div></a>
+     <a class="item" href="https://www.nintendo.com/switch/online/" target="_blank" rel="noopener"><div class="grow"><strong>Nintendo Switch Online</strong><small>The official way to play the original SNES, Game Boy and GBA classics</small></div></a>
+    </div>
+    <p class="note">For commercial games you own, make a backup of your own cartridge and add it with “Add a game or file”.</p>
+   </div>
    <p class="note">Opens your games (SNES .sfc and .smc, Game Boy .gb and .gbc, GBA .gba, or inside a .zip, .7z or .rar), game backups, Mod packs and IPS or BPS patches.</p>
    <div class="row"><button class="btn" id="convertZip">Convert 7z or RAR to zip</button></div>
    <div class="list" id="gameList"></div>
@@ -689,13 +708,45 @@ $('#convertZip').onclick=()=>{const f=$('#romFile');f.value='';f.onchange=async(
  catch(e){toast(e.message,5000);}};f.click();};
 
 // One button opens anything: a game, a zip, a game backup, a Mod pack, or an IPS/BPS patch.
-function openFile(){const f=$('#romFile');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return;let b=new Uint8Array(await file.arrayBuffer());
- try{if(hasMagic(b,MAGIC.game))return await restoreGame(b);if(hasMagic(b,MAGIC.pack))return await openPack(b);
-  if(hasMagic(b,'PATCH')||hasMagic(b,'BPS1'))return await patchFlow(b,file.name);
-  if(is7z(b)||isRar(b)){toast('Opening the archive…',8000);return await addFromArchive(await sevenExtract(b,file.name));}
-  let fname=file.name;if(b[0]===0x50&&b[1]===0x4B){try{const z=await unzip(b);b=z.data;fname=z.name.split('/').pop();}
-   catch(e){if(/no game/.test(e.message))throw e;return await addFromArchive(await sevenExtract(b,file.name));}}
-  await addRomBytes(b,fname);}catch(e){toast(e.message||'That file couldn’t be opened.',5000);}};f.click();}
+function openFile(){const f=$('#romFile');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return;
+ try{await openBytes(new Uint8Array(await file.arrayBuffer()),file.name);}catch(e){toast(e.message||'That file couldn’t be opened.',5000);}};f.click();}
+// Anything that arrives as bytes (a picked file or a free-game download) goes through here.
+async function openBytes(b,name){if(hasMagic(b,MAGIC.game))return await restoreGame(b);if(hasMagic(b,MAGIC.pack))return await openPack(b);
+ if(hasMagic(b,'PATCH')||hasMagic(b,'BPS1'))return await patchFlow(b,name);
+ if(is7z(b)||isRar(b)){toast('Opening the archive…',8000);return await addFromArchive(await sevenExtract(b,name));}
+ let fname=name;if(b[0]===0x50&&b[1]===0x4B){try{const z=await unzip(b);b=z.data;fname=z.name.split('/').pop();}
+  catch(e){if(/no game/.test(e.message))throw e;return await addFromArchive(await sevenExtract(b,name));}}
+ return await addRomBytes(b,fname);}
+/* ---------- free games: homebrew shared by its creators on Homebrew Hub (hh.gbdev.io) ---------- */
+const HH='https://hh3.gbdev.io/api',FG={page:1,total:1,q:'',plat:'',random:false,seen:new Set()};
+async function hhJson(path){const r=await fetch(HH+path);if(!r.ok)throw new Error('Homebrew Hub answered '+r.status);return r.json();}
+const hhList=j=>(j.entries||Object.values(j).find(v=>Array.isArray(v)&&v.length&&v[0]&&v[0].slug)||[]);
+async function freeSearch(more){const box=$('#freeList');if(!more){FG.page=1;FG.seen=new Set();box.innerHTML='';}
+ $('#freeNote').textContent='Looking…';$('#freeMore').hidden=true;
+ const p=new URLSearchParams({type:'game',page:FG.page,page_elements:10});if(FG.q)p.set('title',FG.q);if(FG.plat)p.set('platform',FG.plat);if(FG.random)p.set('random','true');else{p.set('order_by','title');}
+ try{const j=await hhJson('/search?'+p);FG.total=j.page_total||1;const list=hhList(j).filter(e=>e.typetag!=='hackrom'&&!FG.seen.has(e.slug));
+  for(const e of list){FG.seen.add(e.slug);box.appendChild(freeItem(e));}
+  const n=box.children.length;$('#freeNote').textContent=!n?'Nothing found. Try another word or platform.':FG.random?'A random handful. Tap Surprise me for others.':`Showing ${n} free game${n===1?'':'s'}${FG.page<FG.total?'. Tap More for others.':'.'}`;
+  $('#freeMore').hidden=FG.random||FG.page>=FG.total;}
+ catch(e){$('#freeNote').textContent='Couldn’t reach Homebrew Hub ('+e.message+'). You can still browse it in Safari with the link below.';}}
+function freeItem(e){const d=document.createElement('div');d.className='item';const shot=e.screenshots&&e.screenshots[0];
+ d.innerHTML=`${shot?`<img src="${HH}/entry/${encodeURIComponent(e.slug)}/${encodeURIComponent(shot)}" width="64" alt="" loading="lazy" style="image-rendering:pixelated;border-radius:6px">`:''}
+  <div class="grow"><strong>${esc(e.title||e.slug)}</strong><small>${esc([e.developer,e.platform,e.license?`License: ${e.license}`:'',(e.tags||[]).slice(0,3).join(', ')].filter(Boolean).join(' · '))}</small></div><button class="btn main">Play</button>`;
+ d.querySelector('button').onclick=()=>freeAdd(e,d.querySelector('button'));return d;}
+async function freeAdd(e,btn){btn.disabled=true;btn.textContent='Getting…';
+ try{const m=e.files?e:await hhJson(`/entry/${encodeURIComponent(e.slug)}.json`),files=m.files||[],f=files.find(x=>x.default&&x.playable)||files.find(x=>x.playable)||files[0];
+  if(!f)throw new Error('This entry has no game file.');
+  const r=await fetch(`${HH}/entry/${encodeURIComponent(e.slug)}/${encodeURIComponent(f.filename)}`);if(!r.ok)throw new Error('Download failed ('+r.status+')');
+  await openBytes(new Uint8Array(await r.arrayBuffer()),f.filename);btn.textContent='Added';
+  toast(`${m.title||e.title} by ${m.developer||'its creator'} was added${m.license?` (${m.license})`:''}.`,4500);}
+ catch(err){btn.disabled=false;btn.textContent='Play';toast(err.message||'That game couldn’t be added.',5000);}}
+$('#freeOpen').onclick=()=>{const b=$('#freeBox');b.hidden=!b.hidden;if(!b.hidden&&!$('#freeList').children.length){FG.random=true;freeSearch();}};
+$('#freeGo').onclick=()=>{FG.q=$('#freeQ').value.trim();FG.plat=$('#freePlat').value;FG.random=false;freeSearch();};
+$('#freeQ').onkeydown=e=>{if(e.key==='Enter')$('#freeGo').click();};
+$('#freeRand').onclick=()=>{FG.q='';$('#freeQ').value='';FG.plat=$('#freePlat').value;FG.random=true;freeSearch();};
+$('#freeMore').onclick=()=>{FG.page++;freeSearch(true);};
+
+
 $('#addGame').onclick=openFile;$('#emptyAdd').onclick=openFile;$('#packIn').onclick=openFile;
 function renderGames(){const box=$('#gameList');box.innerHTML='';
  if(!lib.length){box.innerHTML='<p class="note">No games yet.</p>';return;}
